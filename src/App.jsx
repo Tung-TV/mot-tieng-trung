@@ -37,7 +37,7 @@ function Shell() {
       {!isAdmin && <TopNav path={path} />}
       {!isAdmin && (path === '/' || path === '/lo-trinh') && <Banner />}
       {page}
-      {!isAdmin && <footer className="foot">© {new Date().getFullYear()} Mọt Tiếng Trung · Tài liệu miễn phí cho người tự học</footer>}
+      {!isAdmin && <footer className="foot">© {new Date().getFullYear()} Mọt Tiếng Trung · Tài liệu miễn phí cho người tự học · <a href="privacy.html">Quyền riêng tư</a> · <a href="terms.html">Điều khoản</a></footer>}
       <AuthModal />
       <ConfirmDialog />
       <Toasts />
