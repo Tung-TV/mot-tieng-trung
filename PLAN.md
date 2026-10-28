@@ -182,4 +182,6 @@ Lưu ý cách B: trang kiểm tra token có đúng do Google cấp cho Client ID
   - Auth › URL Configuration: Site URL `https://mot-tieng-trung.pages.dev`; Redirect URLs: `https://mot-tieng-trung.pages.dev/**`, `https://*.mot-tieng-trung.pages.dev/**`, `http://localhost:5173/**`.
   - Dữ liệu mẫu: bảng `content` trống thì web tự hiện 40 tài liệu + 9 chặng gốc; lần sửa đầu tiên trong CMS sẽ tự ghi toàn bộ dữ liệu mẫu vào database (hoặc chạy `docs/seed.sql`).
   - Admin đầu tiên: đăng ký trên web, rồi chạy trong SQL Editor: `update public.profiles set role = 'admin' where email = '...';`
-- Việc còn lại: bật đăng nhập Google (Google Cloud OAuth client → Supabase › Authentication › Providers › Google).
+- Đăng nhập Google: Google Cloud project `mot-tieng-trung`, OAuth client “Mot Tieng Trung - Supabase” (Web), trạng thái **In production**; redirect URI `https://uyrolkmqiguqjpomxvsc.supabase.co/auth/v1/callback`. Đã bật trong Supabase › Authentication › Providers › Google.
+  - Trang bắt buộc cho màn hình đồng ý: `/privacy.html`, `/terms.html`.
+- Quản trị viên: `kaitoshion53@gmail.com` (đăng nhập Google). Cấp quyền cho người khác trong CMS › Tài khoản.
