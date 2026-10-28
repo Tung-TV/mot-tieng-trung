@@ -167,3 +167,13 @@ Lưu ý cách B: trang kiểm tra token có đúng do Google cấp cho Client ID
 - Tài khoản chỉ có Google có thể **Tạo mật khẩu** ở “Kho của tôi” để đăng nhập thêm bằng email.
 - Tài khoản bị khoá trong CMS không đăng nhập được bằng Google. CMS › Tài khoản hiện nhãn “Google”.
 - Muốn tài khoản Google làm quản trị: đăng nhập bằng Google một lần, rồi admin đổi vai trò trong CMS › Tài khoản.
+
+---
+
+## Triển khai hiện tại
+
+- Mã nguồn: GitHub `Tung-TV/mot-tieng-trung` (Private), nhánh `main`.
+- Host: Cloudflare Pages, project `mot-tieng-trung` → https://mot-tieng-trung.pages.dev
+  - Build command `npm run build`, output `dist`, Node 22 (file `.node-version`).
+  - Mỗi lần đẩy code lên `main`, Cloudflare tự build và deploy lại.
+- Chế độ dữ liệu: đang dùng **lưu trên trình duyệt**. Bước tiếp: Supabase + đăng nhập Google (thêm biến môi trường `VITE_BACKEND`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` trong Cloudflare › Settings › Variables, rồi deploy lại).
