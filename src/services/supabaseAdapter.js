@@ -17,7 +17,8 @@ export function createSupabaseAdapter(url, anonKey) {
     if (auth && session && session.expires_at * 1000 < Date.now() + 30000) await refresh();
     const r = await fetch(url + path, {
       method,
-      headers: { apikey: anonKey, 'Content-Type': 'application/json', Authorization: 'Bearer ' + (auth && session ? session.access_token : anonKey), ...headers },
+      // apikey: khoá publishable (sb_publishable_…) hoặc anon cũ. Authorization chỉ gửi khi đã đăng nhập (JWT của người dùng).
+      headers: { apikey: anonKey, 'Content-Type': 'application/json', ...(auth && session ? { Authorization: 'Bearer ' + session.access_token } : {}), ...headers },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     const text = await r.text();
@@ -58,6 +59,15 @@ export function createSupabaseAdapter(url, anonKey) {
     return u && { ...u, providers: myProviders(), hasPassword: myProviders().includes('email') };
   }
 
+  // Bảng content còn trống mà đã sửa 1 mục → các mục mẫu khác sẽ biến mất. Nên ghi toàn bộ dữ liệu mẫu trước.
+  let seeded = false;
+  async function ensureSeeded(api) {
+    if (seeded) return;
+    const rows = await rest('content?select=id&limit=1');
+    if (!rows.length) await api.importContent(buildSeed());
+    seeded = true;
+  }
+
   return {
     kind: 'supabase',
     googleMode: 'redirect', // bật Google trong Supabase › Authentication › Providers
@@ -79,21 +89,24 @@ export function createSupabaseAdapter(url, anonKey) {
       return { version: 1, documents: pick('document'), stages: pick('stage'), settings: settings ? settings.data : buildSeed().settings };
     },
     async saveDocument(doc) {
+      await ensureSeeded(this);
       const d = { ...doc, id: doc.id || 'doc_' + crypto.randomUUID().slice(0, 8), createdAt: doc.createdAt || Date.now() };
       await upsert('content', { id: d.id, kind: 'document', sort: -d.createdAt, data: d }); return d;
     },
-    async deleteDocument(id) { await rest('content?id=eq.' + id, { method: 'DELETE' }); },
+    async deleteDocument(id) { await ensureSeeded(this); await rest('content?id=eq.' + id, { method: 'DELETE' }); },
     async bumpDownload(id) { try { await rest('rpc/bump_download', { method: 'POST', body: { doc_id: id } }); } catch { /* bỏ qua */ } },
     async saveStage(stage) {
+      await ensureSeeded(this);
       const s = { ...stage, id: stage.id || 'stage_' + crypto.randomUUID().slice(0, 8), order: stage.order ?? 999 };
       await upsert('content', { id: s.id, kind: 'stage', sort: s.order, data: s }); return s;
     },
-    async deleteStage(id) { await rest('content?id=eq.' + id, { method: 'DELETE' }); },
+    async deleteStage(id) { await ensureSeeded(this); await rest('content?id=eq.' + id, { method: 'DELETE' }); },
     async reorderStages(ids) {
+      await ensureSeeded(this);
       const { stages } = await this.getContent();
       await Promise.all(stages.map((s) => upsert('content', { id: s.id, kind: 'stage', sort: ids.indexOf(s.id), data: { ...s, order: ids.indexOf(s.id) } })));
     },
-    async saveSettings(settings) { await upsert('content', { id: 'settings', kind: 'settings', sort: 0, data: settings }); },
+    async saveSettings(settings) { await ensureSeeded(this); await upsert('content', { id: 'settings', kind: 'settings', sort: 0, data: settings }); },
 
     takeAuthError() { const e = authError; authError = ''; return e; },
     async currentUser() { return myProfile(); },

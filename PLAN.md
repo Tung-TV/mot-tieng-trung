@@ -176,4 +176,10 @@ Lưu ý cách B: trang kiểm tra token có đúng do Google cấp cho Client ID
 - Host: Cloudflare Pages, project `mot-tieng-trung` → https://mot-tieng-trung.pages.dev
   - Build command `npm run build`, output `dist`, Node 22 (file `.node-version`).
   - Mỗi lần đẩy code lên `main`, Cloudflare tự build và deploy lại.
-- Chế độ dữ liệu: đang dùng **lưu trên trình duyệt**. Bước tiếp: Supabase + đăng nhập Google (thêm biến môi trường `VITE_BACKEND`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` trong Cloudflare › Settings › Variables, rồi deploy lại).
+- Database: Supabase project **Mọt Tiếng Trung** (`uyrolkmqiguqjpomxvsc`, gói Free, vùng eu-west-1).
+  - Đã chạy `docs/supabase.sql` (bảng `content`, `profiles`, trigger, RLS).
+  - Cấu hình web nằm trong `.env.production` (URL + publishable key — công khai được). `npm run dev` trên máy vẫn chạy chế độ lưu trên trình duyệt.
+  - Auth › URL Configuration: Site URL `https://mot-tieng-trung.pages.dev`; Redirect URLs: `https://mot-tieng-trung.pages.dev/**`, `https://*.mot-tieng-trung.pages.dev/**`, `http://localhost:5173/**`.
+  - Dữ liệu mẫu: bảng `content` trống thì web tự hiện 40 tài liệu + 9 chặng gốc; lần sửa đầu tiên trong CMS sẽ tự ghi toàn bộ dữ liệu mẫu vào database (hoặc chạy `docs/seed.sql`).
+  - Admin đầu tiên: đăng ký trên web, rồi chạy trong SQL Editor: `update public.profiles set role = 'admin' where email = '...';`
+- Việc còn lại: bật đăng nhập Google (Google Cloud OAuth client → Supabase › Authentication › Providers › Google).

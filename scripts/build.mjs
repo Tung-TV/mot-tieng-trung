@@ -10,9 +10,12 @@ const dist = join(root, 'dist');
 
 // Đọc .env (đơn giản) để lấy biến VITE_*
 const env = {};
-const envFile = join(root, '.env');
-if (existsSync(envFile)) for (const line of readFileSync(envFile, 'utf8').split('\n')) {
-  const m = line.match(/^\s*(VITE_[A-Z0-9_]+)\s*=\s*(.*)\s*$/); if (m) env[m[1]] = m[2].replace(/^['"]|['"]$/g, '');
+// giống Vite: .env.production rồi .env (file sau ghi đè)
+for (const f of ['.env.production', '.env']) {
+  const envFile = join(root, f);
+  if (existsSync(envFile)) for (const line of readFileSync(envFile, 'utf8').split('\n')) {
+    const m = line.match(/^\s*(VITE_[A-Z0-9_]+)\s*=\s*(.*)\s*$/); if (m) env[m[1]] = m[2].replace(/^['"]|['"]$/g, '');
+  }
 }
 for (const a of process.argv.slice(2)) { const m = a.match(/^--backend=(\w+)/); if (m) env.VITE_BACKEND = m[1]; }
 

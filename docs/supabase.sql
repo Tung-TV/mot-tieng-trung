@@ -57,7 +57,8 @@ $$;
 create or replace function public.protect_profile_fields() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
-  if not public.has_role(array['admin']) then
+  -- auth.uid() rỗng = chạy từ SQL Editor / service role: cho phép
+  if auth.uid() is not null and not public.has_role(array['admin']) then
     new.role := old.role;
     new.status := old.status;
   end if;
@@ -75,6 +76,12 @@ language sql security definer set search_path = public as $$
    where id = doc_id and kind = 'document';
 $$;
 grant execute on function public.bump_download(text) to anon, authenticated;
+
+-- Quyền truy cập qua Data API (project mới có thể không tự cấp)
+grant usage on schema public to anon, authenticated;
+grant select on public.content to anon, authenticated;
+grant insert, update, delete on public.content to authenticated;
+grant select, update, delete on public.profiles to authenticated;
 
 -- 3) Bảo mật theo dòng (RLS)
 alter table public.content  enable row level security;
@@ -102,5 +109,6 @@ drop policy if exists "profiles admin xoá" on public.profiles;
 create policy "profiles admin xoá" on public.profiles for delete
   using (public.has_role(array['admin']));
 
--- 4) Sau khi tự đăng ký tài khoản đầu tiên trên web, nâng nó thành admin:
+-- 4) Dữ liệu ban đầu: chạy tiếp file docs/seed.sql (chỉ thêm khi bảng content còn trống).
+-- 5) Sau khi tự đăng ký tài khoản đầu tiên trên web, nâng nó thành admin:
 -- update public.profiles set role = 'admin' where email = 'email-cua-ban@gmail.com';
