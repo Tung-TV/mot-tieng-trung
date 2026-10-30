@@ -119,3 +119,25 @@
 .avatar{position:relative}
 .prov{display:inline-block;margin-left:6px;border:1px solid var(--line);border-radius:999px;padding:0 7px;font-size:10px;font-weight:700;color:var(--muted);vertical-align:middle;background:var(--panel)}
 .foot a{color:inherit}
+
+/* Hộp Ủng hộ Mọt: luôn trong tầm mắt */
+@media (min-width:821px) and (min-height:900px){
+  .lib-wrap aside.donate{position:sticky!important;top:12px}
+}
+@media (max-width:820px){
+  /* đưa lên trên danh sách tài liệu, thu gọn: QR bên trái, thông tin chuyển khoản bên phải */
+  .lib-wrap aside.donate{order:0!important}
+  .donate .dn-top{display:flex;align-items:center;gap:10px;padding:10px 14px}
+  .donate .dn-heart{font-size:26px}
+  .donate h2{font-size:15px}
+  .donate .dn-body{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 14px;align-items:center;text-align:left}
+  .donate .dn-body>p,.donate .dn-list,.donate .note{display:none}
+  .donate .qr-frame{grid-row:span 2;margin:0;padding:6px}
+  .donate .qr{width:132px!important}
+  .donate .bank{margin:0}
+  .donate .copy{margin:0}
+}
+@media (max-width:420px){
+  .donate .qr{width:108px!important}
+  .donate .bank{font-size:12px;padding:8px}
+}
