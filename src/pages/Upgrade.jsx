@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { navigate } from '../router.jsx';
 import { Modal } from '../components/Overlays.jsx';
-import { DEFAULT_PLAN, fmtVnd, vietQrUrl } from '../services/model.js';
+import { DEFAULT_PLAN, fmtVnd, vietQrPayload } from '../services/model.js';
+import { qrSvg } from '../services/qr.js';
 import { copyText } from '../services/util.js';
 
 /** Hộp hiện ra khi tài khoản thường bấm vào phần dành cho học viên */
@@ -40,7 +41,6 @@ export default function Upgrade() {
   const bank = content.settings.bank || {};
   const [req, setReq] = useState(undefined); // undefined = đang tải
   const [busy, setBusy] = useState(false);
-  const [qrFail, setQrFail] = useState(false);
 
   const load = useCallback(async () => {
     if (!user) return setReq(null);
@@ -86,7 +86,9 @@ export default function Upgrade() {
   const refresh = async () => { const u = await auth.refreshUser(); await load(); if (u && u.role === 'student') toast('Tài khoản đã được nâng cấp lên Học viên!'); };
 
   const active = req && (req.status === 'pending' || req.status === 'claimed');
-  const qr = active && !qrFail ? vietQrUrl(bank, req.amount, req.code) : '';
+  // mã QR VietQR tạo ngay trong trình duyệt: quét là app ngân hàng điền sẵn số tài khoản, số tiền và nội dung
+  const payload = active ? vietQrPayload(bank, req.amount, req.code) : '';
+  const qr = payload ? qrSvg(payload) : '';
 
   return (
     <div className="up-page">
@@ -112,7 +114,7 @@ export default function Upgrade() {
           <h2>Chuyển khoản để kích hoạt</h2>
           <div className="up-grid">
             <div className="up-qr">
-              {qr ? <img src={qr} alt={'Mã QR chuyển ' + fmtVnd(req.amount) + ' nội dung ' + req.code} onError={() => setQrFail(true)} />
+              {qr ? <div className="up-qr-svg" role="img" aria-label={'Mã QR chuyển ' + fmtVnd(req.amount) + ' nội dung ' + req.code} dangerouslySetInnerHTML={{ __html: qr }} />
                 : bank.qr ? <img src={bank.qr} alt="Mã QR tài khoản ngân hàng" /> : null}
               <small>{qr ? 'Mã QR đã có sẵn số tiền và nội dung' : 'Quét mã rồi tự nhập số tiền và nội dung'}</small>
             </div>

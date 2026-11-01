@@ -108,11 +108,33 @@ export function newTxnCode() {
   return 'MOT' + Array.from(r, (x) => A[x % A.length]).join('');
 }
 
-/** Ảnh QR VietQR có sẵn số tiền + nội dung chuyển khoản (dịch vụ miễn phí img.vietqr.io) */
-export function vietQrUrl(bank, amount, info) {
-  if (!bank || !bank.bankId || !bank.number) return '';
-  const q = new URLSearchParams({ amount: String(amount || ''), addInfo: info || '', accountName: bank.owner || '' });
-  return `https://img.vietqr.io/image/${encodeURIComponent(bank.bankId)}-${encodeURIComponent(bank.number)}-compact2.png?${q}`;
+// Mã BIN (NAPAS) của các ngân hàng phổ biến — trường “Mã ngân hàng” trong Cài đặt nhận tên viết tắt hoặc BIN 6 số
+export const BANK_BIN = {
+  MB: '970422', MBBANK: '970422', VCB: '970436', VIETCOMBANK: '970436', TCB: '970407', TECHCOMBANK: '970407',
+  ACB: '970416', BIDV: '970418', CTG: '970415', VIETINBANK: '970415', ICB: '970415', VPB: '970432', VPBANK: '970432',
+  TPB: '970423', TPBANK: '970423', STB: '970403', SACOMBANK: '970403', VBA: '970405', AGRIBANK: '970405',
+  HDB: '970437', HDBANK: '970437', VIB: '970441', SHB: '970443', MSB: '970426', OCB: '970448', SEAB: '970440',
+  EIB: '970431', EXIMBANK: '970431', LPB: '970449', LPBANK: '970449', NAB: '970428', ABB: '970425', BAB: '970409',
+  VCCB: '970454', PGB: '970430', CAKE: '546034', TIMO: '963388', UBANK: '546035', KLB: '970452', SCB: '970429', NCB: '970419',
+};
+export const bankBin = (id) => { const k = String(id || '').trim().toUpperCase(); return /^\d{6}$/.test(k) ? k : BANK_BIN[k] || ''; };
+
+const tlv = (id, v) => id + String(v.length).padStart(2, '0') + v;
+function crc16(s) {
+  let c = 0xffff;
+  for (const b of new TextEncoder().encode(s)) { c ^= b << 8; for (let i = 0; i < 8; i++) c = c & 0x8000 ? ((c << 1) ^ 0x1021) & 0xffff : (c << 1) & 0xffff; }
+  return c.toString(16).toUpperCase().padStart(4, '0');
+}
+/** Nội dung mã QR chuyển khoản theo chuẩn VietQR (NAPAS/EMVCo): ngân hàng + số TK + số tiền + nội dung */
+export function vietQrPayload(bank, amount, info) {
+  const bin = bankBin(bank && bank.bankId); const acc = String((bank && bank.number) || '').replace(/\s/g, '');
+  if (!bin || !acc) return '';
+  const amt = Math.max(0, Math.round(Number(amount) || 0));
+  const note = String(info || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').replace(/[^A-Za-z0-9 ]/g, '').slice(0, 25);
+  let p = tlv('00', '01') + tlv('01', amt ? '12' : '11')
+    + tlv('38', tlv('00', 'A000000727') + tlv('01', tlv('00', bin) + tlv('01', acc)) + tlv('02', 'QRIBFTTA'))
+    + tlv('53', '704') + (amt ? tlv('54', String(amt)) : '') + tlv('58', 'VN') + (note ? tlv('62', tlv('08', note)) : '') + '6304';
+  return p + crc16(p);
 }
 
 export const fmtVnd = (n) => (Number(n) || 0).toLocaleString('vi-VN') + 'đ';

@@ -232,3 +232,5 @@
 .up-warn{background:#fdecea;border:1.5px solid #e3a59d;border-radius:12px;padding:12px 14px;line-height:1.6}
 .up-steps{margin:0;padding-left:20px;display:grid;gap:4px;line-height:1.6}
 @media (max-width:720px){.up-plan,.up-grid{grid-template-columns:1fr}.up-qr{justify-self:center}}
+.up-qr-svg{width:240px;max-width:100%;border-radius:12px;background:#fff;padding:6px;box-shadow:0 0 0 2px #e8b14a;line-height:0}
+.up-qr-svg svg{width:100%;height:auto;display:block}
