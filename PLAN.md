@@ -275,5 +275,5 @@ Kỹ thuật: các trang trên chạy bằng mã gốc của bản HTML (tách r
 - Nút **🤖 AI chấm** ở phần Luyện nói của bài học: ghi âm ≤ 12 giây (đổi sang WAV 16 kHz ngay trên trình duyệt) → `functions/api/ai-speak.js` (Cloudflare Pages Function).
 - Hàm này gọi `ai_take` trong Supabase bằng phiên của người dùng: chỉ Học viên / biên tập / quản trị, tối đa 60 lượt mỗi người mỗi ngày (bảng `ai_usage`). Sau đó Whisper (`@cf/openai/whisper-large-v3-turbo`) nghe câu nói → Qwen (`@cf/qwen/qwen3-30b-a3b-fp8`) so với câu mẫu, trả điểm, chữ đọc sai, nhận xét + mẹo bằng tiếng Việt.
 - Miễn phí trong hạn mức Workers AI 10.000 neuron/ngày (ước tính vài trăm lượt chấm/ngày). Cấu hình ở `wrangler.toml` (binding `AI` + địa chỉ/khoá công khai Supabase). Không cần khoá bí mật nào.
-- Người chưa là Học viên thấy nút “🔒 AI chấm · Học viên” → mở hộp đăng ký khoá học. Nút “🎙 Nói” (nhận giọng trên trình duyệt) vẫn miễn phí cho mọi người.
+- Người chưa là Học viên không thấy nút AI chấm. Nút “🎙 Nói” (nhận giọng trên trình duyệt) vẫn miễn phí cho mọi người.
 - Bản thử lưu trên trình duyệt không chạy được AI (cần web thật).
