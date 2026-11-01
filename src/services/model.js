@@ -272,7 +272,38 @@ export const GIFT_SOURCES = ['Facebook', 'TikTok', 'Zalo', 'Bạn bè giới thi
 export function giftOf(settings) {
   const g = { ...DEFAULT_GIFT, ...((settings && settings.gift) || {}) };
   const sp = supportOf(settings);
+  const plat = Object.fromEntries(((settings && settings.community && settings.community.platforms) || []).map((p) => [p.k, p.url]));
   const fill = { fbPage: facebookUrl(sp.facebook), zalo: zaloUrl(sp.zalo) };
-  const tasks = (g.tasks || []).map((t) => ({ ...t, url: t.url || (fill[t.k] || '') }));
+  // link nhiệm vụ để trống thì lấy link kênh tương ứng ở trang Cộng đồng, rồi tới phần Hỗ trợ
+  const tasks = (g.tasks || []).map((t) => ({ ...t, url: t.url || plat[t.k] || fill[t.k] || '' }));
   return { ...g, tasks, active: tasks.filter((t) => t.k === 'share' || t.url) };
+}
+
+// ----- Trang Cộng đồng: các kênh, lịch hoạt động trong tuần, quy tắc — cấu hình trong CMS -----
+export const DEFAULT_COMMUNITY = {
+  platforms: [
+    { k: 'fbPage', e: '📘', c: '#3b6fd6', n: 'Page Facebook', s: 'MỌT TIẾNG TRUNG', ul: ['Bài học nhanh, mẹo nhớ chữ Hán mỗi ngày', 'Thông báo tài liệu & đề thi mới', 'Minigame, quà tặng cho người theo dõi'], h: 'Bấm Thích + Theo dõi để không lỡ bài mới!', b: '👍 Theo dõi Page', url: '', members: 0 },
+    { k: 'fbGroup', e: '👥', c: '#5a4fcf', n: 'Nhóm Facebook', s: 'HỌC CÙNG MỌT TIẾNG TRUNG', ul: ['Hỏi đáp bài tập, ngữ pháp, phát âm', 'Nhắc học, điểm danh cùng nhau', 'Chia sẻ tài liệu & kinh nghiệm thi HSK'], h: 'Học một mình dễ bỏ cuộc, học cùng bạn là đi xa.', b: '🙋 Tham gia nhóm', url: '', members: 0 },
+    { k: 'zalo', e: '💬', c: '#1b8fe0', n: 'Nhóm Zalo', s: 'MỌT TIẾNG TRUNG', ul: ['Nhận thông báo nhanh, gọn trên điện thoại', 'Luyện nói, nhắn tin tiếng Trung mỗi ngày', 'Nhóm nhỏ nên dễ trò chuyện, ai cũng được hỗ trợ'], h: 'Vào nhóm, giới thiệu 1 câu tiếng Trung đầu tiên nhé!', b: '💬 Vào nhóm Zalo', url: '', members: 0 },
+    { k: 'tiktok', e: '🎵', c: '#1c1c24', n: 'TikTok', s: 'MỌT TIẾNG TRUNG', ul: ['Video 30 giây: 1 từ, 1 mẫu câu, 1 mẹo', 'Học vui qua trend, thử thách phát âm', 'Bình luận đáp án để được Mọt phản hồi'], h: 'Lướt 5 phút mỗi ngày cũng học được vài chữ!', b: '▶ Theo dõi TikTok', url: '', members: 0 },
+    { k: 'locket', e: '📸', c: '#e0a800', n: 'Locket', s: 'MỌT TIẾNG TRUNG', ul: ['Mỗi ngày một ảnh góc học tập của Mọt', 'Gửi ảnh vở chữ Hán, nhận lại tim từ bạn bè', 'Biến việc học thành thói quen có động lực'], h: 'Kết bạn Locket để xem Mọt học gì hôm nay.', b: '📸 Kết bạn Locket', url: '', members: 0 },
+  ],
+  // link: "@fbPage" = kênh ở trên · "/luyen-go" = trang trong web · "https://…" = link ngoài
+  schedule: [
+    { day: 'Thứ 2', text: 'Từ vựng của tuần · quiz nhanh ở Page', link: '@fbPage' },
+    { day: 'Thứ 3', text: 'Mẹo ngữ pháp 30 giây · TikTok', link: '@tiktok' },
+    { day: 'Thứ 4', text: 'Thử thách phát âm · gửi ghi âm vào nhóm', link: '@fbGroup' },
+    { day: 'Thứ 5', text: 'Hỏi đáp cùng Mọt · nhóm Facebook', link: '@fbGroup' },
+    { day: 'Thứ 6', text: 'Điểm danh Locket · khoe vở chữ Hán', link: '@locket' },
+    { day: 'Thứ 7', text: 'Đề thi thử HSK · làm bài rồi khoe điểm', link: '/thi-hsk' },
+    { day: 'Chủ nhật', text: 'Tổng kết tuần · chia sẻ mục tiêu tuần mới', link: '@fbGroup' },
+  ],
+  rules: ['Tôn trọng, không chê người mới học.', 'Hỏi bài thoải mái, ai biết thì giúp.', 'Không spam, không quảng cáo khi chưa hỏi admin.', 'Chia sẻ tài liệu đúng nguồn, ghi rõ tác giả.', 'Mỗi ngày chỉ cần học một chút, quan trọng là đều đặn!'],
+};
+/** Trang trong web để chọn làm đích cho lịch hoạt động */
+export const SITE_PAGES = [['/', 'Kho tài liệu'], ['/lo-trinh', 'Lộ trình học'], ['/khoa-hoc', 'Khoá học HSK'], ['/on-tap', 'Ôn tập'], ['/pinyin', 'Bảng Pinyin'], ['/bai-tap-pinyin', 'Bài tập nghe Pinyin'], ['/thi-hsk', 'Luyện thi HSK'], ['/luyen-go', 'Luyện gõ từ vựng'], ['/shadowing', 'Luyện shadowing'], ['/hskk-so-cap', 'HSKK nhìn tranh nói'], ['/dia-diem-thi', 'Địa điểm thi HSK'], ['/cong-dong', 'Cộng đồng']];
+export function communityOf(settings) {
+  const c = { ...DEFAULT_COMMUNITY, ...((settings && settings.community) || {}) };
+  const sp = supportOf(settings), fill = { fbPage: facebookUrl(sp.facebook), zalo: zaloUrl(sp.zalo) };
+  return { ...c, platforms: (c.platforms || []).map((p) => ({ ...p, url: p.url || fill[p.k] || '' })) };
 }

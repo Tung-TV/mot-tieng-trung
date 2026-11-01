@@ -4,6 +4,7 @@ import { isLegacy, useRoute } from './router.jsx';
 import LegacyView from './pages/LegacyView.jsx';
 import Lesson from './pages/Lesson.jsx';
 import Course from './pages/Course.jsx';
+import Community from './pages/Community.jsx';
 import { Header, TopNav, Banner } from './components/Header.jsx';
 import { AuthModal, ConfirmDialog, Toasts } from './components/Overlays.jsx';
 import Library from './pages/Library.jsx';
@@ -39,6 +40,7 @@ function Shell() {
   else if (path === '/nang-cap') page = <Upgrade />;
   else if (/^\/bai-hoc\/\d+\/\d+$/.test(path)) { const [, , lv, n] = path.split('/'); page = <Lesson key={path} lv={+lv} n={+n} />; }
   else if (path === '/khoa-hoc') page = <Course />;
+  else if (path === '/cong-dong') page = <Community />;
   else if (isLegacy(path)) page = <LegacyView path={path} />;
   else page = <ComingSoon path={path} />;
 

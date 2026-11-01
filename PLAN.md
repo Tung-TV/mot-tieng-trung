@@ -267,3 +267,4 @@ Kỹ thuật: các trang trên chạy bằng mã gốc của bản HTML (tách r
 
 - Cấp HSK không còn cố định 1–6: chặng có tên bắt đầu bằng “HSK” + số (HSK7, HSK7–9 …) tự có mục Bài học trong CMS, trang bài học, trang Khoá học, thống kê.
 - Tag kỹ năng: Cài đặt › 🏷️ Tag (thêm tag mới bằng nút ＋, chọn màu, biểu tượng); Sửa chặng có ô chọn tag: ＋ Thêm tag, bấm gợi ý để thêm nhanh, × để bỏ, ‹ để đổi thứ tự.
+- Trang Cộng đồng viết lại bằng React, cấu hình ở CMS › Cài đặt › 👥 Cộng đồng: các kênh (link, số thành viên, nút, lợi ích; ＋ thêm kênh), lịch hoạt động trong tuần (mỗi dòng chọn đích: kênh của Mọt / trang trong web / link khác; ＋ thêm hoạt động), quy tắc chung. Danh sách “Hành trình gia nhập Mọt” dùng chung nhiệm vụ với “Nhận lộ trình”: bấm là mở link + tính hoàn thành, sửa lệch dấu tích.

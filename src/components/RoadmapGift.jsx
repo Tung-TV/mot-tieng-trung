@@ -9,32 +9,18 @@ const KEY = 'mot.gift.v1';
 const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch { return null; } };
 const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => { const r = (Math.random() * 16) | 0; return (c === 'x' ? r : (r & 3) | 8).toString(16); }));
 
-export default function RoadmapGift({ onClose }) {
+/** Trạng thái nhiệm vụ dùng chung cho hộp “Nhận lộ trình” và trang Cộng đồng (lưu máy + máy chủ để thống kê) */
+export function useGiftState() {
   const { content, store, user, toast } = useApp();
   const gift = giftOf(content.settings);
-  const [st, setSt] = useState(() => {
-    const s = load() || { id: uuid(), data: { n: user ? user.name : '', c: user ? user.email : '', l: GIFT_LEVELS[0], g: [], t: GIFT_TIMES[0], s: GIFT_SOURCES[0], tasks: {}, done: false } };
-    return s;
-  });
+  const [st, setSt] = useState(() => load() || { id: uuid(), data: { n: user ? user.name : '', c: user ? user.email : '', l: GIFT_LEVELS[0], g: [], t: GIFT_TIMES[0], s: GIFT_SOURCES[0], tasks: {}, done: false } });
   const d = st.data;
   const doneN = gift.active.filter((t) => d.tasks[t.k]).length, all = gift.active.length;
-  const [step, setStep] = useState(() => (!d.n || !d.c ? 1 : doneN >= all ? 3 : 2));
-  const [err, setErr] = useState('');
-
   const persist = (data) => {
     const next = { ...st, data };
     setSt(next);
     try { localStorage.setItem(KEY, JSON.stringify(next)); } catch { /* */ }
     store.saveLead(next.id, data).catch(() => { /* không chặn người dùng nếu mạng lỗi */ });
-  };
-  useEffect(() => { if (step === 3 && !d.done && doneN >= all) persist({ ...d, done: true, doneAt: Date.now() }); }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const submit = (e) => {
-    e.preventDefault();
-    const f = new FormData(e.target);
-    const data = { ...d, n: String(f.get('n') || '').trim().slice(0, 60), c: String(f.get('c') || '').trim().slice(0, 80), l: f.get('l'), g: f.getAll('g'), t: f.get('t'), s: f.get('s'), at: d.at || Date.now() };
-    if (!data.n || !data.c) { setErr('Bạn điền tên và Zalo / Email giúp Mọt nhé.'); return; }
-    setErr(''); persist(data); setStep(2);
   };
   // bấm nhiệm vụ = mở link ngay (thẻ <a> mở tab mới), đồng thời ghi nhận đã làm
   const mark = (k) => { if (!d.tasks[k]) persist({ ...d, tasks: { ...d.tasks, [k]: Date.now() } }); };
@@ -46,7 +32,23 @@ export default function RoadmapGift({ onClose }) {
       mark('share');
     } catch { /* người dùng huỷ chia sẻ */ }
   };
+  return { gift, d, doneN, all, persist, mark, share };
+}
 
+export default function RoadmapGift({ onClose }) {
+  const { gift, d, doneN, all, persist, mark, share } = useGiftState();
+  const [step, setStep] = useState(() => (!d.n || !d.c ? 1 : doneN >= all ? 3 : 2));
+  const [err, setErr] = useState('');
+
+  useEffect(() => { if (step === 3 && !d.done && doneN >= all) persist({ ...d, done: true, doneAt: Date.now() }); }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const submit = (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const data = { ...d, n: String(f.get('n') || '').trim().slice(0, 60), c: String(f.get('c') || '').trim().slice(0, 80), l: f.get('l'), g: f.getAll('g'), t: f.get('t'), s: f.get('s'), at: d.at || Date.now() };
+    if (!data.n || !data.c) { setErr('Bạn điền tên và Zalo / Email giúp Mọt nhé.'); return; }
+    setErr(''); persist(data); setStep(2);
+  };
   return (
     <Modal title="🎁 Nhận lộ trình học tiếng Trung" onClose={onClose}>
       <div className="gift">

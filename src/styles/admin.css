@@ -139,3 +139,5 @@ textarea.mono{font-family:ui-monospace,Menlo,monospace;font-size:13px}
 .tag-row .chip{min-width:150px}
 .tag-emo{width:56px;text-align:center}
 .tag-new{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+.sched-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.sched-day{width:100px}.sched-text{flex:1;min-width:220px}.sched-url{min-width:220px}

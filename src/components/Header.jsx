@@ -33,7 +33,7 @@ export function Header() {
     <header className="topbar">
       <a className="brand" href="#/" aria-label="Mọt Tiếng Trung - Trang chủ"><img src={img.logo} alt="Mọt Tiếng Trung - Kho tài liệu tự học" /></a>
       <div className="acct">
-        <a className="com" href="#cong-dong">
+        <a className="com" href="#/cong-dong">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2" /><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5" /><circle cx="17" cy="9" r="2.4" /><path d="M17.5 14.2c2.2.3 3.5 2 3.5 4.3" /></svg>
           Cộng đồng
         </a>
