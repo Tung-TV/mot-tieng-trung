@@ -32,13 +32,13 @@ export default function Community() {
         <p>Mọt có mặt ở nhiều nơi để bạn học mọi lúc: xem mẹo trên TikTok, hỏi bài trong nhóm, điểm danh cùng bạn bè. Chọn nơi bạn thích, hoặc theo dõi tất cả!</p>
         <div className="cd-stage">
           <div className="cd-mas">
-            <div className="cd-bub">Chào {user && user.name ? user.name.trim().split(/\s+/).pop() : 'bạn'}! 👋<br />Cùng học nhé!</div>
+            <div className="cd-bub">Chào {user && user.name ? user.name.trim() : 'bạn'}! 👋<br />Cùng học nhé!</div>
             <div className="cd-mid"><img src={logo} alt="Mọt Tiếng Trung" /></div>
-            <div className="cd-tot"><small>TỔNG MỌTer</small><b>{total ? fmt(total) : 'Sắp cập nhật'}</b></div>
+            <div className="cd-tot"><small>TỔNG SỐ BẠN HỌC</small><b>{total ? fmt(total) : 'Sắp cập nhật'}</b></div>
           </div>
           <div className="cd-st">{c.platforms.map((p, i) => (
             <button key={p.k} type="button" className="cd-sc" style={{ '--c': p.c, '--i': i }} onClick={() => jump(p.k)}>
-              <span className="e">{p.e}</span><span className="t"><small>{p.n}</small><b>{p.members ? fmt(p.members) : 'Sắp cập nhật'}</b><em>MỌTer</em></span>
+              <span className="e">{p.e}</span><span className="t"><small>{p.n}</small><b>{p.members ? fmt(p.members) : 'Sắp cập nhật'}</b><em>{p.members ? 'bạn' : ''}</em></span>
             </button>
           ))}</div>
         </div>
@@ -47,7 +47,7 @@ export default function Community() {
       <h3 className="cd-sec">📍 Mọt đang ở đâu? <small>chọn nền tảng bạn dùng nhiều nhất</small></h3>
       <div className="cd-g">{c.platforms.map((p) => (
         <article key={p.k} className="cd-c" id={'cd-' + p.k} style={{ '--c': p.c }}>
-          <div className="cd-ch"><span className="cd-ic" aria-hidden="true">{p.e}</span><div><b>{p.n}</b><span>{p.s}</span></div><span className="cd-mb">👥 {p.members ? fmt(p.members) + ' MỌTer' : 'MỌTer'}</span></div>
+          <div className="cd-ch"><span className="cd-ic" aria-hidden="true">{p.e}</span><div><b>{p.n}</b><span>{p.s}</span></div><span className="cd-mb">👥 {p.members ? fmt(p.members) + ' bạn' : 'Sắp cập nhật'}</span></div>
           <ul>{(p.ul || []).map((u, i) => <li key={i}>{u}</li>)}</ul>
           {p.h && <p className="hook">“{p.h}”</p>}
           {p.url ? <a className="cd-go" href={p.url} target="_blank" rel="noopener noreferrer" onClick={() => mark(p.k)}>{p.b || 'Mở ›'}</a>
