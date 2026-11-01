@@ -5,7 +5,7 @@ import { useApp } from '../context/AppContext.jsx';
 import { navigate } from '../router.jsx';
 import { giftOf } from '../services/model.js';
 
-export const LG_V = '20261101c';
+export const LG_V = '20261101d';
 let loading = null;
 
 /** Nạp engine (một lần). bank: thông tin chuyển khoản lấy từ CMS */

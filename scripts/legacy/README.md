@@ -15,3 +15,7 @@ python3 scripts/legacy/scope.py x/orig.css public/legacy/lg.css   # rồi thêm 
 ```
 
 (cần `acorn` trong NODE_PATH). Nhớ đổi `LG_V` trong `src/pages/LegacyView.jsx` để trình duyệt tải bản mới.
+
+## Chỉ giao diện sáng
+Web cố định theme sáng. Sau khi tạo lại `public/legacy/lg.css` bằng `scope.py`, chạy thêm:
+`python3 scripts/light-only.py public/legacy/lg.css` (bỏ các khối CSS theme tối của bản gốc).
