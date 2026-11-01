@@ -1,0 +1,3 @@
+# Bản xem trước: cho trang chính đọc dữ liệu bài học mẫu để nhập vào CMS
+/data/lessons/*
+  Access-Control-Allow-Origin: https://mot-tieng-trung.pages.dev
