@@ -1,26 +1,24 @@
 import { useRef, useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { navigate } from '../router.jsx';
-import { loadLegacy } from './LegacyView.jsx';
+import RoadmapGift from '../components/RoadmapGift.jsx';
 import MOUNTAIN from '../data/mountain.svg.js';
-import { byButton, canEnterStage, stageStates } from '../services/model.js';
+import { byButton, canEnterStage, stageLevel, stageStates } from '../services/model.js';
 import { Boxes, Chip, InfoBlock, Sections } from '../components/StageParts.jsx';
 
 const PHASES = [['Bắt đầu', 'Chuẩn bị', '#7fc8a9'], ['Nhập môn', 'Pinyin', '#ecb857'], ['HSK 1–3', 'Sơ cấp', '#74b5e4'], ['HSK 4–6', 'Trung cấp', '#b86fa3'], ['HSK 7–9', 'Cao cấp', '#c0392b']];
 
 function GiftCta() {
-  const { content, toast } = useApp();
-  const [busy, setBusy] = useState(false);
-  const open = async () => {
-    setBusy(true);
-    try { await loadLegacy(content.settings.bank); window.__lgOpenLr && window.__lgOpenLr(); } catch (e) { toast(e.message, 'err'); } finally { setBusy(false); }
-  };
+  const [open, setOpen] = useState(false);
   return (
-    <button type="button" className="rm-cta" onClick={open} disabled={busy}>
-      <span className="gf">🎁</span>
-      <span className="tx"><b>NHẬN NGAY LỘ TRÌNH</b><small>{busy ? 'Đang mở…' : 'Làm nhiệm vụ nhỏ · nhận file Lộ trình học tiếng Trung cho người mới'}</small></span>
-      <span className="ar">›</span>
-    </button>
+    <>
+      <button type="button" className="rm-cta" onClick={() => setOpen(true)}>
+        <span className="gf">🎁</span>
+        <span className="tx"><b>NHẬN NGAY LỘ TRÌNH</b><small>Làm nhiệm vụ nhỏ · nhận file Lộ trình học tiếng Trung cho người mới</small></span>
+        <span className="ar">›</span>
+      </button>
+      {open && <RoadmapGift onClose={() => setOpen(false)} />}
+    </>
   );
 }
 
@@ -143,14 +141,14 @@ function LearnerRoadmap() {
         <div className="row">
           <div className="node" style={{ background: '#f2c94c' }}><span className="ne">🎓</span><span className="nk">Chứng chỉ</span></div>
           <div className="sk stage">
-            <h3>Thi chứng chỉ HSK <span className="bd">Chứng chỉ</span></h3>
+            <h3>Thi chứng chỉ HSK <span className="bd">Chứng chỉ</span><span className="free-tag">Miễn phí</span></h3>
             <p>Thi thử và ôn đề theo từng cấp độ để sẵn sàng cho kỳ thi chứng chỉ HSK chính thức. Chọn cấp bạn muốn thi.</p>
             <div className="chips">
               {stages.filter((s) => /HSK/.test(s.title)).map((s) => (
-                <button key={s.id} type="button" className="chip cert" style={{ background: s.color, color: s.whiteText ? '#fff' : undefined }} onClick={() => goLib(s.keyword)}>{s.title.replace(' 3.0', '')}</button>
+                <button key={s.id} type="button" className="chip cert" style={{ background: s.color, color: s.whiteText ? '#fff' : undefined }} onClick={() => { const lv = stageLevel(s); location.hash = lv ? '#thi-hsk-' + lv : '#thi-hsk'; }}>{s.title.replace(' 3.0', '')}</button>
               ))}
             </div>
-            <div className="act" style={{ gridRow: '1/span 3' }}><button className="arr" type="button" aria-label="Mở phần thi chứng chỉ HSK" onClick={() => goLib('HSK')}>›</button></div>
+            <div className="act" style={{ gridRow: '1/span 3' }}><button className="go on" type="button" onClick={() => { location.hash = '#thi-hsk'; }}>Luyện thi miễn phí</button><button className="arr" type="button" aria-label="Mở phần luyện thi chứng chỉ HSK" onClick={() => { location.hash = '#thi-hsk'; }}>›</button></div>
           </div>
         </div>
         <div className="row last">

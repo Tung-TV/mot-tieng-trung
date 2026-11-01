@@ -217,6 +217,10 @@ export function createSupabaseAdapter(url, anonKey) {
       }
       return r[0].data;
     },
+    async saveLead(id, data) { await rest('rpc/save_lead', { method: 'POST', body: { p_id: id, p_data: data } }); },
+    async listLeads() {
+      return (await rest('roadmap_leads?select=*&order=updated_at.desc&limit=2000')).map((r) => ({ id: r.id, userId: r.user_id, data: r.data, done: r.done, createdAt: Date.parse(r.created_at), updatedAt: Date.parse(r.updated_at) }));
+    },
     async listLessons(level) {
       return (await rest('content?select=data&kind=eq.lesson&id=like.' + encodeURIComponent('ls:' + level + '-*') + '&order=sort.asc')).map((r) => r.data);
     },

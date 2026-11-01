@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { navigate } from '../router.jsx';
+import { giftOf } from '../services/model.js';
 
-export const LG_V = '20261101b';
+export const LG_V = '20261101c';
 let loading = null;
 
 /** Nạp engine (một lần). bank: thông tin chuyển khoản lấy từ CMS */
-export function loadLegacy(bank) {
+export function loadLegacy(bank, comm) {
+  if (comm) window.__MOT_COMM = comm;
   if (bank) window.__MOT_BANK = { name: bank.name || '', number: bank.number || '', owner: bank.owner || '', qr: bank.qr || '' };
   if (window.__lgReady) return Promise.resolve();
   if (loading) return loading;
@@ -42,7 +44,7 @@ function Host({ path }) {
 
   useEffect(() => {
     let alive = true, r = null;
-    loadLegacy(content.settings.bank).then(() => {
+    loadLegacy(content.settings.bank, Object.fromEntries(giftOf(content.settings).tasks.filter((t) => t.url).map((t) => [t.k, t.url]))).then(() => {
       if (!alive) return;
       r = document.getElementById('lg');
       if (r && slot.current) { slot.current.appendChild(r); r.classList.add('on'); r.classList.toggle('lg-guest', !!window.__lgGuest); }

@@ -17,39 +17,29 @@ export function ytId(u) {
   return m ? m[1] : '';
 }
 
-let ytLoading = null;
-const loadYT = () => {
-  if (window.YT && window.YT.Player) return Promise.resolve(window.YT);
-  if (!ytLoading) ytLoading = new Promise((res) => {
-    const prev = window.onYouTubeIframeAPIReady;
-    window.onYouTubeIframeAPIReady = () => { if (prev) prev(); res(window.YT); };
-    const s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(s);
-  });
-  return ytLoading;
-};
-
 function Video({ videos, part, setPart, startAt, onTime }) {
   const v = videos[part] || videos[0];
   const id = ytId(v && v.url);
-  const holder = useRef(null), player = useRef(null), slot = useRef(null);
+  const frame = useRef(null), slot = useRef(null), cur = useRef(startAt || 0);
   const [docked, setDocked] = useState(false);
   const [pin, setPin] = useState(true);
-  // YouTube: dùng IFrame API để nhớ giây đang xem
+  // YouTube nhúng thẳng bằng iframe; nhận giây đang xem qua postMessage (không cần tải thêm thư viện)
   useEffect(() => {
-    if (!id || !holder.current) return undefined;
-    let alive = true, timer = 0;
-    const el = document.createElement('div'); holder.current.innerHTML = ''; holder.current.appendChild(el);
-    loadYT().then((YT) => {
-      if (!alive) return;
-      player.current = new YT.Player(el, {
-        videoId: id, width: '100%', height: '100%',
-        playerVars: { start: Math.floor(startAt || 0), rel: 0, modestbranding: 1, playsinline: 1 },
-        events: { onStateChange: (e) => { if (e.data === 2 || e.data === 0) onTime(player.current.getCurrentTime(), e.data === 0); } },
-      });
-      timer = setInterval(() => { try { if (player.current && player.current.getPlayerState && player.current.getPlayerState() === 1) onTime(player.current.getCurrentTime(), false); } catch { /* */ } }, 15000);
-    });
-    return () => { alive = false; clearInterval(timer); try { if (player.current) { onTime(player.current.getCurrentTime(), false); player.current.destroy(); } } catch { /* */ } player.current = null; };
+    if (!id) return undefined;
+    cur.current = startAt || 0;
+    let last = 0;
+    const onMsg = (e) => {
+      if (!/youtube(-nocookie)?\.com$/.test(new URL(e.origin).hostname) || !frame.current || e.source !== frame.current.contentWindow) return;
+      let d; try { d = typeof e.data === 'string' ? JSON.parse(e.data) : e.data; } catch { return; }
+      const info = d && d.info; if (!info) return;
+      if (typeof info.currentTime === 'number') cur.current = info.currentTime;
+      if (info.playerState === 0) onTime(cur.current, true);
+      else if (info.playerState === 2 || Date.now() - last > 15000) { last = Date.now(); if (cur.current > 0) onTime(cur.current, false); }
+    };
+    window.addEventListener('message', onMsg);
+    return () => { window.removeEventListener('message', onMsg); if (cur.current > 0) onTime(cur.current, false); };
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const listen = () => { try { frame.current.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), '*'); } catch { /* */ } };
   // cuộn xuống phần ôn tập: video thu nhỏ, ghim ở góc để vừa xem vừa luyện
   useEffect(() => {
     if (!slot.current || !id) return undefined;
@@ -58,25 +48,26 @@ function Video({ videos, part, setPart, startAt, onTime }) {
   }, [id]);
 
   if (!videos.length) return <div className="lsn-soon"><span className="em">🎬</span>Mọt đang cập nhật video bài giảng này.</div>;
+  const src = id && 'https://www.youtube.com/embed/' + id + '?enablejsapi=1&rel=0&playsinline=1&modestbranding=1' + (startAt > 5 ? '&start=' + Math.floor(startAt) : '') + '&origin=' + encodeURIComponent(location.origin);
   return (
     <section className="lv-wrap">
       {videos.length > 1 && <div className="lv-parts">{videos.map((x, i) => <button key={i} type="button" className={i === part ? 'on' : ''} onClick={() => setPart(i)}>{x.title || 'Phần ' + (i + 1)}</button>)}</div>}
-      <div className={'lv-slot' + (id ? ' yt' : '')} ref={slot}>
-        {id ? (
-          <div className={'lv-player' + (docked && pin ? ' docked' : '')}>
-            <div className="lv-frame" ref={holder} />
-            {docked && pin && <button type="button" className="lv-unpin" onClick={() => setPin(false)} aria-label="Bỏ ghim video">✕</button>}
+      {id ? (
+        <>
+          <div className="lv-slot yt" ref={slot}>
+            <div className={'lv-player' + (docked && pin ? ' docked' : '')}>
+              <iframe ref={frame} key={id} className="lv-frame" src={src} title={v.title || 'Video bài giảng'} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" onLoad={listen} />
+              {docked && pin && <button type="button" className="lv-unpin" onClick={() => setPin(false)} aria-label="Bỏ ghim video">✕</button>}
+            </div>
           </div>
-        ) : (
-          <div className="lv-ext">
-            <span className="em">🎬</span>
-            <b>{v.title || 'Video bài giảng'}</b>
-            <span className="muted">Video này chưa phải link YouTube nên mở ở trang riêng. Admin có thể dán link YouTube trong CMS để xem ngay tại đây.</span>
-            <a className="btn-p" href={v.url} target="_blank" rel="noopener noreferrer" onClick={() => onTime(0, false)}>▶ Mở video bài giảng</a>
+          <div className="lv-sub">
+            <a href={'https://www.youtube.com/watch?v=' + id + (cur.current > 5 ? '&t=' + Math.floor(cur.current) + 's' : '')} target="_blank" rel="noopener noreferrer">Không xem được? Mở trên YouTube ↗</a>
+            {!pin && <button type="button" className="btn-s small" onClick={() => setPin(true)}>📌 Ghim video khi cuộn</button>}
           </div>
-        )}
-      </div>
-      {id && !pin && <button type="button" className="btn-s small lv-pin" onClick={() => setPin(true)}>📌 Ghim video khi cuộn</button>}
+        </>
+      ) : (
+        <a className="btn-p lv-open" href={v.url} target="_blank" rel="noopener noreferrer" onClick={() => onTime(1, false)}>▶ Mở video bài giảng{videos.length > 1 ? ' · ' + (v.title || 'Phần ' + (part + 1)) : ''}</a>
+      )}
     </section>
   );
 }

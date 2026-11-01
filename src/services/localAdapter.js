@@ -4,7 +4,7 @@ import { hashPassword, newSalt } from './crypto.js';
 import { checkGoogleClaims, decodeJwt } from './google.js';
 import { DEFAULT_SUPPORT, DEFAULT_PLAN, allQuestions, byButton, gradeAuto, hasTest, isManual, newTxnCode, normTest, passPct, pctOf, qPoints, stageStates, testFromLessons, tierOf, viewFor, canEnterStage, canOpenLesson, stageLevel } from './model.js';
 
-const K = { db: 'mot.db.v1', users: 'mot.users.v1', session: 'mot.session.v1', upgrades: 'mot.upgrades.v1', subs: 'mot.subs.v1', lessons: 'mot.lessons.v1' };
+const K = { db: 'mot.db.v1', users: 'mot.users.v1', session: 'mot.session.v1', upgrades: 'mot.upgrades.v1', subs: 'mot.subs.v1', lessons: 'mot.lessons.v1', leads: 'mot.leads.v1' };
 const mem = {}; // dự phòng khi localStorage bị chặn
 const ls = {
   get(k) { try { const v = localStorage.getItem(k); return v == null ? mem[k] ?? null : v; } catch { return mem[k] ?? null; } },
@@ -134,6 +134,14 @@ export function createLocalAdapter({ googleClientId = '' } = {}) {
       if (!l) throw new Error('Bài học này chưa có nội dung.');
       return l;
     },
+    // ---- Quà nhận lộ trình: ai cũng ghi được bản khảo sát của mình; chỉ admin xem danh sách
+    async saveLead(id, data) {
+      const u = me();
+      const all = read(K.leads, {}), old = all[id];
+      all[id] = { id, userId: (old && old.userId) || (u && u.id) || null, data, done: !!data.done, createdAt: (old && old.createdAt) || Date.now(), updatedAt: Date.now() };
+      write(K.leads, all);
+    },
+    async listLeads() { require('admin'); return Object.values(read(K.leads, {})).sort((a, b) => b.updatedAt - a.updatedAt); },
     async listLessons(level) { require('editor'); return levelLessons(level); },
     async saveLesson(lesson) {
       require('editor');

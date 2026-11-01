@@ -373,3 +373,32 @@ update public.content
 update public.content
    set data = data || jsonb_build_object('support', jsonb_build_object('zalo', '', 'facebook', '', 'messenger', '', 'hours', '8:00 – 22:00 hằng ngày', 'floating', true))
  where id = 'settings' and not (data ? 'support');
+
+
+-- Quà “Nhận ngay lộ trình”: khảo sát + nhiệm vụ của người xem (kể cả khách), admin xem để thống kê
+create table if not exists public.roadmap_leads (
+  id          uuid primary key,
+  user_id     uuid references auth.users(id) on delete set null,
+  data        jsonb not null,
+  done        boolean not null default false,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+alter table public.roadmap_leads enable row level security;
+grant select, delete on public.roadmap_leads to authenticated;
+drop policy if exists "leads admin xem" on public.roadmap_leads;
+create policy "leads admin xem" on public.roadmap_leads for select using (public.has_role(array['admin']));
+drop policy if exists "leads admin xoá" on public.roadmap_leads;
+create policy "leads admin xoá" on public.roadmap_leads for delete using (public.has_role(array['admin']));
+create or replace function public.save_lead(p_id uuid, p_data jsonb) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if p_id is null or p_data is null or jsonb_typeof(p_data) <> 'object' then raise exception 'Dữ liệu không hợp lệ.'; end if;
+  if length(p_data::text) > 4000 then raise exception 'Dữ liệu quá lớn.'; end if;
+  insert into public.roadmap_leads (id, user_id, data, done)
+  values (p_id, auth.uid(), p_data, coalesce((p_data->>'done')::boolean, false))
+  on conflict (id) do update
+     set data = excluded.data, done = excluded.done,
+         user_id = coalesce(public.roadmap_leads.user_id, excluded.user_id), updated_at = now();
+end $$;
+grant execute on function public.save_lead(uuid, jsonb) to anon, authenticated;

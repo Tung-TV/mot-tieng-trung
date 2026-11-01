@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { Field, ImageInput } from './ui.jsx';
-import { DEFAULT_PLAN, DEFAULT_SUPPORT, fmtVnd, messengerUrl, zaloUrl } from '../services/model.js';
+import { DEFAULT_GIFT, DEFAULT_PLAN, DEFAULT_SUPPORT, fmtVnd, messengerUrl, zaloUrl } from '../services/model.js';
 
 const AFF_LABEL = { giaotrinh: 'Giáo trình HSK 1 (túi đồ nghề)', giaotrinh2: 'Giáo trình HSK 2', giaotrinh3: 'Giáo trình HSK 3', but: 'Bút viết', vo: 'Vở ô ly' };
 const PR_LABEL = { p1: 'Prompt phân tích chữ Hán', p2: 'Prompt 2', p3: 'Prompt 3', p4: 'Prompt 4' };
@@ -15,7 +15,7 @@ export default function SettingsAdmin() {
   const setArr = (k, i, sub, v) => setS({ ...s, [k]: s[k].map((x, j) => (j === i ? { ...x, [sub]: v } : x)) });
   const save = () => run(() => store.saveSettings({ ...s, plan: { ...s.plan, benefits: (s.plan.benefits || []).map((x) => x.trim()).filter(Boolean) } }), 'Đã lưu cài đặt.');
   const err = (m) => toast(m, 'err');
-  const TABS = [['plan', '⭐ Gói học viên'], ['bank', '💝 Ngân hàng'], ['support', '💬 Hỗ trợ'], ['aff', '🛒 Link mua'], ['tools', '🎒 Túi đồ nghề'], ['apps', '📱 App học'], ['pr', '🤖 Prompt AI']];
+  const TABS = [['plan', '⭐ Gói học viên'], ['bank', '💝 Ngân hàng'], ['support', '💬 Hỗ trợ'], ['gift', '🎁 Quà lộ trình'], ['aff', '🛒 Link mua'], ['tools', '🎒 Túi đồ nghề'], ['apps', '📱 App học'], ['pr', '🤖 Prompt AI']];
 
   return (
     <>
@@ -32,6 +32,23 @@ export default function SettingsAdmin() {
           <Field label="Quyền lợi — mỗi dòng một ý"><textarea rows={5} value={(s.plan.benefits || []).join('\n')} onChange={(e) => setIn('plan', 'benefits', e.target.value.split('\n'))} /></Field>
         </>)}
 
+        {tab === 'gift' && (() => {
+          const g = { ...DEFAULT_GIFT, ...(s.gift || {}) };
+          const setG = (patch) => setS({ ...s, gift: { ...g, ...patch } });
+          const setT = (i, k, v) => setG({ tasks: g.tasks.map((t, j) => (j === i ? { ...t, [k]: v } : t)) });
+          return (<>
+            <p className="muted">Nút “🎁 Nhận ngay lộ trình” ở trang Lộ trình: người xem làm khảo sát, bấm từng nhiệm vụ (mở link là tính xong) rồi nhận file. Kết quả xem ở <a href="#/admin/thong-ke">Thống kê học tập</a>. Nhiệm vụ để trống link sẽ bị ẩn (Facebook / Zalo trống thì lấy từ tab Hỗ trợ).</p>
+            <Field label="Link file Lộ trình học tiếng Trung cho người mới"><input value={g.file} onChange={(e) => setG({ file: e.target.value.trim() })} placeholder="https://drive.google.com/…" /></Field>
+            {g.tasks.map((t, i) => (
+              <div key={i} className="grid2 vid-row">
+                <Field label={'Nhiệm vụ ' + (i + 1)}><input value={t.label} onChange={(e) => setT(i, 'label', e.target.value)} /></Field>
+                <Field label={t.k === 'share' ? 'Chia sẻ trang web (không cần link)' : 'Link mở khi bấm'}><input value={t.url} disabled={t.k === 'share'} onChange={(e) => setT(i, 'url', e.target.value.trim())} placeholder="https://…" /></Field>
+                <button type="button" className="btn-d small" onClick={() => setG({ tasks: g.tasks.filter((_, j) => j !== i) })}>Xoá</button>
+              </div>
+            ))}
+            <button type="button" className="btn-s small" onClick={() => setG({ tasks: [...g.tasks, { k: 't' + Date.now().toString(36), label: 'Nhiệm vụ mới', url: '' }] })}>+ Thêm nhiệm vụ</button>
+          </>);
+        })()}
         {tab === 'support' && (<>
           <p className="muted">Hiện thành nút “💬 Hỗ trợ” ở góc phải mọi trang, và trong trang Nâng cấp (kèm sẵn mã giao dịch). Để trống thì nút tự ẩn.</p>
           <div className="grid3">

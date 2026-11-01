@@ -28,6 +28,7 @@ let eng=engine.join('\n');
 const rep=(a,b,all)=>{if(!eng.includes(a))throw new Error('miss: '+a.slice(0,60));eng=all?eng.split(a).join(b):eng.replace(a,b)};
 rep('document.body.classList','LGR.classList',true);
 rep('function route(){','function route0(){');
+rep('var COMM={fbPage:"",fbGroup:"",zalo:"",tiktok:"",locket:"",locketId:""};','var COMM=Object.assign({fbPage:"",fbGroup:"",zalo:"",tiktok:"",locket:"",locketId:""},window.__MOT_COMM||{});');
 rep('window.addEventListener("hashchange",function(){route();','window.addEventListener("hashchange",function(){if(viewId(location.hash)==="none"){if(typeof EX!=="undefined"&&EX&&EX.on)exLeave();var au=document.getElementById("exAu");if(au)au.pause();if(window.speechSynthesis)speechSynthesis.cancel();return}route();');
 rep('.style.animation="flash 1.2s"','.style.animation="lg-flash 1.2s"');
 rep('.style.animation="spring "','.style.animation="lg-spring "');

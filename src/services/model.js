@@ -251,3 +251,28 @@ export function messengerUrl(s, text) {
   return text && /m\.me\//.test(base) ? base + (base.includes('?') ? '&' : '?') + 'text=' + encodeURIComponent(text) : base;
 }
 export const facebookUrl = (v) => { v = String(v || '').trim(); return !v ? '' : isUrl(v) ? v : 'https://www.facebook.com/' + v.replace(/^@/, ''); };
+
+// ----- Quà “Nhận ngay lộ trình”: khảo sát + nhiệm vụ (mở link là tính hoàn thành), lưu để thống kê -----
+export const DEFAULT_GIFT = {
+  file: '', // link file Lộ trình học tiếng Trung cho người mới
+  tasks: [
+    { k: 'fbPage', label: 'Theo dõi Page Facebook', url: '' },
+    { k: 'fbGroup', label: 'Tham gia nhóm HỌC CÙNG MỌT TIẾNG TRUNG', url: '' },
+    { k: 'zalo', label: 'Vào nhóm Zalo MỌT TIẾNG TRUNG', url: '' },
+    { k: 'tiktok', label: 'Theo dõi TikTok', url: '' },
+    { k: 'locket', label: 'Kết bạn Locket', url: '' },
+    { k: 'share', label: 'Chia sẻ Mọt cho 1 người bạn muốn học tiếng Trung', url: '' },
+  ],
+};
+export const GIFT_LEVELS = ['Chưa biết gì', 'Biết Pinyin', 'Đang học HSK 1–2', 'HSK 3 trở lên'];
+export const GIFT_GOALS = ['Thi chứng chỉ HSK', 'Du học', 'Công việc', 'Giao tiếp', 'Sở thích'];
+export const GIFT_TIMES = ['15 phút', '30 phút', '1 giờ', 'Trên 1 giờ'];
+export const GIFT_SOURCES = ['Facebook', 'TikTok', 'Zalo', 'Bạn bè giới thiệu', 'Tìm kiếm Google', 'Khác'];
+/** Nhiệm vụ đang bật: có link, hoặc là nhiệm vụ chia sẻ. Link trống lấy từ phần Hỗ trợ (Facebook, Zalo) nếu có. */
+export function giftOf(settings) {
+  const g = { ...DEFAULT_GIFT, ...((settings && settings.gift) || {}) };
+  const sp = supportOf(settings);
+  const fill = { fbPage: facebookUrl(sp.facebook), zalo: zaloUrl(sp.zalo) };
+  const tasks = (g.tasks || []).map((t) => ({ ...t, url: t.url || (fill[t.k] || '') }));
+  return { ...g, tasks, active: tasks.filter((t) => t.k === 'share' || t.url) };
+}

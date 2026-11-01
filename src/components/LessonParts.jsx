@@ -1,5 +1,5 @@
 // Các phần ôn tập của một bài học: Luyện viết, Từ vựng, Nghe hiểu, Ngữ pháp, Luyện nói
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { canListen, listen, say } from '../services/speech.js';
 import { shuffled } from '../services/model.js';
 
@@ -19,46 +19,81 @@ const loadHW = () => {
   return hwLoading;
 };
 
+/** Ô tập viết tự do (luôn dùng được, kể cả khi không tải được dữ liệu nét chữ): chữ mẫu mờ phía sau, viết bằng chuột / ngón tay */
+function DrawPad({ ch, guide }) {
+  const cv = useRef(null), drawing = useRef(false);
+  const paint = useCallback(() => {
+    const c = cv.current; if (!c) return;
+    const x = c.getContext('2d'); x.clearRect(0, 0, c.width, c.height);
+    if (guide) { x.fillStyle = 'rgba(43,42,34,.13)'; x.font = '200px "KaiTi","STKaiti","Kaiti SC","Noto Serif SC",serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(ch, 120, 128); }
+  }, [ch, guide]);
+  useEffect(() => { paint(); }, [paint]);
+  const pos = (e) => { const r = cv.current.getBoundingClientRect(); return [((e.clientX - r.left) * 240) / r.width, ((e.clientY - r.top) * 240) / r.height]; };
+  const down = (e) => { e.preventDefault(); cv.current.setPointerCapture(e.pointerId); drawing.current = true; const x = cv.current.getContext('2d'); const [a, b] = pos(e); x.beginPath(); x.moveTo(a, b); x.lineWidth = 9; x.lineCap = 'round'; x.lineJoin = 'round'; x.strokeStyle = '#2b2a22'; };
+  const move = (e) => { if (!drawing.current) return; const x = cv.current.getContext('2d'); const [a, b] = pos(e); x.lineTo(a, b); x.stroke(); };
+  const up = () => { drawing.current = false; };
+  return (
+    <div className="dp-wrap">
+      <canvas ref={cv} className="dp" width={240} height={240} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} aria-label={'Ô tập viết chữ ' + ch} />
+      <button type="button" className="btn-s small" onClick={paint}>🧽 Xoá, viết lại</button>
+    </div>
+  );
+}
+
 export function WritePart({ lesson, vocab }) {
-  const chars = useMemo(() => [...new Set([...(lesson.write || '')].filter((c) => /[一-鿿]/.test(c)))], [lesson.write]);
+  const chars = useMemo(() => [...new Set([...(lesson.write || '')].filter((c) => /[\u4e00-\u9fff]/.test(c)))], [lesson.write]);
   const [sel, setSel] = useState(chars[0] || '');
-  const [mode, setMode] = useState('show');
+  const [hw, setHw] = useState(null); // null: đang tải, true: có thư viện nét chữ, false: không tải được → ô viết tự do
   const [msg, setMsg] = useState('');
+  const [guide, setGuide] = useState(true);
   const box = useRef(null), writer = useRef(null);
   useEffect(() => { setSel(chars[0] || ''); }, [chars]);
+  const startQuiz = useCallback(() => {
+    if (!writer.current) return;
+    setMsg('✍️ Viết từng nét vào ô (kéo chuột hoặc ngón tay). Sai 3 lần Mọt sẽ gợi ý nét.');
+    writer.current.quiz({ showHintAfterMisses: 3, onComplete: (d) => setMsg('🎉 Viết xong chữ ' + d.character + '! Sai ' + d.totalMistakes + ' nét. Bấm “Viết lại” để luyện tiếp.') });
+  }, []);
   useEffect(() => {
-    if (!sel || !box.current) return undefined;
+    if (!sel || hw === false) return undefined;
     let alive = true; setMsg('');
-    box.current.innerHTML = '';
     loadHW().then((HW) => {
-      if (!alive) return;
+      if (!alive || !box.current) return;
+      box.current.innerHTML = '';
       writer.current = HW.create(box.current, sel, {
-        width: 240, height: 240, padding: 12, showOutline: true, strokeColor: '#2b2a22', radicalColor: '#c0392b',
-        outlineColor: '#e6dfc7', drawingColor: '#2f7d4f', highlightColor: '#ecb857', strokeAnimationSpeed: 1, delayBetweenStrokes: 200,
-        charDataLoader: (c, ok, fail) => fetch('https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0.1/' + encodeURIComponent(c) + '.json').then((r) => r.json()).then(ok, fail),
-        onLoadCharDataError: () => alive && setMsg('Chưa có dữ liệu nét cho chữ này.'),
+        width: 240, height: 240, padding: 12, showOutline: true, showCharacter: false, strokeColor: '#2b2a22', radicalColor: '#c0392b',
+        outlineColor: '#e6dfc7', drawingColor: '#2f7d4f', drawingWidth: 18, highlightColor: '#ecb857', strokeAnimationSpeed: 1, delayBetweenStrokes: 200,
+        charDataLoader: (c, ok, fail) => fetch('https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0.1/' + encodeURIComponent(c) + '.json').then((r) => { if (!r.ok) throw new Error(); return r.json(); }).then(ok, fail),
+        onLoadCharDataSuccess: () => { if (alive) { setHw(true); startQuiz(); } },
+        onLoadCharDataError: () => alive && setHw(false),
       });
-      if (mode === 'show') writer.current.animateCharacter();
-      else writer.current.quiz({ onComplete: (d) => alive && setMsg('🎉 Viết xong! Sai ' + d.totalMistakes + ' nét.') });
-    }, (e) => alive && setMsg(e.message));
+    }, () => alive && setHw(false));
     return () => { alive = false; };
-  }, [sel, mode]);
+  }, [sel, hw === false, startQuiz]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!chars.length) return <Empty />;
   const w = vocab.find((x) => x.h.includes(sel));
+  const show = () => { if (!writer.current) return; writer.current.cancelQuiz(); setMsg('👀 Xem thứ tự nét…'); writer.current.animateCharacter({ onComplete: startQuiz }); };
   return (
     <div className="wr-x">
       <div className="wr-list" role="list">{chars.map((c) => <button key={c} type="button" role="listitem" className={'wr-c' + (c === sel ? ' on' : '')} onClick={() => setSel(c)} lang="zh">{c}</button>)}</div>
       <div className="wr-main">
-        <div className="wr-box" ref={box} aria-label={'Chữ ' + sel} />
+        {hw === false ? <DrawPad ch={sel} guide={guide} /> : <div className="wr-box" ref={box} aria-label={'Ô tập viết chữ ' + sel} />}
         <div className="wr-side">
           <div className="wr-big" lang="zh">{sel} <Spk t={sel} rate={0.6} /></div>
           {w && <p className="muted">{w.h} · {w.p} · {w.m}</p>}
-          <div className="row-btns">
-            <button type="button" className={mode === 'show' ? 'btn-p' : 'btn-s'} onClick={() => { setMode('show'); if (mode === 'show' && writer.current) writer.current.animateCharacter(); }}>▶ Xem cách viết</button>
-            <button type="button" className={mode === 'quiz' ? 'btn-p' : 'btn-s'} onClick={() => setMode(mode === 'quiz' ? 'show' : 'quiz')}>✍️ Tự viết</button>
-          </div>
-          <small className="muted">{mode === 'quiz' ? 'Dùng chuột / ngón tay viết từng nét vào ô. Sai 3 lần Mọt sẽ gợi ý.' : 'Xem thứ tự nét rồi bấm “Tự viết” để luyện.'}</small>
-          {msg && <p className="wr-msg">{msg}</p>}
+          {hw === false ? (
+            <>
+              <label className="chk"><input type="checkbox" checked={guide} onChange={(e) => setGuide(e.target.checked)} /> Hiện chữ mẫu mờ để tô theo</label>
+              <small className="muted">Không tải được dữ liệu thứ tự nét (mạng chặn), bạn vẫn tô / viết tự do vào ô bên cạnh.</small>
+            </>
+          ) : (
+            <div className="row-btns">
+              <button type="button" className="btn-p" onClick={show} disabled={!hw}>▶ Xem cách viết</button>
+              <button type="button" className="btn-s" onClick={startQuiz} disabled={!hw}>↺ Viết lại</button>
+              <button type="button" className="btn-s" onClick={() => setHw(false)}>✏️ Viết tự do</button>
+            </div>
+          )}
+          {hw === null && <small className="muted">Đang tải thứ tự nét…</small>}
+          {msg && hw && <p className="wr-msg">{msg}</p>}
         </div>
       </div>
     </div>

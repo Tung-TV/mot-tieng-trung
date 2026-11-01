@@ -1,7 +1,7 @@
 // CMS › Thống kê học tập: bao nhiêu người dùng, làm bao nhiêu bài, đúng bao nhiêu, đang kẹt ở đâu
 import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
-import { allQuestions, qPoints, stageLevel, stageStates, tierOf } from '../services/model.js';
+import { GIFT_LEVELS, GIFT_SOURCES, allQuestions, giftOf, qPoints, stageLevel, stageStates, tierOf } from '../services/model.js';
 
 const DAY = 86400000;
 const lastAct = (u) => {
@@ -24,10 +24,12 @@ export default function StatsAdmin() {
   const { store, content, toast } = useApp();
   const [users, setUsers] = useState(null);
   const [subs, setSubs] = useState(null);
+  const [leads, setLeads] = useState(null);
   const [days, setDays] = useState(30);
   useEffect(() => {
     store.listUsers().then(setUsers, (e) => { toast(e.message, 'err'); setUsers([]); });
     store.listSubmissions().then(setSubs, () => setSubs([]));
+    store.listLeads().then(setLeads, () => setLeads([]));
   }, [store, toast]);
 
   const S = useMemo(() => {
@@ -71,6 +73,22 @@ export default function StatsAdmin() {
     return { learners, tiers, active, started, perStage, qs: qs.slice(0, 12), stuckLessons: [...ls].sort((a, b) => b.doing - a.doing).filter((x) => x.doing).slice(0, 10), topLessons: [...ls].sort((a, b) => b.start - a.start).slice(0, 10), byLevel, rs, doneLessons: ls.reduce((n, x) => n + x.done, 0), gradedAll: rs.filter((x) => x.status === 'graded') };
   }, [users, subs, content, days]);
 
+  const G = useMemo(() => {
+    if (!leads) return null;
+    const since = Date.now() - days * DAY, L = leads.filter((x) => (x.updatedAt || 0) >= since), gift = giftOf(content.settings);
+    const count = (key, opts) => opts.map((o) => [o, L.filter((x) => (x.data || {})[key] === o).length]);
+    return {
+      L, gift, done: L.filter((x) => x.done).length,
+      tasks: gift.tasks.map((t) => [t.label.length > 26 ? t.label.slice(0, 25) + '…' : t.label, L.filter((x) => ((x.data || {}).tasks || {})[t.k]).length]),
+      src: count('s', GIFT_SOURCES), lv: count('l', GIFT_LEVELS),
+    };
+  }, [leads, days, content]);
+  const csv = () => {
+    const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+    const rows = [['Ngày', 'Tên', 'Zalo/Email', 'Trình độ', 'Mục tiêu', 'Thời gian/ngày', 'Biết Mọt qua', 'Nhiệm vụ đã làm', 'Hoàn thành'], ...G.L.map((x) => { const d = x.data || {}; return [new Date(x.createdAt).toLocaleString('vi-VN'), d.n, d.c, d.l, (d.g || []).join('; '), d.t, d.s, Object.keys(d.tasks || {}).length + '/' + G.gift.active.length, x.done ? 'Có' : 'Chưa']; })];
+    const b = new Blob(['\ufeff' + rows.map((r) => r.map(esc).join(',')).join('\n')], { type: 'text/csv' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'nhan-lo-trinh.csv'; a.click();
+  };
   if (!S) return <p className="muted">Đang tải thống kê…</p>;
   return (
     <>
@@ -84,6 +102,7 @@ export default function StatsAdmin() {
         <div className="kpi"><small>Đã bắt đầu học</small><b>{S.started.length}</b><span>{pct(S.started.length, S.learners.length)}% người dùng</span></div>
         <div className="kpi"><small>Lượt làm bài kiểm tra</small><b>{S.rs.length}</b><span>{new Set(S.rs.map((x) => x.userId)).size} người · đạt {pct(S.gradedAll.filter((x) => x.passed).length, S.gradedAll.length)}%</span></div>
         <div className="kpi"><small>Bài học đã học xong</small><b>{S.doneLessons}</b><span>tổng số lượt đánh dấu học xong</span></div>
+        {G && <div className="kpi"><small>Nhận lộ trình</small><b>{G.L.length}</b><span>{G.done} người làm xong nhiệm vụ ({pct(G.done, G.L.length)}%)</span></div>}
       </div>
 
       <section className="card">
@@ -118,6 +137,23 @@ export default function StatsAdmin() {
           {S.topLessons.length ? <ol className="toplist">{S.topLessons.map((x) => <li key={x.id}><span lang="zh">{x.name}</span><b>{x.start} · xong {x.done}</b></li>)}</ol> : <p className="muted">Chưa có dữ liệu.</p>}
         </section>
       </div>
+      {G && (
+        <section className="card">
+          <div className="adm-top"><h2>🎁 Nhận ngay lộ trình (khảo sát + nhiệm vụ)</h2>{G.L.length > 0 && <button type="button" className="btn-s small" onClick={csv}>⬇ Tải danh sách (.csv)</button>}</div>
+          {G.L.length ? (
+            <>
+              <div className="adm-cols">
+                <div><h3>Số người đã bấm từng nhiệm vụ</h3><Bars rows={G.tasks} unit=" người" /></div>
+                <div><h3>Biết Mọt qua đâu</h3><Bars rows={G.src} unit=" người" /><h3>Trình độ</h3><Bars rows={G.lv} unit=" người" /></div>
+              </div>
+              <div className="tbl-wrap"><table className="tbl-adm">
+                <thead><tr><th>Ngày</th><th>Tên</th><th>Zalo / Email</th><th>Trình độ · mục tiêu</th><th>Nhiệm vụ</th></tr></thead>
+                <tbody>{G.L.slice(0, 50).map((x) => { const d = x.data || {}; return <tr key={x.id}><td className="muted">{new Date(x.createdAt).toLocaleDateString('vi-VN')}</td><td><b>{d.n}</b></td><td>{d.c}</td><td>{d.l}<span className="url">{(d.g || []).join(', ')} · {d.t} · {d.s}</span></td><td>{x.done ? <span className="pill-s on">Xong</span> : <span className="pill-s warn">{Object.keys(d.tasks || {}).length}/{G.gift.active.length}</span>}</td></tr>; })}</tbody>
+              </table></div>
+            </>
+          ) : <p className="muted">Chưa có ai làm khảo sát trong khoảng thời gian này.</p>}
+        </section>
+      )}
     </>
   );
 }

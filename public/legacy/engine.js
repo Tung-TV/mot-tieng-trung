@@ -927,7 +927,7 @@ var ok=vNorm(raw)===vNorm(x.p),note="";
 if(ok){var hasTone=/[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ1-4]/i.test(raw);if(hasTone&&raw.replace(/\s/g,"").toLowerCase()!==x.p.replace(/\s/g,"").toLowerCase()&&!/\d/.test(raw)){ok=false}else if(!hasTone)note="chú ý thanh điệu nhé!"}
 VC.a.push({w:x,ok:ok});VC.sel={ok:ok,v:raw,note:note};vcRender();
 });
-var COMM={fbPage:"",fbGroup:"",zalo:"",tiktok:"",locket:"",locketId:""};
+var COMM=Object.assign({fbPage:"",fbGroup:"",zalo:"",tiktok:"",locket:"",locketId:""},window.__MOT_COMM||{});
 var CDN={fbPage:0,fbGroup:0,zalo:0,tiktok:0,locket:0};
 function cdTot(){var t=0;for(var k in CDN)t+=CDN[k]||0;return t}
 function cdFmt(n){return n>=1000?(Math.round(n/100)/10).toString().replace(".",",")+"K":String(n)}
