@@ -86,10 +86,9 @@ export function TopNav({ path }) {
     <nav className="topnav" aria-label="Chuyên mục">
       {NAV.map((n) => (
         <a key={n.r} className={'nv ' + n.cls + (navOn(path, n.r) ? ' on' : '')} href={hrefOf(n.r)} style={styleObj(n.s)}>
-          {n.hot && <em className="hotb">HOT</em>}
           <i className="ck" style={{ background: n.ck }}>✓</i>
           <span><b>{n.b[0]}<br />{n.b[1]}</b>{n.hot ? <small className="n5-pill"><span className="fire" aria-hidden="true">🔥</span> {n.sm}</small> : <small>{n.sm}</small>}</span>
-          {n.emoji ? <span className="nv-e" aria-hidden="true">{n.emoji}</span> : <img src={img[n.img]} alt="" />}
+          {n.emoji ? <span className="nv-e" aria-hidden="true">{n.emoji}{n.hot && <em className="hotb">HOT</em>}</span> : <img src={img[n.img]} alt="" />}
         </a>
       ))}
     </nav>
