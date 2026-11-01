@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { loadGis } from '../services/google.js';
 import { useApp } from '../context/AppContext.jsx';
 
@@ -23,11 +24,21 @@ export function Toasts() {
   return <div className="toasts" role="status" aria-live="polite">{toasts.map((t) => <div key={t.id} className={'toast ' + t.type}>{t.msg}</div>)}</div>;
 }
 
+// Gắn thẳng vào <body> (portal): nếu nằm trong hộp Ủng hộ, khung phóng to bị hộp đó cắt và bị các thẻ tài liệu đè lên
 export function QrModal({ src, onClose }) {
-  return (
-    <div className="qr-zoom" onClick={onClose} role="dialog" aria-label="Mã QR chuyển khoản (phóng to)">
-      <img src={src} alt="Mã QR chuyển khoản (phóng to)" />
-    </div>
+  useEffect(() => {
+    const k = (e) => e.key === 'Escape' && onClose();
+    document.addEventListener('keydown', k);
+    const o = document.body.style.overflow; document.body.style.overflow = 'hidden';
+    return () => { document.removeEventListener('keydown', k); document.body.style.overflow = o; };
+  }, [onClose]);
+  return createPortal(
+    <div className="qr-zoom" onClick={onClose} role="dialog" aria-modal="true" aria-label="Mã QR chuyển khoản (phóng to)">
+      <img src={src} alt="Mã QR chuyển khoản (phóng to)" onClick={(e) => e.stopPropagation()} />
+      <button type="button" className="qr-x" onClick={onClose} aria-label="Đóng">×</button>
+      <span className="qr-hint">Quét bằng app ngân hàng · bấm ra ngoài hoặc Esc để đóng</span>
+    </div>,
+    document.body,
   );
 }
 
