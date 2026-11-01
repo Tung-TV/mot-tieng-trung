@@ -22,10 +22,12 @@ for (const a of process.argv.slice(2)) { const m = a.match(/^--backend=(\w+)/); 
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(dist, { recursive: true });
 cpSync(join(root, 'public'), dist, { recursive: true });
+// bản thử lưu trên trình duyệt: kèm dữ liệu bài học (bản Supabase thì admin nhập vào CMS, không để công khai)
+if (env.VITE_BACKEND === 'local' && existsSync(join(root, 'data/lessons'))) cpSync(join(root, 'data/lessons'), join(dist, 'data/lessons'), { recursive: true });
 
 await build({
   entryPoints: [join(root, 'src/main.jsx')],
-  bundle: true, minify: true, format: 'esm', target: 'es2020',
+  bundle: true, minify: !process.env.NOMIN, format: 'esm', target: 'es2020',
   outfile: join(dist, 'app.js'),
   jsx: 'automatic',
   define: { 'import.meta.env': JSON.stringify({ MODE: 'production', ...env }), 'process.env.NODE_ENV': '"production"' },

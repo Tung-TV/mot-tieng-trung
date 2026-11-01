@@ -1,18 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
-import { navigate } from '../router.jsx';
-import { ROLE_LABEL, canEdit } from '../services/util.js';
+import { hrefOf, navigate } from '../router.jsx';
+import { ROLE_LABEL } from '../services/util.js';
 
 const NAV = [
   { r: '/', cls: 'n1', s: '--bg1:#d6e9fd;--bg2:#b9d8f8;--tc:#1f4f9a;--sc:#c1440e', ck: '#3b82d6', b: ['KHO TÀI LIỆU', 'TIẾNG TRUNG'], sm: 'MIỄN PHÍ 100%', img: 'nav1' },
   { r: '/lo-trinh', cls: 'n2', s: '--bg1:#fde5b8;--bg2:#fbd08a;--tc:#b3541a;--sc:#5a3a1a', ck: '#f0a030', b: ['LỘ TRÌNH HỌC', 'TIẾNG TRUNG'], sm: 'DÀNH CHO NGƯỜI MỚI', img: 'nav2' },
+  { r: '/khoa-hoc', cls: 'n5', s: '--bg1:#ef4b3a;--bg2:#b3241b;--tc:#fff;--sc:#fff', ck: '#ffd24a', b: ['KHÓA HỌC', 'HSK 1–6'], sm: 'Chỉ 1K/ngày', hot: true, emoji: '🎓' },
   { r: '/on-tap', cls: 'n3', s: '--bg1:#d8f3d3;--bg2:#bde8b6;--tc:#1f7a2f;--sc:#2f5d34', ck: '#3fae49', b: ['ÔN TẬP', 'TIẾNG TRUNG'], sm: 'Luyện từ vựng, nghe, nói, đọc, viết', img: 'nav3' },
   { r: '/cong-dong', cls: 'n4', s: '--bg1:#f1dcf8;--bg2:#e4c3f1;--tc:#7b2f9c;--sc:#7b2f9c', ck: '#a855c7', b: ['CỘNG ĐỒNG', 'HỌC TIẾNG TRUNG'], sm: 'GIAO LƯU & CHIA SẺ', img: 'nav4' },
 ];
+// trang luyện tập thuộc mục Ôn tập; bài học thuộc Lộ trình
+const navKey = (p) => (/^\/bai-hoc/.test(p) ? '/khoa-hoc' : /^\/(on-tap|luyen-go|shadowing|pinyin|bai-tap-pinyin|thi-hsk|dia-diem-thi|hskk|de-thi|lam-bai)/.test(p) ? '/on-tap' : p);
+const navOn = (p, r) => { const k = navKey(p); return k === r || (r !== '/' && k.startsWith(r + '/')); };
 const styleObj = (s) => Object.fromEntries(s.split(';').map((x) => x.split(':')));
 
 export function Header() {
-  const { user, auth, setAuthOpen, content } = useApp();
+  const { user, auth, setAuthOpen, content, tier } = useApp();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const img = content.settings.images;
@@ -48,8 +52,16 @@ export function Header() {
               {user ? (
                 <>
                   <b>Xin chào, {user.name}!<small className="role-tag">{ROLE_LABEL[user.role]}</small></b>
-                  <button type="button" onClick={go(() => navigate('/kho-cua-toi'))}>📚 Kho của tôi</button>
-                  {canEdit(user) && <button type="button" onClick={go(() => navigate('/admin'))}>🛠️ Trang quản trị (CMS)</button>}
+                  {tier === 'staff' ? (
+                    <button type="button" onClick={go(() => navigate('/admin'))}>🛠️ Trang quản trị (CMS)</button>
+                  ) : (
+                    <>
+                      <button type="button" onClick={go(() => navigate('/kho-cua-toi'))}>📚 Kho của tôi</button>
+                      {tier === 'student'
+                        ? <button type="button" onClick={go(() => navigate('/lo-trinh'))}>🪜 Lộ trình của tôi</button>
+                        : <button type="button" className="menu-up" onClick={go(() => navigate('/nang-cap'))}>🎓 Đăng ký Khoá học</button>}
+                    </>
+                  )}
                   <button type="button" onClick={go(() => auth.logout())}>Đăng xuất</button>
                 </>
               ) : (
@@ -73,10 +85,11 @@ export function TopNav({ path }) {
   return (
     <nav className="topnav" aria-label="Chuyên mục">
       {NAV.map((n) => (
-        <a key={n.r} className={'nv ' + n.cls + (path === n.r ? ' on' : '')} href={'#' + n.r} style={styleObj(n.s)}>
+        <a key={n.r} className={'nv ' + n.cls + (navOn(path, n.r) ? ' on' : '')} href={hrefOf(n.r)} style={styleObj(n.s)}>
+          {n.hot && <em className="hotb">HOT</em>}
           <i className="ck" style={{ background: n.ck }}>✓</i>
-          <span><b>{n.b[0]}<br />{n.b[1]}</b><small>{n.sm}</small></span>
-          <img src={img[n.img]} alt="" />
+          <span><b>{n.b[0]}<br />{n.b[1]}</b>{n.hot ? <small className="n5-pill"><span className="fire" aria-hidden="true">🔥</span> {n.sm}</small> : <small>{n.sm}</small>}</span>
+          {n.emoji ? <span className="nv-e" aria-hidden="true">{n.emoji}</span> : <img src={img[n.img]} alt="" />}
         </a>
       ))}
     </nav>

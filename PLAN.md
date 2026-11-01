@@ -185,3 +185,95 @@ Lưu ý cách B: trang kiểm tra token có đúng do Google cấp cho Client ID
 - Đăng nhập Google: Google Cloud project `mot-tieng-trung`, OAuth client “Mot Tieng Trung - Supabase” (Web), trạng thái **In production**; redirect URI `https://uyrolkmqiguqjpomxvsc.supabase.co/auth/v1/callback`. Đã bật trong Supabase › Authentication › Providers › Google.
   - Trang bắt buộc cho màn hình đồng ý: `/privacy.html`, `/terms.html`.
 - Quản trị viên: `kaitoshion53@gmail.com` (đăng nhập Google). Cấp quyền cho người khác trong CMS › Tài khoản.
+
+---
+
+## Cập nhật: 3 loại tài khoản, nâng cấp Học viên, bài kiểm tra (nhánh `feature/hoc-vien` — CHƯA đăng web)
+
+### Loại tài khoản
+| Loại | Vai trò trong DB | Được làm gì |
+|---|---|---|
+| Khách / **Thành viên** (tài khoản thường) | — / `member` | Xem & tải tài liệu ở Kho. Lộ trình chỉ thấy khung (tên, mô tả, kỹ năng): không nút, không link, không chi tiết. Bấm vào chặng → hộp “Cần nâng cấp tài khoản” + nút **Nâng cấp tài khoản**. |
+| **Học viên** | `student` (+ `student_until`, trống = vĩnh viễn) | Học lộ trình: trang chi tiết từng chặng `#/lo-trinh/<id>` (bài học, giáo trình, túi đồ nghề, app học, tài liệu của chặng), bài kiểm tra cuối chặng. Phải **đạt điểm** (mặc định 70%) mới mở chặng sau. Chặng chưa có bài kiểm tra: bấm “Hoàn thành chặng”. Có lộ trình cá nhân (trạng thái + điểm từng chặng). |
+| Biên tập / **Quản trị** | `editor` / `admin` | Đăng nhập xong vào thẳng CMS. Menu chỉ còn CMS + Đăng xuất. Xem trước lộ trình không bị khoá. |
+
+### Nâng cấp bằng chuyển khoản
+1. Thành viên vào `#/nang-cap` (bắt buộc đăng nhập) → **Tạo mã giao dịch** → mã dạng `MOTXXXXXX` (riêng cho từng người, bấm lại vẫn giữ mã cũ khi chưa xử lý).
+2. Trang hiện số tiền, ngân hàng, số TK, mã QR **VietQR có sẵn số tiền + nội dung = mã giao dịch** (img.vietqr.io, miễn phí; lỗi thì dùng ảnh QR tĩnh), nhắc **ghi đúng mã vào nội dung chuyển khoản**. Người dùng bấm “Tôi đã chuyển khoản”.
+3. Admin: CMS › **Nâng cấp học viên** → đối chiếu mã + số tiền trong app ngân hàng → **Xác nhận đã nhận tiền** → tài khoản thành Học viên ngay.
+- Giá, tên gói, thời hạn (tháng, 0 = vĩnh viễn), quyền lợi, mã ngân hàng VietQR: CMS › Cài đặt › Gói học viên. **Gói Học viên = Khóa học trọn bộ HSK1–6: 365.000đ / 12 tháng** (chủ web xác nhận ngày 01/11/2026).
+
+### Hỗ trợ qua Zalo / Facebook
+- CMS › Cài đặt › **Hỗ trợ**: số Zalo (hoặc link zalo.me), link trang Facebook, tên Messenger (tuỳ chọn), giờ hỗ trợ, bật/tắt nút nổi.
+- Nút **💬 Hỗ trợ** góc phải mọi trang (ẩn khi chưa điền, ẩn lúc đang làm bài kiểm tra). Trang Nâng cấp có khung hỗ trợ; tin nhắn Messenger điền sẵn mã giao dịch + email (Zalo không cho điền sẵn → có nút sao chép nội dung).
+- Mã QR thanh toán tạo ngay trong trình duyệt theo chuẩn VietQR (src/services/qr.js), không dùng dịch vụ ngoài.
+
+### Bảo mật (Supabase)
+- Dữ liệu chặng tách 3 dòng: `stage` (công khai), `stage_detail` (chỉ học viên trở lên), `test_key` (đáp án, chỉ biên tập/quản trị). Cài đặt tách `settings` (công khai) / `premium` (link mua, túi đồ nghề, app học, prompt — học viên trở lên). Tài khoản thường không tải được link/chi tiết dù gọi thẳng API.
+- Chấm điểm trong database (`submit_test`), kiểm tra thứ tự chặng (`stage_open`); người dùng không tự ghi điểm, không tự đổi vai trò/email/hạn học viên (trigger `protect_profile_fields`). Tài liệu đang ẩn không đọc được từ API.
+- Bảng `upgrade_requests` + hàm `create_upgrade_request`, `claim_upgrade`, `cancel_upgrade`, `confirm_upgrade` (chỉ admin).
+- Đã chạy thử toàn bộ SQL trên PostgreSQL 16 (dữ liệu kiểu cũ → chuyển đổi đúng; chạy lại không lỗi; phân quyền đúng cho khách/thành viên/học viên/admin).
+
+### Bài kiểm tra kiểu HSK
+- “Nhập môn” hoàn thành bằng nút; mọi chặng khác phải đạt bài kiểm tra (mặc định 70%).
+- Admin soạn đề trong CMS › Lộ trình › Sửa chặng: nhiều **phần** (Nghe / Đọc / Viết / Nói), mỗi phần có thể kèm file nghe, ảnh, đoạn văn. Dạng câu: trắc nghiệm, đúng/sai, điền từ (nhiều đáp án chấp nhận), sắp xếp câu, viết tự luận, nói (ghi âm ≤ 90 giây). Điểm từng câu, thời gian làm bài, đảo câu.
+- Câu tự động chấm ngay trong database; câu viết/nói vào CMS › **Chấm bài** để giáo viên cho điểm + nhận xét. Đạt thì chặng sau tự mở.
+- Đã chạy thử trên PostgreSQL 16: dữ liệu cũ của web thật → chạy 002 → nạp nội dung mới → học viên nộp bài (tự chấm + chờ chấm) → admin chấm → chặng sau mở; học viên không đọc được đáp án.
+
+### Khi đăng web (chưa làm)
+1. Supabase › SQL Editor: chạy `docs/migrations/002_hoc-vien.sql`.
+2. Gộp nhánh `feature/hoc-vien` vào `main` → Cloudflare tự đăng.
+3. Admin đăng nhập → CMS › Tổng quan hiện **“Có bản cập nhật nội dung” → Áp dụng cập nhật**: cập nhật 9 chặng theo nội dung mới, thêm tài liệu mới vào Kho, đổi gói thành 365K/năm, tạo bài kiểm tra mẫu cho chặng chưa có đề. Bài kiểm tra, tài liệu admin đã sửa được giữ nguyên.
+
+## Cập nhật 01/11/2026: theo bản HTML mới (mottiengtrung_1.html)
+
+| Mục | Trang | Ai dùng được |
+|---|---|---|
+| **Khóa học Mọt Tiếng Trung HSK1–6** (mục HOT trên menu) | `#khoa-hoc` | Mọi người xem; nút “Đăng ký” → trang Nâng cấp (365K/năm). Nút vào bài học bị ẩn với tài khoản thường. |
+| **Ôn tập** | `#on-tap` | Mọi người (miễn phí như bản gốc) |
+| · Bảng Pinyin + nghe từng âm, bài tập nghe chọn pinyin | `#pinyin`, `#bai-tap-pinyin` | |
+| · Luyện thi HSK 1–6: đề thi thử có file nghe, chấm điểm, đánh dấu đề đã làm; HSKK nhìn tranh nói; địa điểm thi HSK | `#thi-hsk`, `#thi-hsk-1`, `#de-thi-1-1`, `#hskk-so-cap`, `#dia-diem-thi` | |
+| · Luyện gõ từ vựng HSK1–6 (nhắc ôn từ sai) | `#luyen-go` | |
+| · Shadowing theo video 4 kênh | `#shadowing` | |
+| **Cộng đồng** | `#cong-dong` | Mọi người |
+| **Bài học từng bài** (bài giảng, luyện viết, từ vựng, nghe, ngữ pháp, luyện nói) | `#bai-hoc-<cấp>-<bài>` | Chỉ **Học viên**, và chặng HSK tương ứng phải đã mở. Vào từ trang chặng › “BẮT ĐẦU HỌC”. |
+| Quà “Nhận ngay lộ trình” (khảo sát + nhiệm vụ) | nút trên trang Lộ trình | Mọi người |
+
+Kỹ thuật: các trang trên chạy bằng mã gốc của bản HTML (tách ra `public/legacy/`, xem `scripts/legacy/README.md`), chỉ tải khi mở; dữ liệu nặng (đề thi, từ vựng, chữ Hán luyện viết) tách gói, mở đúng trang mới tải. Trang chủ không nặng thêm.
+
+**Còn thiếu từ bản gốc (file đi kèm, không có trong file HTML):**
+- `audio/ … audio6/de*.mp3`: file nghe đề thi thử (hiện chỉ đề 1 HSK1 có tiếng, đã nhúng sẵn).
+- `hskk/p01–p25.jpg`: 25 tranh HSKK (đang dùng ảnh tạm “Tranh N”).
+- `hsk/b4–b6.jpg`: bìa giáo trình HSK4–6 (đang dùng bìa tạm).
+- `kho/c01…c40.jpg`: ảnh bìa tài liệu (web đang dùng hình vẽ tự tạo nên không bắt buộc).
+- Khảo sát “Nhận lộ trình” hiện chỉ lưu trên máy người dùng như bản gốc.
+
+## Cập nhật 01/11/2026 (2): Lộ trình xem miễn phí, Khoá học tính phí, bài học trong CMS
+
+- **Ai được gì**: danh sách lộ trình (chặng, giáo trình, danh sách bài) ai cũng xem. **Vào học** (trang chặng, bài kiểm tra, trang bài học) cần Học viên, trừ phần admin đặt **🎁 Miễn phí**: từng chặng (CMS › Lộ trình › Sửa chặng › “Ai được vào học”), từng bài học (CMS › Bài học › Sửa › “Miễn phí”), từng tài liệu (CMS › Tài liệu › “Ai được tải”). Mặc định: chặng Bắt đầu, Nhập môn và bài 1 mỗi cấp miễn phí; tài liệu Kho miễn phí.
+- **Trang bài học mới** `#/bai-hoc/<cấp>/<bài>`: video YouTube phát ngay trên web, ghim giữa trang, cuộn xuống thì thu nhỏ ở góc; bên dưới là Ôn tập: Luyện viết (thứ tự nét, tự viết — thư viện Hanzi Writer), Từ vựng (danh sách + lật thẻ, có giọng đọc), Nghe hiểu, Ngữ pháp + bài tập, Luyện nói (nhận giọng nói trên trình duyệt, chấm độ giống). Video HSK1–3 trong bản gốc không phải YouTube → hiện nút mở trang riêng cho tới khi admin dán link YouTube.
+- **3 trạng thái bài**: Bắt đầu học → Đang học (mở lại đúng phần ôn tập và giây video đang xem dở) → Đã học xong (vẫn vào ôn lại được).
+- **CMS › Bài học (Khoá học)**: sửa video, từ vựng, chữ luyện viết, ngữ pháp, bài tập, câu luyện nói từng bài; nhập/xuất file .json. Dữ liệu gốc từ bản HTML: `data/lessons/1..6.json` (144 bài) — **không** để công khai trên web; admin nhập qua nút “Nhập dữ liệu”. Nội dung bài lưu ở Supabase (`content.kind = 'lesson'`), chỉ Học viên đọc được (trừ bài Miễn phí).
+- **CMS › Thống kê học tập** (admin): số người dùng / đang hoạt động / đã bắt đầu học, người học đang dừng ở chặng nào, lượt làm và tỉ lệ đạt từng bài kiểm tra, câu hỏi làm sai nhiều nhất, bài học nhiều người học dở / mở nhiều nhất.
+- **Trang Khoá học** viết lại bằng React (giá + quyền lợi lấy từ CMS › Cài đặt › Gói học viên, chương trình HSK1–6 kèm danh sách bài, học thử, 3 bước đăng ký, hỏi đáp). Đã bỏ bộ đếm “thành viên đang tăng trực tiếp” của bản gốc vì là số giả.
+- Sửa lỗi: từ Kho → Khoá học → quay lại Kho bị mất tài liệu (mã gốc chạy lại khi đổi trang làm thẻ tài liệu đứng ở trạng thái ẩn).
+- Việc sau: đưa đề thi thử HSK vào CMS; AI chấm viết / nói (đề xuất: Cloudflare Workers AI miễn phí 10.000 neuron/ngày, gọi qua Cloudflare Pages Function để giấu khoá).
+
+## Cập nhật 01/11/2026 (3)
+- Luyện viết: viết bằng chuột / ngón tay hiện nét ngay (Hanzi Writer chấm từng nét, nét vẽ dày hơn); nếu mạng chặn dữ liệu nét thì tự chuyển sang ô viết tự do có chữ mẫu mờ để tô.
+- Video không phải YouTube: chỉ hiện nút “▶ Mở video bài giảng”. Video YouTube nhúng bằng iframe thường (không cần tải thư viện YouTube), kèm link “Mở trên YouTube” dự phòng.
+- Lộ trình › Thi chứng chỉ HSK: nút › và các chip HSK mở phần Luyện thi HSK (miễn phí).
+- Quà “Nhận ngay lộ trình” viết lại bằng React: bấm nhiệm vụ là mở link ngay và tính hoàn thành; khảo sát + nhiệm vụ lưu lên máy chủ (bảng `roadmap_leads`, hàm `save_lead`, khách cũng ghi được, chỉ admin đọc). Cấu hình link nhiệm vụ + file lộ trình: CMS › Cài đặt › 🎁 Quà lộ trình. Thống kê + tải danh sách .csv: CMS › Thống kê học tập.
+
+- Cấp HSK không còn cố định 1–6: chặng có tên bắt đầu bằng “HSK” + số (HSK7, HSK7–9 …) tự có mục Bài học trong CMS, trang bài học, trang Khoá học, thống kê.
+- Tag kỹ năng: Cài đặt › 🏷️ Tag (thêm tag mới bằng nút ＋, chọn màu, biểu tượng); Sửa chặng có ô chọn tag: ＋ Thêm tag, bấm gợi ý để thêm nhanh, × để bỏ, ‹ để đổi thứ tự.
+- Trang Cộng đồng viết lại bằng React, cấu hình ở CMS › Cài đặt › 👥 Cộng đồng: các kênh (link, số thành viên, nút, lợi ích; ＋ thêm kênh), lịch hoạt động trong tuần (mỗi dòng chọn đích: kênh của Mọt / trang trong web / link khác; ＋ thêm hoạt động), quy tắc chung. Danh sách “Hành trình gia nhập Mọt” dùng chung nhiệm vụ với “Nhận lộ trình”: bấm là mở link + tính hoàn thành, sửa lệch dấu tích.
+- CMS › Bài học: nút ＋ Thêm cấp (HSK8, HSK9…) tạo luôn chặng mới ở cuối Lộ trình, có ngay mục bài học, trang Khoá học, thống kê.
+- Số liệu CMS là số thật: lượt tải trong CMS chỉ đếm khi có người bấm Tải xuống (downloads). Số lượt tải lấy từ bản HTML chuyển thành “số hiển thị ban đầu” (baseDownloads), ngoài web hiện tổng hai số; admin sửa được số ban đầu (đặt 0 để ngoài web cũng hiện số thật). Dữ liệu cũ tự chuyển khi bấm Áp dụng cập nhật.
+
+### AI chấm phát âm (Luyện nói, chỉ Học viên)
+- Nút **🤖 AI chấm** ở phần Luyện nói của bài học: ghi âm ≤ 12 giây (đổi sang WAV 16 kHz ngay trên trình duyệt) → `functions/api/ai-speak.js` (Cloudflare Pages Function).
+- Hàm này gọi `ai_take` trong Supabase bằng phiên của người dùng: chỉ Học viên / biên tập / quản trị, tối đa 60 lượt mỗi người mỗi ngày (bảng `ai_usage`). Sau đó Whisper (`@cf/openai/whisper-large-v3-turbo`) nghe câu nói → Qwen (`@cf/qwen/qwen3-30b-a3b-fp8`) so với câu mẫu, trả điểm, chữ đọc sai, nhận xét + mẹo bằng tiếng Việt.
+- Miễn phí trong hạn mức Workers AI 10.000 neuron/ngày (ước tính vài trăm lượt chấm/ngày). Cấu hình ở `wrangler.toml` (binding `AI` + địa chỉ/khoá công khai Supabase). Không cần khoá bí mật nào.
+- Người chưa là Học viên không thấy nút AI chấm. Nút “🎙 Nói” (nhận giọng trên trình duyệt) vẫn miễn phí cho mọi người.
+- Bản thử lưu trên trình duyệt không chạy được AI (cần web thật).

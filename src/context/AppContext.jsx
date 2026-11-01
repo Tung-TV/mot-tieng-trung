@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { store } from '../services/store.js';
+import { tierOf } from '../services/model.js';
+import { navigate, currentPath } from '../router.jsx';
 
 const Ctx = createContext(null);
 export const useApp = () => useContext(Ctx);
@@ -15,6 +17,7 @@ export function AppProvider({ children }) {
   const [authOpen, setAuthOpen] = useState(null); // 'login' | 'register' | null
   const [libQuery, setLibQuery] = useState(''); // từ khoá chuyển từ trang Lộ trình sang Kho
   const [guest, setGuest] = useState(readGuest);
+  const [upgradeOpen, setUpgradeOpen] = useState(false); // hộp “Cần nâng cấp tài khoản”
   const [dialog, setDialog] = useState(null); // hộp xác nhận trong trang (thay window.confirm/prompt)
   const ask = useCallback((opts) => new Promise((resolve) => setDialog({ ...opts, resolve })), []);
 
@@ -32,7 +35,7 @@ export function AppProvider({ children }) {
         await store.init(); await reload();
         const u = await store.currentUser(); setUser(u);
         const ae = store.takeAuthError && store.takeAuthError();
-        if (ae) toast(ae, 'err'); else if (u && sessionStorage.getItem('mot.welcome')) toast('Đăng nhập thành công. Chào ' + u.name + '!');
+        if (ae) toast(ae, 'err'); else if (u && sessionStorage.getItem('mot.welcome')) { toast('Đăng nhập thành công. Chào ' + u.name + '!'); if (tierOf(u) === 'staff') navigate('/admin'); }
         try { sessionStorage.removeItem('mot.welcome'); } catch { /* */ }
       }
       catch (e) { setError(e.message || String(e)); }
@@ -51,18 +54,25 @@ export function AppProvider({ children }) {
     else setGuest((g) => { const n = { ...g, ...patch }; try { localStorage.setItem(GUEST_KEY, JSON.stringify(n)); } catch { /* */ } return n; });
   }, [user]);
 
+  // đổi tài khoản → nội dung được phép xem cũng đổi (học viên thấy chi tiết lộ trình, thành viên thì không)
+  const afterLogin = useCallback(async (u, msg) => {
+    await reload(); setUser(u); toast(msg); // tải nội dung đúng quyền trước rồi mới đổi tài khoản
+    if (tierOf(u) === 'staff' && !currentPath().startsWith('/admin')) navigate('/admin'); // quản trị vào thẳng trang quản lý
+    return u;
+  }, [reload, toast]);
+
   const auth = useMemo(() => ({
-    async login(data) { const u = await store.login(data); setUser(u); toast('Đăng nhập thành công. Chào ' + u.name + '!'); return u; },
+    async login(data) { const u = await store.login(data); return afterLogin(u, 'Đăng nhập thành công. Chào ' + u.name + '!'); },
     // Supabase: chuyển trang sang Google (không trả về). Bản trình duyệt: nhận credential từ nút Google.
     async google(credential) {
       if (store.googleMode === 'redirect') { try { sessionStorage.setItem('mot.welcome', '1'); } catch { /* */ } }
-      const u = await store.loginWithGoogle(credential); setUser(u); toast('Đăng nhập Google thành công. Chào ' + u.name + '!'); return u;
+      const u = await store.loginWithGoogle(credential); return afterLogin(u, 'Đăng nhập Google thành công. Chào ' + u.name + '!');
     },
-    async register(data) { const u = await store.register(data); setUser(u); toast('Tạo tài khoản thành công!'); return u; },
-    async logout() { await store.logout(); setUser(null); toast('Đã đăng xuất.'); },
-    async refreshUser() { setUser(await store.currentUser()); },
-  }), [toast]);
+    async register(data) { const u = await store.register(data); return afterLogin(u, 'Tạo tài khoản thành công!'); },
+    async logout() { await store.logout(); setUser(null); await reload(); toast('Đã đăng xuất.'); if (currentPath().startsWith('/admin')) navigate('/'); },
+    async refreshUser() { const u = await store.currentUser(); await reload(); setUser(u); return u; },
+  }), [toast, reload, afterLogin]);
 
-  const value = { store, content, user, setUser, error, reload, run, toast, toasts, auth, authOpen, setAuthOpen, libQuery, setLibQuery, progress, setProgress, ask, dialog, setDialog };
+  const value = { store, content, user, setUser, error, reload, run, toast, toasts, auth, authOpen, setAuthOpen, libQuery, setLibQuery, progress, setProgress, ask, dialog, setDialog, tier: tierOf(user), upgradeOpen, setUpgradeOpen };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

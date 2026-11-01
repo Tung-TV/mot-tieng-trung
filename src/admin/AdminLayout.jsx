@@ -6,18 +6,26 @@ import StagesAdmin from './StagesAdmin.jsx';
 import UsersAdmin from './UsersAdmin.jsx';
 import SettingsAdmin from './SettingsAdmin.jsx';
 import BackupAdmin from './BackupAdmin.jsx';
+import UpgradesAdmin from './UpgradesAdmin.jsx';
+import GradingAdmin from './GradingAdmin.jsx';
+import LessonsAdmin from './LessonsAdmin.jsx';
+import StatsAdmin from './StatsAdmin.jsx';
 
 const MENU = [
   { p: '/admin', l: '📊 Tổng quan', c: Dashboard },
   { p: '/admin/tai-lieu', l: '📄 Tài liệu', c: DocsAdmin },
   { p: '/admin/lo-trinh', l: '🪜 Lộ trình học', c: StagesAdmin },
+  { p: '/admin/bai-hoc', l: '🎬 Bài học (Khoá học)', c: LessonsAdmin },
+  { p: '/admin/cham-bai', l: '📝 Chấm bài', c: GradingAdmin },
+  { p: '/admin/thong-ke', l: '📈 Thống kê học tập', c: StatsAdmin, admin: true },
   { p: '/admin/tai-khoan', l: '👥 Tài khoản', c: UsersAdmin, admin: true },
+  { p: '/admin/nang-cap', l: '💳 Nâng cấp học viên', c: UpgradesAdmin, admin: true },
   { p: '/admin/cai-dat', l: '⚙️ Cài đặt', c: SettingsAdmin, admin: true },
   { p: '/admin/sao-luu', l: '💾 Sao lưu', c: BackupAdmin, admin: true },
 ];
 
 export default function AdminLayout({ path }) {
-  const { user, setAuthOpen, store } = useApp();
+  const { user, setAuthOpen, store, auth } = useApp();
   if (!canEdit(user)) {
     return (
       <section className="sk soon">
@@ -37,7 +45,8 @@ export default function AdminLayout({ path }) {
       <aside className="adm-side">
         <div className="adm-me"><b>{user.name}</b><small>{ROLE_LABEL[user.role]} · {store.kind === 'local' ? 'Lưu trên trình duyệt' : 'Supabase'}</small></div>
         <nav>{items.map((m) => <a key={m.p} href={'#' + m.p} className={cur && cur.p === m.p ? 'on' : ''}>{m.l}</a>)}</nav>
-        <a className="adm-back" href="#/">‹ Về trang chính</a>
+        <a className="adm-back" href="#/">‹ Xem trang web</a>
+        <button type="button" className="adm-back adm-out" onClick={() => auth.logout()}>Đăng xuất</button>
       </aside>
       <main className="adm-main">{Page ? <Page /> : <p>Bạn không có quyền xem mục này.</p>}</main>
     </div>

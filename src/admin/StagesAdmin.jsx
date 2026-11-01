@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { Modal } from '../components/Overlays.jsx';
-import { Field, ImageInput, pairsToText, textToPairs } from './ui.jsx';
+import { ChipPicker, Field, ImageInput, pairsToText, textToPairs } from './ui.jsx';
+import { allQuestions, normTest } from '../services/model.js';
+import TestEditor, { cleanTest } from './TestEditor.jsx';
 
-const BLANK = { key: 'Bậc mới', emoji: '📘', color: '#74b5e4', whiteText: false, title: 'HSK', badge: 'Sơ cấp', desc: '', chips: ['Bài giảng', 'Từ vựng'], keyword: 'HSK', sections: [], info: [], lessons: [], ribbon: '', ribbonColor: '#c4001d', affKey: '', cover: '', boxes: [] };
+const BLANK = { key: 'Bậc mới', emoji: '📘', color: '#74b5e4', whiteText: false, title: 'HSK', badge: 'Sơ cấp', desc: '', chips: ['Bài giảng', 'Từ vựng'], keyword: 'HSK', sections: [], info: [], lessons: [], ribbon: '', ribbonColor: '#c4001d', affKey: '', cover: '', boxes: [], test: null, completion: 'test' };
 
 function StageForm({ initial, onSave, onClose, affKeys, toast }) {
-  const [s, setS] = useState(structuredClone(initial));
+  const { content } = useApp();
+  const [s, setS] = useState(() => ({ ...structuredClone(initial), test: normTest(initial.test), completion: initial.completion || 'test' }));
   const [txt, setTxt] = useState({
-    chips: initial.chips.join(', '),
+    chips: [...(initial.chips || [])],
     lessons: pairsToText(initial.lessons),
     info: pairsToText(initial.info),
   });
@@ -16,7 +19,10 @@ function StageForm({ initial, onSave, onClose, affKeys, toast }) {
   const setSec = (i, k, v) => set('sections', s.sections.map((x, j) => (j === i ? { ...x, [k]: v } : x)));
   const submit = (e) => {
     e.preventDefault();
-    onSave({ ...s, chips: txt.chips.split(',').map((x) => x.trim()).filter(Boolean), lessons: textToPairs(txt.lessons), info: textToPairs(txt.info) });
+    const mode = s.completion === 'button' ? 'button' : 'test';
+    const { test, error } = mode === 'button' ? { test: cleanTest(s.test).test || null } : cleanTest(s.test);
+    if (error) return toast('Bài kiểm tra: ' + error, 'err');
+    onSave({ ...s, completion: mode, test, chips: txt.chips, lessons: textToPairs(txt.lessons), info: textToPairs(txt.info) });
   };
   return (
     <Modal title={initial.id ? 'Sửa chặng: ' + initial.key : 'Thêm chặng'} onClose={onClose} wide>
@@ -31,7 +37,7 @@ function StageForm({ initial, onSave, onClose, affKeys, toast }) {
         </div>
         <label className="chk"><input type="checkbox" checked={!!s.whiteText} onChange={(e) => set('whiteText', e.target.checked)} /> Chữ trắng trên nền màu</label>
         <Field label="Mô tả"><textarea rows={2} value={s.desc} onChange={(e) => set('desc', e.target.value)} /></Field>
-        <Field label="Kỹ năng (chip), cách nhau bằng dấu phẩy"><input value={txt.chips} onChange={(e) => setTxt({ ...txt, chips: e.target.value })} /></Field>
+        <div className="fld"><span>Tag kỹ năng (màu và biểu tượng sửa ở Cài đặt › 🏷️ Tag)</span><ChipPicker value={txt.chips} onChange={(v) => setTxt({ ...txt, chips: v })} settings={content.settings} /></div>
 
         <fieldset><legend>Thông tin giáo trình (tuỳ chọn)</legend>
           <div className="grid3">
@@ -60,7 +66,22 @@ function StageForm({ initial, onSave, onClose, affKeys, toast }) {
           ))}
           <button type="button" className="btn-s small" onClick={() => set('sections', [...s.sections, { title: 'Nhóm mới', color: '#7bb8e8', items: [], note: '' }])}>+ Thêm nhóm buổi học</button>
         </fieldset>
-        {s.boxes.length > 0 && <p className="muted">Chặng này có hộp “Dụng cụ / App học” — nội dung các hộp sửa ở <a href="#/admin/cai-dat">Cài đặt</a>.</p>}
+        <fieldset><legend>Ai được vào học</legend>
+          <div className="row-btns">
+            <label className={'q-opt' + (!s.free ? ' on' : '')}><input type="radio" name="free" checked={!s.free} onChange={() => set('free', false)} /> ⭐ Chỉ Học viên (Khoá học)</label>
+            <label className={'q-opt' + (s.free ? ' on' : '')}><input type="radio" name="free" checked={!!s.free} onChange={() => set('free', true)} /> 🎁 Miễn phí (mọi người)</label>
+          </div>
+          <small className="muted">Danh sách lộ trình luôn xem miễn phí. Đây là quyền vào trang chặng và làm bài kiểm tra. Bài học miễn phí (học thử) đặt trong mục <a href="#/admin/bai-hoc">Bài học</a>.</small>
+        </fieldset>
+        <fieldset><legend>Hoàn thành chặng</legend>
+          <div className="row-btns">
+            <label className={'q-opt' + (s.completion !== 'button' ? ' on' : '')}><input type="radio" name="completion" checked={s.completion !== 'button'} onChange={() => set('completion', 'test')} /> Phải đạt bài kiểm tra</label>
+            <label className={'q-opt' + (s.completion === 'button' ? ' on' : '')}><input type="radio" name="completion" checked={s.completion === 'button'} onChange={() => set('completion', 'button')} /> Bấm nút “Hoàn thành chặng” (không cần kiểm tra)</label>
+          </div>
+          {s.completion !== 'button' && <TestEditor test={s.test} lessons={textToPairs(txt.lessons)} onChange={(t) => set('test', t)} />}
+          {s.completion !== 'button' && !s.test && <p className="err">Chặng này chưa có bài kiểm tra: học viên sẽ dừng ở đây cho tới khi có bài.</p>}
+        </fieldset>
+        {(s.boxes || []).length > 0 && <p className="muted">Chặng này có hộp “Dụng cụ / App học” — nội dung các hộp sửa ở <a href="#/admin/cai-dat">Cài đặt</a>.</p>}
         <div className="form-act"><button type="button" className="btn-s" onClick={onClose}>Huỷ</button><button className="btn-p">Lưu chặng</button></div>
       </form>
     </Modal>
@@ -84,7 +105,7 @@ export default function StagesAdmin() {
         {stages.map((s, i) => (
           <li key={s.id}>
             <span className="sw" style={{ background: s.color, color: s.whiteText ? '#fff' : undefined }}>{s.emoji}</span>
-            <div><b>Bậc {i + 1} · {s.key}</b><span>{s.title} · {s.chips.length} kỹ năng · {s.lessons.length} bài học{s.keyword ? ' · từ khoá “' + s.keyword + '”' : ''}</span></div>
+            <div><b>Bậc {i + 1} · {s.key}</b><span>{s.title} · {(s.chips || []).length} kỹ năng · {(s.lessons || []).length} bài học · {s.completion === 'button' ? 'hoàn thành bằng nút' : allQuestions(normTest(s.test)).length ? 'kiểm tra ' + allQuestions(normTest(s.test)).length + ' câu, đạt ' + normTest(s.test).pass + '%' : '⚠ chưa có bài kiểm tra'}{s.keyword ? ' · từ khoá “' + s.keyword + '”' : ''}</span></div>
             <div className="acts">
               <button type="button" className="btn-s small" onClick={() => move(i, -1)} disabled={i === 0} aria-label="Lên">↑</button>
               <button type="button" className="btn-s small" onClick={() => move(i, 1)} disabled={i === stages.length - 1} aria-label="Xuống">↓</button>

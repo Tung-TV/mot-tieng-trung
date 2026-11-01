@@ -2,14 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import DocCard, { FileIcon } from '../components/DocCard.jsx';
 import DonateBox from '../components/DonateBox.jsx';
-import { nrm } from '../services/util.js';
+import { nrm, shownDl } from '../services/util.js';
 import { navigate } from '../router.jsx';
 
 const TB = [['ALL', 'Tất cả'], ['PDF', 'PDF'], ['PPT', 'PPT'], ['SHEET', 'SHEET'], ['DOCX', 'DOCX']];
 const PER = 12;
 
 export function useDocActions() {
-  const { store, user, progress, setProgress, setAuthOpen, toast, reload } = useApp();
+  const { store, user, progress, setProgress, setAuthOpen, toast, reload, setUpgradeOpen } = useApp();
   const saved = progress.saved || [];
   return {
     saved,
@@ -18,11 +18,12 @@ export function useDocActions() {
       setProgress({ saved: saved.includes(id) ? saved.filter((x) => x !== id) : [...saved, id] });
     },
     download: (id) => { store.bumpDownload(id).then(reload); },
+    locked: () => setUpgradeOpen(true),
   };
 }
 
 export function hotSet(docs) {
-  return new Set([...docs].sort((a, b) => b.downloads - a.downloads).slice(0, 3).map((d) => d.id));
+  return new Set([...docs].sort((a, b) => shownDl(b) - shownDl(a)).slice(0, 3).map((d) => d.id));
 }
 
 export default function Library() {
@@ -33,7 +34,7 @@ export default function Library() {
   const [sort, setSort] = useState('new');
   const [page, setPage] = useState(1);
   const [zoom, setZoom] = useState(false);
-  const { saved, toggleSave, download } = useDocActions();
+  const { saved, toggleSave, download, locked } = useDocActions();
 
   // nhận từ khoá khi bấm "Vào học" ở trang Lộ trình
   useEffect(() => {
@@ -44,11 +45,11 @@ export default function Library() {
   }, [libQuery, setLibQuery]);
 
   const hot = useMemo(() => hotSet(docs), [docs]);
-  const maxDl = Math.max(1, ...docs.map((d) => d.downloads || 0));
+  const maxDl = Math.max(1, ...docs.map(shownDl));
   const list = useMemo(() => {
     const k = nrm(q.trim());
     const a = docs.filter((d) => (tab === 'ALL' || d.format === tab) && (!k || nrm(d.name).includes(k)));
-    if (sort === 'dl') a.sort((x, y) => y.downloads - x.downloads);
+    if (sort === 'dl') a.sort((x, y) => shownDl(y) - shownDl(x));
     else a.sort((x, y) => (y.createdAt || 0) - (x.createdAt || 0));
     return a;
   }, [docs, tab, q, sort]);
@@ -87,7 +88,7 @@ export default function Library() {
           <div className="strip"><span className="heart" aria-hidden="true">❤️</span><div><b>Thấy tài liệu hữu ích?</b><span>Mời Mọt một ly cà phê để Mọt có thêm động lực chia sẻ nhiều tài liệu hơn.</span></div><button type="button" onClick={() => setZoom(true)}>☕ Ủng hộ Mọt</button></div>
           <div className="grid">
             {shown.length ? shown.map((d, k) => (
-              <DocCard key={d.id} doc={d} idx={k} hot={hot.has(d.id)} maxDl={maxDl} saved={saved.includes(d.id)} onSave={() => toggleSave(d.id)} onDownload={() => download(d.id)} />
+              <DocCard onLocked={locked} key={d.id} doc={d} idx={k} hot={hot.has(d.id)} maxDl={maxDl} saved={saved.includes(d.id)} onSave={() => toggleSave(d.id)} onDownload={() => download(d.id)} />
             )) : <p className="empty">Không tìm thấy tài liệu phù hợp. Thử từ khóa khác nhé!</p>}
           </div>
           <div className="pager">

@@ -1,32 +1,151 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { Field, ImageInput } from './ui.jsx';
+import { DEFAULT_COMMUNITY, SITE_PAGES, DEFAULT_GIFT, DEFAULT_PLAN, DEFAULT_SUPPORT, fmtVnd, messengerUrl, zaloUrl } from '../services/model.js';
 
 const AFF_LABEL = { giaotrinh: 'Giáo trình HSK 1 (túi đồ nghề)', giaotrinh2: 'Giáo trình HSK 2', giaotrinh3: 'Giáo trình HSK 3', but: 'Bút viết', vo: 'Vở ô ly' };
 const PR_LABEL = { p1: 'Prompt phân tích chữ Hán', p2: 'Prompt 2', p3: 'Prompt 3', p4: 'Prompt 4' };
 
 export default function SettingsAdmin() {
   const { content, store, run, toast } = useApp();
-  const [s, setS] = useState(() => structuredClone(content.settings));
-  const [tab, setTab] = useState('bank');
+  const [s, setS] = useState(() => { const x = structuredClone(content.settings); x.plan = { ...DEFAULT_PLAN, ...(x.plan || {}) }; x.support = { ...DEFAULT_SUPPORT, ...(x.support || {}) }; return x; });
+  const [tab, setTab] = useState('plan');
   const set = (k, v) => setS({ ...s, [k]: v });
   const setIn = (k, sub, v) => setS({ ...s, [k]: { ...s[k], [sub]: v } });
   const setArr = (k, i, sub, v) => setS({ ...s, [k]: s[k].map((x, j) => (j === i ? { ...x, [sub]: v } : x)) });
-  const save = () => run(() => store.saveSettings(s), 'Đã lưu cài đặt.');
+  const save = () => run(() => store.saveSettings({ ...s, plan: { ...s.plan, benefits: (s.plan.benefits || []).map((x) => x.trim()).filter(Boolean) } }), 'Đã lưu cài đặt.');
   const err = (m) => toast(m, 'err');
-  const TABS = [['bank', '💝 Ủng hộ'], ['aff', '🛒 Link mua'], ['tools', '🎒 Túi đồ nghề'], ['apps', '📱 App học'], ['pr', '🤖 Prompt AI']];
+  const TABS = [['plan', '⭐ Gói học viên'], ['bank', '💝 Ngân hàng'], ['support', '💬 Hỗ trợ'], ['community', '👥 Cộng đồng'], ['gift', '🎁 Quà lộ trình'], ['tags', '🏷️ Tag'], ['aff', '🛒 Link mua'], ['tools', '🎒 Túi đồ nghề'], ['apps', '📱 App học'], ['pr', '🤖 Prompt AI']];
 
   return (
     <>
       <div className="adm-top"><h1 className="adm-h">Cài đặt</h1><button type="button" className="btn-p" onClick={save}>Lưu thay đổi</button></div>
       <div className="seg">{TABS.map(([k, l]) => <button key={k} type="button" className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>
       <div className="card form">
+        {tab === 'plan' && (<>
+          <p className="muted">Thông tin hiển thị ở trang “Nâng cấp tài khoản”. Giá và thời hạn áp dụng cho các mã giao dịch tạo từ nay về sau.</p>
+          <div className="grid3">
+            <Field label="Tên gói"><input value={s.plan.name} onChange={(e) => setIn('plan', 'name', e.target.value)} /></Field>
+            <Field label="Giá (đồng)" hint={fmtVnd(s.plan.price)}><input type="number" min="0" step="1000" value={s.plan.price} onChange={(e) => setIn('plan', 'price', Math.max(0, parseInt(e.target.value, 10) || 0))} /></Field>
+            <Field label="Thời hạn (tháng)" hint="0 = không giới hạn thời gian"><input type="number" min="0" value={s.plan.months} onChange={(e) => setIn('plan', 'months', Math.max(0, parseInt(e.target.value, 10) || 0))} /></Field>
+          </div>
+          <Field label="Quyền lợi — mỗi dòng một ý"><textarea rows={5} value={(s.plan.benefits || []).join('\n')} onChange={(e) => setIn('plan', 'benefits', e.target.value.split('\n'))} /></Field>
+        </>)}
+
+        {tab === 'community' && (() => {
+          const cm = { ...DEFAULT_COMMUNITY, ...(s.community || {}) };
+          const setC = (patch) => setS({ ...s, community: { ...cm, ...patch } });
+          const setP = (i, k, v) => setC({ platforms: cm.platforms.map((p, j) => (j === i ? { ...p, [k]: v } : p)) });
+          const setR = (i, k, v) => setC({ schedule: cm.schedule.map((r, j) => (j === i ? { ...r, [k]: v } : r)) });
+          const kind = (l) => (!l ? '' : l.startsWith('@') ? 'ch' : l.startsWith('/') ? 'page' : 'url');
+          return (<>
+            <p className="muted">Nội dung trang <a href="#/cong-dong">Cộng đồng</a>. Link của các kênh cũng dùng cho nhiệm vụ “Nhận lộ trình” và “Hành trình gia nhập Mọt” (nhiệm vụ nào chưa điền link riêng).</p>
+            <fieldset><legend>Các kênh</legend>
+              {cm.platforms.map((p, i) => (
+                <div key={i} className="sec-edit">
+                  <div className="grid3">
+                    <Field label="Tên kênh"><input value={p.n} onChange={(e) => setP(i, 'n', e.target.value)} /></Field>
+                    <Field label="Biểu tượng"><input value={p.e} maxLength={4} onChange={(e) => setP(i, 'e', e.target.value)} /></Field>
+                    <Field label="Màu"><input type="color" value={p.c} onChange={(e) => setP(i, 'c', e.target.value)} /></Field>
+                  </div>
+                  <div className="grid3">
+                    <Field label="Link"><input value={p.url} placeholder="https://…" onChange={(e) => setP(i, 'url', e.target.value.trim())} /></Field>
+                    <Field label="Số thành viên (0 = Sắp cập nhật)"><input type="number" min="0" value={p.members || 0} onChange={(e) => setP(i, 'members', Number(e.target.value) || 0)} /></Field>
+                    <Field label="Chữ trên nút"><input value={p.b} onChange={(e) => setP(i, 'b', e.target.value)} /></Field>
+                  </div>
+                  <Field label="Tên hiển thị phụ"><input value={p.s} onChange={(e) => setP(i, 's', e.target.value)} /></Field>
+                  <Field label="Lợi ích — mỗi dòng một ý"><textarea rows={3} defaultValue={(p.ul || []).join('\n')} onBlur={(e) => setP(i, 'ul', e.target.value.split('\n').map((x) => x.trim()).filter(Boolean))} /></Field>
+                  <Field label="Câu kêu gọi"><input value={p.h} onChange={(e) => setP(i, 'h', e.target.value)} /></Field>
+                  <button type="button" className="btn-d small" onClick={() => setC({ platforms: cm.platforms.filter((_, j) => j !== i) })}>Xoá kênh</button>
+                </div>
+              ))}
+              <button type="button" className="btn-s small" onClick={() => setC({ platforms: [...cm.platforms, { k: 'k' + Date.now().toString(36), e: '⭐', c: '#7b2f9c', n: 'Kênh mới', s: 'MỌT TIẾNG TRUNG', ul: [], h: '', b: 'Tham gia ›', url: '', members: 0 }] })}>＋ Thêm kênh</button>
+            </fieldset>
+            <fieldset><legend>📅 Lịch hoạt động trong tuần</legend>
+              {cm.schedule.map((r, i) => (
+                <div key={i} className="sched-row">
+                  <input className="sched-day" value={r.day} onChange={(e) => setR(i, 'day', e.target.value)} aria-label="Ngày" />
+                  <input className="sched-text" value={r.text} onChange={(e) => setR(i, 'text', e.target.value)} aria-label="Hoạt động" />
+                  <select value={kind(r.link) === 'url' ? 'url' : r.link || ''} onChange={(e) => setR(i, 'link', e.target.value === 'url' ? 'https://' : e.target.value)} aria-label="Bấm vào thì mở">
+                    <option value="">— Không có link —</option>
+                    <optgroup label="Kênh của Mọt">{cm.platforms.map((p) => <option key={p.k} value={'@' + p.k}>{p.e} {p.n}</option>)}</optgroup>
+                    <optgroup label="Trang trong web">{SITE_PAGES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</optgroup>
+                    <option value="url">🔗 Link khác…</option>
+                  </select>
+                  {kind(r.link) === 'url' && <input className="sched-url" value={r.link} onChange={(e) => setR(i, 'link', e.target.value.trim())} placeholder="https://…" />}
+                  <button type="button" className="btn-d small" onClick={() => setC({ schedule: cm.schedule.filter((_, j) => j !== i) })}>Xoá</button>
+                </div>
+              ))}
+              <button type="button" className="btn-s small" onClick={() => setC({ schedule: [...cm.schedule, { day: 'Thứ …', text: 'Hoạt động mới', link: '' }] })}>＋ Thêm hoạt động</button>
+            </fieldset>
+            <Field label="🤝 Quy tắc chung — mỗi dòng một quy tắc"><textarea rows={5} defaultValue={cm.rules.join('\n')} onBlur={(e) => setC({ rules: e.target.value.split('\n').map((x) => x.trim()).filter(Boolean) })} /></Field>
+          </>);
+        })()}
+        {tab === 'tags' && (() => {
+          const cc = s.chipColors || {}, ce = s.chipEmojis || {};
+          const names = [...new Set([...Object.keys(cc), ...Object.keys(ce), ...content.stages.flatMap((x) => x.chips || [])])];
+          const setTag = (k, color, emoji) => setS({ ...s, chipColors: { ...cc, [k]: color }, chipEmojis: { ...ce, [k]: emoji } });
+          const del = (k) => { const a = { ...cc }, b = { ...ce }; delete a[k]; delete b[k]; setS({ ...s, chipColors: a, chipEmojis: b }); };
+          return (<>
+            <p className="muted">Tag kỹ năng hiện trên từng chặng (Bài giảng, Từ vựng, Thi HSK…). Thêm tag ở đây để chọn nhanh khi sửa chặng; gắn tag vào chặng ở Lộ trình học › Sửa chặng.</p>
+            <div className="tag-list">{names.map((k) => {
+              const used = content.stages.filter((x) => (x.chips || []).includes(k)).length;
+              return (
+                <div key={k} className="tag-row">
+                  <span className="chip" style={{ background: cc[k] || '#e6dfc7' }}>{ce[k] && <span className="cs">{ce[k]}</span>}{k}</span>
+                  <input type="color" value={cc[k] || '#e6dfc7'} onChange={(e) => setTag(k, e.target.value, ce[k] || '')} aria-label={'Màu tag ' + k} />
+                  <input className="tag-emo" value={ce[k] || ''} maxLength={4} placeholder="😀" onChange={(e) => setTag(k, cc[k] || '#e6dfc7', e.target.value)} aria-label={'Biểu tượng tag ' + k} />
+                  <small className="muted">{used ? 'dùng ở ' + used + ' chặng' : 'chưa dùng'}</small>
+                  <button type="button" className="btn-d small" disabled={used > 0} title={used ? 'Bỏ tag khỏi các chặng trước rồi mới xoá' : ''} onClick={() => del(k)}>Xoá</button>
+                </div>
+              );
+            })}</div>
+            <form className="tag-new" onSubmit={(e) => { e.preventDefault(); const f = new FormData(e.target); const k = String(f.get('k') || '').trim(); if (!k) return; setTag(k, f.get('c') || '#f2c94c', String(f.get('e') || '')); e.target.reset(); }}>
+              <input name="k" placeholder="Tên tag mới, VD: Luyện đề HSK" />
+              <input name="e" className="tag-emo" placeholder="📝" maxLength={4} />
+              <input name="c" type="color" defaultValue="#f2c94c" />
+              <button className="btn-p small">＋ Thêm tag</button>
+            </form>
+          </>);
+        })()}
+        {tab === 'gift' && (() => {
+          const g = { ...DEFAULT_GIFT, ...(s.gift || {}) };
+          const setG = (patch) => setS({ ...s, gift: { ...g, ...patch } });
+          const setT = (i, k, v) => setG({ tasks: g.tasks.map((t, j) => (j === i ? { ...t, [k]: v } : t)) });
+          return (<>
+            <p className="muted">Nút “🎁 Nhận ngay lộ trình” ở trang Lộ trình: người xem làm khảo sát, bấm từng nhiệm vụ (mở link là tính xong) rồi nhận file. Kết quả xem ở <a href="#/admin/thong-ke">Thống kê học tập</a>. Nhiệm vụ để trống link sẽ bị ẩn (Facebook / Zalo trống thì lấy từ tab Hỗ trợ).</p>
+            <Field label="Link file Lộ trình học tiếng Trung cho người mới"><input value={g.file} onChange={(e) => setG({ file: e.target.value.trim() })} placeholder="https://drive.google.com/…" /></Field>
+            {g.tasks.map((t, i) => (
+              <div key={i} className="grid2 vid-row">
+                <Field label={'Nhiệm vụ ' + (i + 1)}><input value={t.label} onChange={(e) => setT(i, 'label', e.target.value)} /></Field>
+                <Field label={t.k === 'share' ? 'Link để sao chép (trống = link trang web)' : 'Link mở khi bấm'}><input value={t.url} onChange={(e) => setT(i, 'url', e.target.value.trim())} placeholder="https://…" /></Field>
+                <button type="button" className="btn-d small" onClick={() => setG({ tasks: g.tasks.filter((_, j) => j !== i) })}>Xoá</button>
+              </div>
+            ))}
+            <button type="button" className="btn-s small" onClick={() => setG({ tasks: [...g.tasks, { k: 't' + Date.now().toString(36), label: 'Nhiệm vụ mới', url: '' }] })}>+ Thêm nhiệm vụ</button>
+          </>);
+        })()}
+        {tab === 'support' && (<>
+          <p className="muted">Hiện thành nút “💬 Hỗ trợ” ở góc phải mọi trang, và trong trang Nâng cấp (kèm sẵn mã giao dịch). Để trống thì nút tự ẩn.</p>
+          <div className="grid3">
+            <Field label="Zalo" hint={s.support.zalo ? 'Mở: ' + zaloUrl(s.support.zalo) : 'Số điện thoại Zalo (VD 0912345678) hoặc link zalo.me/…'}><input value={s.support.zalo} onChange={(e) => setIn('support', 'zalo', e.target.value)} placeholder="0912345678" /></Field>
+            <Field label="Trang Facebook" hint="Link trang/hồ sơ, VD https://facebook.com/mottiengtrung"><input value={s.support.facebook} onChange={(e) => setIn('support', 'facebook', e.target.value)} placeholder="https://facebook.com/…" /></Field>
+            <Field label="Messenger (tuỳ chọn)" hint={messengerUrl(s.support) ? 'Mở: ' + messengerUrl(s.support) : 'Tên trang trong link m.me/… — để trống sẽ lấy từ link Facebook'}><input value={s.support.messenger} onChange={(e) => setIn('support', 'messenger', e.target.value)} placeholder="mottiengtrung" /></Field>
+          </div>
+          <div className="grid3">
+            <Field label="Giờ hỗ trợ"><input value={s.support.hours} onChange={(e) => setIn('support', 'hours', e.target.value)} /></Field>
+          </div>
+          <label className="chk"><input type="checkbox" checked={s.support.floating !== false} onChange={(e) => setIn('support', 'floating', e.target.checked)} /> Hiện nút “💬 Hỗ trợ” nổi ở góc phải màn hình</label>
+        </>)}
+
         {tab === 'bank' && (<>
+          <p className="muted">Dùng cho hộp “Ủng hộ Mọt” và trang thanh toán nâng cấp.</p>
           <div className="grid3">
             <Field label="Ngân hàng"><input value={s.bank.name} onChange={(e) => setIn('bank', 'name', e.target.value)} /></Field>
             <Field label="Số tài khoản"><input value={s.bank.number} onChange={(e) => setIn('bank', 'number', e.target.value)} /></Field>
             <Field label="Chủ tài khoản"><input value={s.bank.owner} onChange={(e) => setIn('bank', 'owner', e.target.value)} /></Field>
           </div>
+          <Field label="Mã ngân hàng cho VietQR" hint="VD: MB, VCB, TCB, ACB, BIDV… (hoặc mã BIN 6 số). Dùng để tạo mã QR có sẵn số tiền + mã giao dịch."><input value={s.bank.bankId || ''} onChange={(e) => setIn('bank', 'bankId', e.target.value.trim())} /></Field>
           <Field label="Ảnh mã QR"><ImageInput value={s.bank.qr} onChange={(v) => setIn('bank', 'qr', v)} onError={err} /></Field>
         </>)}
 
