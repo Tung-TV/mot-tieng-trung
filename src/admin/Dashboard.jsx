@@ -23,7 +23,7 @@ export default function Dashboard() {
       <div className="kpis">
         <div className="kpi"><small>Tài liệu</small><b>{docs.length}</b><span>{docs.filter((d) => d.published === false).length} đang ẩn</span></div>
         <div className="kpi"><small>Tổng lượt tải</small><b>{fmtN(total)}</b><span>{total.toLocaleString('vi-VN')} lượt</span></div>
-        <div className="kpi"><small>Chặng lộ trình</small><b>{content.stages.length}</b><span>{content.stages.reduce((s, x) => s + x.lessons.length, 0)} bài học</span></div>
+        <div className="kpi"><small>Chặng lộ trình</small><b>{content.stages.length}</b><span>{content.stages.reduce((s, x) => s + (x.lessons || []).length, 0)} bài học</span></div>
         {ups && <a className="kpi kpi-link" href="#/admin/nang-cap"><small>Chờ kích hoạt học viên</small><b>{ups.filter((r) => r.status === 'pending' || r.status === 'claimed').length}</b><span>{ups.filter((r) => r.status === 'claimed').length} đã báo chuyển khoản · {ups.filter((r) => r.status === 'paid').length} đã kích hoạt</span></a>}
         {users && <div className="kpi"><small>Tài khoản</small><b>{users.length}</b><span>{Object.entries(ROLE_LABEL).map(([r, l]) => users.filter((u) => u.role === r).length + ' ' + l.toLowerCase()).join(' · ')}</span></div>}
       </div>

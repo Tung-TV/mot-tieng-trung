@@ -203,6 +203,11 @@ Lưu ý cách B: trang kiểm tra token có đúng do Google cấp cho Client ID
 3. Admin: CMS › **Nâng cấp học viên** → đối chiếu mã + số tiền trong app ngân hàng → **Xác nhận đã nhận tiền** → tài khoản thành Học viên ngay.
 - Giá, tên gói, thời hạn (tháng, 0 = vĩnh viễn), quyền lợi, mã ngân hàng VietQR: CMS › Cài đặt › Gói học viên. **Giá mặc định 199.000đ, vĩnh viễn — cần chủ web xác nhận.**
 
+### Hỗ trợ qua Zalo / Facebook
+- CMS › Cài đặt › **Hỗ trợ**: số Zalo (hoặc link zalo.me), link trang Facebook, tên Messenger (tuỳ chọn), giờ hỗ trợ, bật/tắt nút nổi.
+- Nút **💬 Hỗ trợ** góc phải mọi trang (ẩn khi chưa điền, ẩn lúc đang làm bài kiểm tra). Trang Nâng cấp có khung hỗ trợ; tin nhắn Messenger điền sẵn mã giao dịch + email (Zalo không cho điền sẵn → có nút sao chép nội dung).
+- Mã QR thanh toán tạo ngay trong trình duyệt theo chuẩn VietQR (src/services/qr.js), không dùng dịch vụ ngoài.
+
 ### Bảo mật (Supabase)
 - Dữ liệu chặng tách 3 dòng: `stage` (công khai), `stage_detail` (chỉ học viên trở lên), `test_key` (đáp án, chỉ biên tập/quản trị). Cài đặt tách `settings` (công khai) / `premium` (link mua, túi đồ nghề, app học, prompt — học viên trở lên). Tài khoản thường không tải được link/chi tiết dù gọi thẳng API.
 - Chấm điểm trong database (`submit_test`), kiểm tra thứ tự chặng (`stage_open`); người dùng không tự ghi điểm, không tự đổi vai trò/email/hạn học viên (trigger `protect_profile_fields`). Tài liệu đang ẩn không đọc được từ API.

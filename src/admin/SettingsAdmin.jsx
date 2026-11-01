@@ -1,21 +1,21 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { Field, ImageInput } from './ui.jsx';
-import { DEFAULT_PLAN, fmtVnd } from '../services/model.js';
+import { DEFAULT_PLAN, DEFAULT_SUPPORT, fmtVnd, messengerUrl, zaloUrl } from '../services/model.js';
 
 const AFF_LABEL = { giaotrinh: 'Giáo trình HSK 1 (túi đồ nghề)', giaotrinh2: 'Giáo trình HSK 2', giaotrinh3: 'Giáo trình HSK 3', but: 'Bút viết', vo: 'Vở ô ly' };
 const PR_LABEL = { p1: 'Prompt phân tích chữ Hán', p2: 'Prompt 2', p3: 'Prompt 3', p4: 'Prompt 4' };
 
 export default function SettingsAdmin() {
   const { content, store, run, toast } = useApp();
-  const [s, setS] = useState(() => { const x = structuredClone(content.settings); x.plan = { ...DEFAULT_PLAN, ...(x.plan || {}) }; return x; });
+  const [s, setS] = useState(() => { const x = structuredClone(content.settings); x.plan = { ...DEFAULT_PLAN, ...(x.plan || {}) }; x.support = { ...DEFAULT_SUPPORT, ...(x.support || {}) }; return x; });
   const [tab, setTab] = useState('plan');
   const set = (k, v) => setS({ ...s, [k]: v });
   const setIn = (k, sub, v) => setS({ ...s, [k]: { ...s[k], [sub]: v } });
   const setArr = (k, i, sub, v) => setS({ ...s, [k]: s[k].map((x, j) => (j === i ? { ...x, [sub]: v } : x)) });
   const save = () => run(() => store.saveSettings({ ...s, plan: { ...s.plan, benefits: (s.plan.benefits || []).map((x) => x.trim()).filter(Boolean) } }), 'Đã lưu cài đặt.');
   const err = (m) => toast(m, 'err');
-  const TABS = [['plan', '⭐ Gói học viên'], ['bank', '💝 Ngân hàng'], ['aff', '🛒 Link mua'], ['tools', '🎒 Túi đồ nghề'], ['apps', '📱 App học'], ['pr', '🤖 Prompt AI']];
+  const TABS = [['plan', '⭐ Gói học viên'], ['bank', '💝 Ngân hàng'], ['support', '💬 Hỗ trợ'], ['aff', '🛒 Link mua'], ['tools', '🎒 Túi đồ nghề'], ['apps', '📱 App học'], ['pr', '🤖 Prompt AI']];
 
   return (
     <>
@@ -30,6 +30,19 @@ export default function SettingsAdmin() {
             <Field label="Thời hạn (tháng)" hint="0 = không giới hạn thời gian"><input type="number" min="0" value={s.plan.months} onChange={(e) => setIn('plan', 'months', Math.max(0, parseInt(e.target.value, 10) || 0))} /></Field>
           </div>
           <Field label="Quyền lợi — mỗi dòng một ý"><textarea rows={5} value={(s.plan.benefits || []).join('\n')} onChange={(e) => setIn('plan', 'benefits', e.target.value.split('\n'))} /></Field>
+        </>)}
+
+        {tab === 'support' && (<>
+          <p className="muted">Hiện thành nút “💬 Hỗ trợ” ở góc phải mọi trang, và trong trang Nâng cấp (kèm sẵn mã giao dịch). Để trống thì nút tự ẩn.</p>
+          <div className="grid3">
+            <Field label="Zalo" hint={s.support.zalo ? 'Mở: ' + zaloUrl(s.support.zalo) : 'Số điện thoại Zalo (VD 0912345678) hoặc link zalo.me/…'}><input value={s.support.zalo} onChange={(e) => setIn('support', 'zalo', e.target.value)} placeholder="0912345678" /></Field>
+            <Field label="Trang Facebook" hint="Link trang/hồ sơ, VD https://facebook.com/mottiengtrung"><input value={s.support.facebook} onChange={(e) => setIn('support', 'facebook', e.target.value)} placeholder="https://facebook.com/…" /></Field>
+            <Field label="Messenger (tuỳ chọn)" hint={messengerUrl(s.support) ? 'Mở: ' + messengerUrl(s.support) : 'Tên trang trong link m.me/… — để trống sẽ lấy từ link Facebook'}><input value={s.support.messenger} onChange={(e) => setIn('support', 'messenger', e.target.value)} placeholder="mottiengtrung" /></Field>
+          </div>
+          <div className="grid3">
+            <Field label="Giờ hỗ trợ"><input value={s.support.hours} onChange={(e) => setIn('support', 'hours', e.target.value)} /></Field>
+          </div>
+          <label className="chk"><input type="checkbox" checked={s.support.floating !== false} onChange={(e) => setIn('support', 'floating', e.target.checked)} /> Hiện nút “💬 Hỗ trợ” nổi ở góc phải màn hình</label>
         </>)}
 
         {tab === 'bank' && (<>

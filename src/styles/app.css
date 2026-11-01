@@ -234,3 +234,22 @@
 @media (max-width:720px){.up-plan,.up-grid{grid-template-columns:1fr}.up-qr{justify-self:center}}
 .up-qr-svg{width:240px;max-width:100%;border-radius:12px;background:#fff;padding:6px;box-shadow:0 0 0 2px #e8b14a;line-height:0}
 .up-qr-svg svg{width:100%;height:auto;display:block}
+
+/* Hỗ trợ Zalo / Facebook */
+.sp-fab{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:max(16px,env(safe-area-inset-bottom,0px));z-index:90;display:grid;justify-items:end;gap:10px}
+.sp-main{display:flex;align-items:center;gap:6px;border:0;border-radius:999px;padding:11px 16px;background:linear-gradient(135deg,#0068ff,#a033ff);color:#fff;font:inherit;font-weight:800;cursor:pointer;box-shadow:0 8px 20px rgba(0,60,180,.35)}
+.sp-main:hover{filter:brightness(1.08)}
+.sp-main:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.sp-ic{font-size:18px;line-height:1}
+.sp-x{font-size:22px;line-height:1;width:18px;text-align:center}
+.sp-pop{background:var(--panel);border:1.5px solid var(--line);border-radius:16px;padding:12px;display:grid;gap:8px;min-width:220px;box-shadow:0 12px 28px rgba(0,0,0,.22);animation:toastIn .2s}
+.sp-pop small{color:var(--muted);margin-top:-6px}
+.sp-btn{display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-weight:700;border-radius:12px;padding:8px 12px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink)}
+.sp-btn.zalo:hover{border-color:#0068ff;color:#0068ff}
+.sp-btn.fb:hover{border-color:#a033ff;color:#7b2fd0}
+.sp-box{display:grid;gap:8px;border:1.5px dashed #9cc2ff;background:color-mix(in srgb,#0068ff 6%,var(--panel));border-radius:12px;padding:12px 14px}
+.sp-box>div:first-child{display:grid;gap:2px}
+.sp-box>div:first-child span{font-size:13px}
+.up-start .sp-box{margin-top:6px;justify-self:stretch}
+@media (max-width:640px){.sp-lb{display:none}.sp-main{padding:12px}}
+body:has(.quiz) .sp-fab{display:none}

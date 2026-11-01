@@ -124,7 +124,7 @@ function StageForm({ initial, onSave, onClose, affKeys, toast }) {
           <button type="button" className="btn-s small" onClick={() => set('sections', [...s.sections, { title: 'Nhóm mới', color: '#7bb8e8', items: [], note: '' }])}>+ Thêm nhóm buổi học</button>
         </fieldset>
         <TestEditor test={s.test} lessons={textToPairs(txt.lessons)} onChange={(t) => set('test', t)} toast={toast} />
-        {s.boxes.length > 0 && <p className="muted">Chặng này có hộp “Dụng cụ / App học” — nội dung các hộp sửa ở <a href="#/admin/cai-dat">Cài đặt</a>.</p>}
+        {(s.boxes || []).length > 0 && <p className="muted">Chặng này có hộp “Dụng cụ / App học” — nội dung các hộp sửa ở <a href="#/admin/cai-dat">Cài đặt</a>.</p>}
         <div className="form-act"><button type="button" className="btn-s" onClick={onClose}>Huỷ</button><button className="btn-p">Lưu chặng</button></div>
       </form>
     </Modal>

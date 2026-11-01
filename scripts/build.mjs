@@ -25,7 +25,7 @@ cpSync(join(root, 'public'), dist, { recursive: true });
 
 await build({
   entryPoints: [join(root, 'src/main.jsx')],
-  bundle: true, minify: true, format: 'esm', target: 'es2020',
+  bundle: true, minify: !process.env.NOMIN, format: 'esm', target: 'es2020',
   outfile: join(dist, 'app.js'),
   jsx: 'automatic',
   define: { 'import.meta.env': JSON.stringify({ MODE: 'production', ...env }), 'process.env.NODE_ENV': '"production"' },

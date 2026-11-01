@@ -56,7 +56,7 @@ export function AppProvider({ children }) {
 
   // đổi tài khoản → nội dung được phép xem cũng đổi (học viên thấy chi tiết lộ trình, thành viên thì không)
   const afterLogin = useCallback(async (u, msg) => {
-    setUser(u); await reload(); toast(msg);
+    await reload(); setUser(u); toast(msg); // tải nội dung đúng quyền trước rồi mới đổi tài khoản
     if (tierOf(u) === 'staff' && !currentPath().startsWith('/admin')) navigate('/admin'); // quản trị vào thẳng trang quản lý
     return u;
   }, [reload, toast]);
@@ -70,7 +70,7 @@ export function AppProvider({ children }) {
     },
     async register(data) { const u = await store.register(data); return afterLogin(u, 'Tạo tài khoản thành công!'); },
     async logout() { await store.logout(); setUser(null); await reload(); toast('Đã đăng xuất.'); if (currentPath().startsWith('/admin')) navigate('/'); },
-    async refreshUser() { const u = await store.currentUser(); setUser(u); await reload(); return u; },
+    async refreshUser() { const u = await store.currentUser(); await reload(); setUser(u); return u; },
   }), [toast, reload, afterLogin]);
 
   const value = { store, content, user, setUser, error, reload, run, toast, toasts, auth, authOpen, setAuthOpen, libQuery, setLibQuery, progress, setProgress, ask, dialog, setDialog, tier: tierOf(user), upgradeOpen, setUpgradeOpen };

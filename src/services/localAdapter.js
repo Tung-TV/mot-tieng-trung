@@ -2,7 +2,7 @@
 import { buildSeed, uid } from './seed.js';
 import { hashPassword, newSalt } from './crypto.js';
 import { checkGoogleClaims, decodeJwt } from './google.js';
-import { DEFAULT_PLAN, grade, hasTest, newTxnCode, questionsFromLessons, stageStates, tierOf, viewFor } from './model.js';
+import { DEFAULT_SUPPORT, DEFAULT_PLAN, grade, hasTest, newTxnCode, questionsFromLessons, stageStates, tierOf, viewFor } from './model.js';
 
 const K = { db: 'mot.db.v1', users: 'mot.users.v1', session: 'mot.session.v1', upgrades: 'mot.upgrades.v1' };
 const mem = {}; // dự phòng khi localStorage bị chặn
@@ -28,6 +28,7 @@ const can = (u, need) => {
 // Bản lưu trên trình duyệt từ phiên bản trước: bổ sung gói học viên + bài kiểm tra mẫu
 function upgradeDb(db) {
   if (!db.settings.plan) db.settings.plan = { ...DEFAULT_PLAN };
+  if (!db.settings.support) db.settings.support = { ...DEFAULT_SUPPORT };
   if (!db.settings.bank.bankId) db.settings.bank.bankId = 'MB';
   db.stages.forEach((s) => { if (s.test === undefined) s.test = (s.lessons || []).length >= 4 ? { pass: 70, questions: questionsFromLessons(s.lessons, 10) } : null; });
   return db;

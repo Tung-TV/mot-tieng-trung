@@ -4,6 +4,7 @@ import { navigate } from '../router.jsx';
 import { Modal } from '../components/Overlays.jsx';
 import { DEFAULT_PLAN, fmtVnd, vietQrPayload } from '../services/model.js';
 import { qrSvg } from '../services/qr.js';
+import { SupportBox } from '../components/Support.jsx';
 import { copyText } from '../services/util.js';
 
 /** Hộp hiện ra khi tài khoản thường bấm vào phần dành cho học viên */
@@ -105,6 +106,7 @@ export default function Upgrade() {
             <p>Bấm nút dưới để nhận <b>mã giao dịch</b> riêng của bạn, rồi chuyển khoản kèm mã đó.</p>
             <button className="btn-p" type="button" disabled={busy || req === undefined} onClick={create}>{busy ? 'Đang tạo…' : 'Tạo mã giao dịch'}</button>
             {req && req.status === 'paid' && <button className="btn-s" type="button" onClick={refresh}>Kiểm tra lại</button>}
+            <SupportBox title="Có câu hỏi trước khi mua?" message="Chào Mọt, mình muốn hỏi về gói Học viên." />
           </div>
         )}
       </section>
@@ -135,6 +137,7 @@ export default function Upgrade() {
             <li>Nhập số tiền <b>{fmtVnd(req.amount)}</b> và nội dung <b>{req.code}</b>, rồi chuyển.</li>
             <li>Bấm “Tôi đã chuyển khoản”. Admin kiểm tra và kích hoạt tài khoản Học viên cho bạn (thường trong 24 giờ).</li>
           </ol>
+          <SupportBox title="Đã chuyển khoản mà chưa được kích hoạt?" text="Nhắn Mọt kèm mã giao dịch (và ảnh chụp biên lai nếu có), Mọt kích hoạt cho bạn ngay." message={'Chào Mọt, mình đã chuyển khoản nâng cấp Học viên. Mã giao dịch: ' + req.code + ' · Email: ' + user.email} />
           <div className="row-btns">
             {req.status === 'pending' && <button className="btn-p" type="button" onClick={claim}>Tôi đã chuyển khoản</button>}
             <button className="btn-s" type="button" onClick={refresh}>Kiểm tra trạng thái</button>

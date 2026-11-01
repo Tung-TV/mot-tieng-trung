@@ -69,7 +69,7 @@ export function InfoBlock({ s, settings }) {
           </div>
         ) : <div key={k} className="ic"><b>{r[0]}</b><span>{r[1]}</span></div>)}
       </div>
-      {s.lessons.length > 0 && (
+      {(s.lessons || []).length > 0 && (
         <details className="dd"><summary>📖 Danh sách {s.lessons.length} bài học trong giáo trình</summary>
           <div><ol className="ls15">{s.lessons.map((l, i) => <li key={i}><span className="bn">Bài {i + 1}</span><span className="lt"><b>{l[0]}</b><small>{l[1]}</small></span></li>)}</ol></div>
         </details>

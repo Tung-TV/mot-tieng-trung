@@ -240,3 +240,8 @@ update public.content
             'Túi đồ nghề và hướng dẫn app học'))) end
      || case when data->'bank' ? 'bankId' then '{}'::jsonb else jsonb_build_object('bank', (data->'bank') || '{"bankId":"MB"}') end
  where id = 'settings';
+
+-- 8) Kênh hỗ trợ Zalo / Facebook (điền trong CMS › Cài đặt › Hỗ trợ)
+update public.content
+   set data = data || jsonb_build_object('support', jsonb_build_object('zalo', '', 'facebook', '', 'messenger', '', 'hours', '8:00 – 22:00 hằng ngày', 'floating', true))
+ where id = 'settings' and not (data ? 'support');

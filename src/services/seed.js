@@ -1,6 +1,6 @@
 // Chuyển dữ liệu thô trích từ HTML gốc (seed.json) sang mô hình dữ liệu của app
 import raw from '../data/seed.json';
-import { DEFAULT_PLAN, questionsFromLessons } from './model.js';
+import { DEFAULT_PLAN, DEFAULT_SUPPORT, questionsFromLessons } from './model.js';
 
 export const uid = (p = 'id') => p + '_' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
 
@@ -53,6 +53,7 @@ export function buildSeed() {
     settings: {
       bank: { bankId: 'MB', ...raw.BANK },
       plan: { ...DEFAULT_PLAN },
+      support: { ...DEFAULT_SUPPORT },
       affiliate: { ...raw.AFF },
       tools: raw.TOOLS,
       apps: raw.APPS,

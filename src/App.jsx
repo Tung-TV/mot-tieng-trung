@@ -10,6 +10,7 @@ import ComingSoon from './pages/ComingSoon.jsx';
 import AdminLayout from './admin/AdminLayout.jsx';
 import StageDetail from './pages/StageDetail.jsx';
 import Upgrade, { UpgradeModal } from './pages/Upgrade.jsx';
+import { SupportFab } from './components/Support.jsx';
 
 const TITLES = { '/': 'Kho tài liệu', '/lo-trinh': 'Lộ trình học', '/kho-cua-toi': 'Kho của tôi', '/on-tap': 'Ôn tập', '/cong-dong': 'Cộng đồng', '/nang-cap': 'Nâng cấp tài khoản' };
 
@@ -44,6 +45,7 @@ function Shell() {
       {!isAdmin && <footer className="foot">© {new Date().getFullYear()} Mọt Tiếng Trung · Tài liệu miễn phí cho người tự học · <a href="privacy.html">Quyền riêng tư</a> · <a href="terms.html">Điều khoản</a></footer>}
       <AuthModal />
       <UpgradeModal />
+      {!isAdmin && <SupportFab />}
       <ConfirmDialog />
       <Toasts />
     </div>

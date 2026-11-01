@@ -144,3 +144,19 @@ export const DEFAULT_PLAN = {
   months: 0,
   benefits: ['Mở toàn bộ lộ trình 9 chặng, từ Vỡ lòng tới HSK 7–9', 'Chi tiết từng chặng: bài học, giáo trình, tài liệu đi kèm', 'Bài kiểm tra cuối chặng, lưu điểm và tiến độ cá nhân', 'Túi đồ nghề và hướng dẫn app học'],
 };
+
+// ----- Kênh hỗ trợ (Zalo / Facebook) -----
+export const DEFAULT_SUPPORT = { zalo: '', facebook: '', messenger: '', hours: '8:00 – 22:00 hằng ngày', floating: true };
+export const supportOf = (settings) => ({ ...DEFAULT_SUPPORT, ...((settings && settings.support) || {}) });
+const isUrl = (v) => /^https?:\/\//i.test(v);
+/** Số điện thoại hoặc link Zalo → link mở chat Zalo */
+export const zaloUrl = (v) => { v = String(v || '').trim(); if (!v) return ''; if (isUrl(v)) return v; const d = v.replace(/\D/g, ''); return d ? 'https://zalo.me/' + d : ''; };
+/** Tên trang / link Facebook → link Messenger (có thể kèm sẵn tin nhắn) */
+export function messengerUrl(s, text) {
+  let v = String(s.messenger || '').trim();
+  if (!v) { const fb = String(s.facebook || '').trim(); const m = fb.match(/facebook\.com\/(?:profile\.php\?id=)?([^/?#]+)/i); v = m ? m[1] : isUrl(fb) ? '' : fb; }
+  if (!v) return '';
+  const base = isUrl(v) ? v : 'https://m.me/' + v.replace(/^@/, '');
+  return text && /m\.me\//.test(base) ? base + (base.includes('?') ? '&' : '?') + 'text=' + encodeURIComponent(text) : base;
+}
+export const facebookUrl = (v) => { v = String(v || '').trim(); return !v ? '' : isUrl(v) ? v : 'https://www.facebook.com/' + v.replace(/^@/, ''); };
