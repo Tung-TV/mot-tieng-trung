@@ -263,6 +263,16 @@ export function createSupabaseAdapter(url, anonKey) {
       await storagePut('speaking', path, blob);
       return 'speaking:' + path;
     },
+    // AI chấm phát âm (Cloudflare Pages Function /api/ai-speak, kiểm tra Học viên bằng phiên Supabase)
+    async aiSpeak(wav, s) {
+      if (!session) throw new Error('Bạn cần đăng nhập tài khoản Học viên.');
+      if (session.expires_at * 1000 < Date.now() + 30000) await refresh();
+      const f = new FormData(); f.append('audio', wav, 'speak.wav'); f.append('target', s[0]); f.append('pinyin', s[1] || ''); f.append('meaning', s[2] || '');
+      const r = await fetch('api/ai-speak', { method: 'POST', headers: { Authorization: 'Bearer ' + session.access_token }, body: f });
+      const j = await r.json().catch(() => ({ error: 'AI chưa sẵn sàng (' + r.status + ').' }));
+      if (!r.ok || j.error) throw new Error(j.error || 'AI chưa sẵn sàng.');
+      return j;
+    },
     async recordingUrl(ref) {
       if (!String(ref).startsWith('speaking:')) return ref;
       const r = await fetch(url + '/storage/v1/object/authenticated/speaking/' + ref.slice(9), { headers: { apikey: anonKey, Authorization: 'Bearer ' + session.access_token } });

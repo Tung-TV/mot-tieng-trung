@@ -1,0 +1,12 @@
+# Cấu hình Cloudflare Pages (đọc khi build/deploy). Bật Workers AI cho /api/ai-speak (AI chấm phát âm, gói miễn phí).
+# Hai giá trị Supabase dưới đây là địa chỉ + khoá công khai (publishable) — vốn đã có trong web, không phải bí mật.
+name = "mot-tieng-trung"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-10-01"
+
+[ai]
+binding = "AI"
+
+[vars]
+SUPABASE_URL = "https://uyrolkmqiguqjpomxvsc.supabase.co"
+SUPABASE_ANON_KEY = "sb_publishable_3z_aF7DrbbgzOSYRC-Y-rQ_koHv9DGb"

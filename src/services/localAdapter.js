@@ -299,6 +299,7 @@ export function createLocalAdapter({ googleClientId = '' } = {}) {
       return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(new Error('Không đọc được bản ghi')); r.readAsDataURL(blob); });
     },
     async recordingUrl(ref) { return ref; },
+    async aiSpeak() { throw new Error('Chấm bằng AI chỉ chạy trên web thật (bản dùng Supabase + Cloudflare), bản thử này chưa có.'); },
 
     // ---- Nâng cấp tài khoản (chuyển khoản, admin xác nhận)
     async myUpgrade() {

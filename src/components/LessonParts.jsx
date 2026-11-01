@@ -1,6 +1,7 @@
 // Các phần ôn tập của một bài học: Luyện viết, Từ vựng, Nghe hiểu, Ngữ pháp, Luyện nói
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { canListen, listen, say } from '../services/speech.js';
+import { canListen, canRecord, listen, say, startRecording } from '../services/speech.js';
+import { useApp } from '../context/AppContext.jsx';
 import { shuffled } from '../services/model.js';
 
 const Spk = ({ t, rate, label = '🔊' }) => <button type="button" className="spk" onClick={() => say(t, rate)} aria-label={'Nghe: ' + t}>{label}</button>;
@@ -220,27 +221,58 @@ export function GrammarPart({ grammar, quiz, onScore }) {
 }
 
 // ---------- Luyện nói: nghe mẫu, nói theo, máy nhận giọng và chấm độ giống ----------
+function AiBox({ r }) {
+  if (r.err) return <div className="sp-r miss">🤖 {r.err}</div>;
+  return (
+    <div className={'sp-ai ' + (r.score >= 80 ? 'good' : r.score >= 50 ? 'mid' : 'miss')}>
+      <div className="sp-ai-h"><b>🤖 AI chấm: {r.score}%</b><span>AI nghe được: <span lang="zh">{r.heard || '—'}</span></span></div>
+      {(r.mistakes || []).length > 0 && <ul className="sp-ai-m">{r.mistakes.map((m, i) => <li key={i}><b lang="zh">{m.want}</b>{m.got ? <> → <span lang="zh">{m.got}</span></> : null}{m.note ? <small>{m.note}</small> : null}</li>)}</ul>}
+      {r.comment && <p>{r.comment}</p>}
+      {r.tip && <p className="sp-ai-tip">💡 {r.tip}</p>}
+      {r.left != null && <small className="muted">Còn {r.left} lượt chấm AI hôm nay.</small>}
+    </div>
+  );
+}
+
+/** Luyện nói: nghe mẫu, nói theo. Ai cũng dùng được nhận giọng trên trình duyệt; AI chấm phát âm chỉ dành cho Học viên. */
 export function SpeakPart({ speak }) {
+  const { tier, store, setUpgradeOpen } = useApp();
+  const pro = tier === 'student' || tier === 'staff';
   const [res, setRes] = useState({});
+  const [ai, setAi] = useState({});
   const [busy, setBusy] = useState(-1);
+  const [rec, setRec] = useState(null); // { i, h } đang ghi âm cho AI
   if (!speak.length) return <Empty />;
   const go = async (i, s) => {
     setBusy(i);
-    try { const r = await listen(s[0]); setRes({ ...res, [i]: r }); } catch (e) { setRes({ ...res, [i]: { err: e.message } }); } finally { setBusy(-1); }
+    try { const r = await listen(s[0]); setRes((x) => ({ ...x, [i]: r })); } catch (e) { setRes((x) => ({ ...x, [i]: { err: e.message } })); } finally { setBusy(-1); }
+  };
+  const finishAi = async (i, s, h) => {
+    setRec(null); setBusy(i); setAi((x) => ({ ...x, [i]: { wait: true } }));
+    try { const wav = await h.stop(); const r = await store.aiSpeak(wav, s); setAi((x) => ({ ...x, [i]: r })); }
+    catch (e) { setAi((x) => ({ ...x, [i]: { err: e.message } })); } finally { setBusy(-1); }
+  };
+  const aiGo = async (i, s) => {
+    if (!pro) { setUpgradeOpen(true); return; }
+    if (rec && rec.i === i) { finishAi(i, s, rec.h); return; }
+    try { let h; h = await startRecording(12, () => finishAi(i, s, h)); setRec({ i, h }); } catch { setAi((x) => ({ ...x, [i]: { err: 'Không mở được micro. Hãy cho phép trình duyệt dùng micro.' } })); }
   };
   return (
     <div>
-      <p className="note-box">Bấm 🔊 nghe câu mẫu, rồi bấm 🎙 và đọc to. Mọt nhận giọng nói ngay trên trình duyệt và chấm độ giống với câu mẫu{canListen() ? '' : ' (trình duyệt này chưa hỗ trợ nhận giọng nói — hãy dùng Chrome hoặc Edge; bạn vẫn nghe mẫu và tự luyện được)'}.</p>
+      <p className="note-box">Bấm 🔊 nghe câu mẫu rồi đọc theo. <b>🎙 Nói</b>: trình duyệt nhận giọng và chấm độ giống (miễn phí{canListen() ? '' : ', cần Chrome hoặc Edge'}). <b>🤖 AI chấm</b>: AI nghe bản ghi của bạn, chỉ ra chữ đọc sai và cách sửa{pro ? '' : ' — dành cho Học viên'}.</p>
       <ol className="sp-list">{speak.map((s, i) => {
-        const r = res[i];
+        const r = res[i], a = ai[i], recing = rec && rec.i === i;
         return (
           <li key={i} className="sp-i">
             <div className="sp-t"><span lang="zh">{s[0]}</span>{s[1] && <small>{s[1]}</small>}{s[2] && <small className="muted">{s[2]}</small>}</div>
             <div className="sp-a">
               <Spk t={s[0]} rate={0.75} label="🔊 Nghe mẫu" />
-              {canListen() && <button type="button" className={'btn-p small' + (busy === i ? ' rec' : '')} disabled={busy >= 0} onClick={() => go(i, s)}>{busy === i ? '● Đang nghe…' : '🎙 Nói'}</button>}
+              {canListen() && <button type="button" className={'btn-s small' + (busy === i && !a ? ' rec' : '')} disabled={busy >= 0 || !!rec} onClick={() => go(i, s)}>{busy === i && !(a && a.wait) ? '● Đang nghe…' : '🎙 Nói'}</button>}
+              {canRecord() && <button type="button" className={'btn-p small sp-aib' + (recing ? ' rec' : '') + (pro ? '' : ' lock')} disabled={(busy >= 0 && !recing) || (!!rec && !recing)} onClick={() => aiGo(i, s)}>{recing ? '■ Dừng & chấm' : a && a.wait ? '🤖 AI đang chấm…' : pro ? '🤖 AI chấm' : '🔒 AI chấm · Học viên'}</button>}
             </div>
-            {r && (r.err ? <div className="sp-r miss">{r.err}</div> : <div className={'sp-r ' + (r.score >= 80 ? 'good' : r.score >= 50 ? 'mid' : 'miss')}><b>{r.score}%</b> · Mọt nghe được: <span lang="zh">{r.text || '—'}</span>{r.score >= 80 ? ' 🎉' : ' — thử lại nhé'}</div>)}
+            {recing && <small className="muted">● Đang ghi âm — đọc câu mẫu rồi bấm “Dừng & chấm” (tối đa 12 giây).</small>}
+            {r && (r.err ? <div className="sp-r miss">{r.err}</div> : <div className={'sp-r ' + (r.score >= 80 ? 'good' : r.score >= 50 ? 'mid' : 'miss')}><b>{r.score}%</b> · Trình duyệt nghe được: <span lang="zh">{r.text || '—'}</span>{r.score >= 80 ? ' 🎉' : ' — thử lại nhé'}</div>)}
+            {a && !a.wait && <AiBox r={a} />}
           </li>
         );
       })}</ol>

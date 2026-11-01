@@ -270,3 +270,10 @@ Kỹ thuật: các trang trên chạy bằng mã gốc của bản HTML (tách r
 - Trang Cộng đồng viết lại bằng React, cấu hình ở CMS › Cài đặt › 👥 Cộng đồng: các kênh (link, số thành viên, nút, lợi ích; ＋ thêm kênh), lịch hoạt động trong tuần (mỗi dòng chọn đích: kênh của Mọt / trang trong web / link khác; ＋ thêm hoạt động), quy tắc chung. Danh sách “Hành trình gia nhập Mọt” dùng chung nhiệm vụ với “Nhận lộ trình”: bấm là mở link + tính hoàn thành, sửa lệch dấu tích.
 - CMS › Bài học: nút ＋ Thêm cấp (HSK8, HSK9…) tạo luôn chặng mới ở cuối Lộ trình, có ngay mục bài học, trang Khoá học, thống kê.
 - Số liệu CMS là số thật: lượt tải trong CMS chỉ đếm khi có người bấm Tải xuống (downloads). Số lượt tải lấy từ bản HTML chuyển thành “số hiển thị ban đầu” (baseDownloads), ngoài web hiện tổng hai số; admin sửa được số ban đầu (đặt 0 để ngoài web cũng hiện số thật). Dữ liệu cũ tự chuyển khi bấm Áp dụng cập nhật.
+
+### AI chấm phát âm (Luyện nói, chỉ Học viên)
+- Nút **🤖 AI chấm** ở phần Luyện nói của bài học: ghi âm ≤ 12 giây (đổi sang WAV 16 kHz ngay trên trình duyệt) → `functions/api/ai-speak.js` (Cloudflare Pages Function).
+- Hàm này gọi `ai_take` trong Supabase bằng phiên của người dùng: chỉ Học viên / biên tập / quản trị, tối đa 60 lượt mỗi người mỗi ngày (bảng `ai_usage`). Sau đó Whisper (`@cf/openai/whisper-large-v3-turbo`) nghe câu nói → Qwen (`@cf/qwen/qwen3-30b-a3b-fp8`) so với câu mẫu, trả điểm, chữ đọc sai, nhận xét + mẹo bằng tiếng Việt.
+- Miễn phí trong hạn mức Workers AI 10.000 neuron/ngày (ước tính vài trăm lượt chấm/ngày). Cấu hình ở `wrangler.toml` (binding `AI` + địa chỉ/khoá công khai Supabase). Không cần khoá bí mật nào.
+- Người chưa là Học viên thấy nút “🔒 AI chấm · Học viên” → mở hộp đăng ký khoá học. Nút “🎙 Nói” (nhận giọng trên trình duyệt) vẫn miễn phí cho mọi người.
+- Bản thử lưu trên trình duyệt không chạy được AI (cần web thật).

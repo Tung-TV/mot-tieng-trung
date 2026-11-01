@@ -52,3 +52,38 @@ export function listen(target) {
     try { r.start(); } catch { reject(new Error('Không mở được micro.')); }
   });
 }
+
+// ---------- Ghi âm ngắn → WAV 16 kHz mono (gửi AI chấm phát âm) ----------
+export const canRecord = () => typeof window !== 'undefined' && !!(navigator.mediaDevices && window.MediaRecorder);
+function toWav(buf) {
+  const ch = buf.getChannelData(0), n = ch.length, out = new DataView(new ArrayBuffer(44 + n * 2));
+  const w = (o, s) => [...s].forEach((c, i) => out.setUint8(o + i, c.charCodeAt(0)));
+  w(0, 'RIFF'); out.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt '); out.setUint32(16, 16, true); out.setUint16(20, 1, true); out.setUint16(22, 1, true);
+  out.setUint32(24, buf.sampleRate, true); out.setUint32(28, buf.sampleRate * 2, true); out.setUint16(32, 2, true); out.setUint16(34, 16, true); w(36, 'data'); out.setUint32(40, n * 2, true);
+  for (let i = 0; i < n; i++) { const v = Math.max(-1, Math.min(1, ch[i])); out.setInt16(44 + i * 2, v < 0 ? v * 0x8000 : v * 0x7fff, true); }
+  return new Blob([out], { type: 'audio/wav' });
+}
+/** Bắt đầu ghi; trả về { stop(): Promise<Blob wav> }. Tự dừng sau maxSec giây (onAuto được gọi khi tự dừng). */
+export async function startRecording(maxSec = 12, onAuto) {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } });
+  const mr = new MediaRecorder(stream), chunks = [];
+  mr.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+  let done;
+  const finished = new Promise((res) => { mr.onstop = res; });
+  const stop = () => {
+    if (!done) done = (async () => {
+      if (mr.state !== 'inactive') mr.stop();
+      await finished; stream.getTracks().forEach((t) => t.stop());
+      const raw = await new Blob(chunks).arrayBuffer();
+      const AC = window.AudioContext || window.webkitAudioContext, ac = new AC();
+      const dec = await ac.decodeAudioData(raw); ac.close();
+      const len = Math.ceil(dec.duration * 16000), off = new OfflineAudioContext(1, Math.max(1, len), 16000);
+      const src = off.createBufferSource(); src.buffer = dec; src.connect(off.destination); src.start();
+      return toWav(await off.startRendering());
+    })();
+    return done;
+  };
+  mr.start();
+  const t = setTimeout(() => { if (onAuto) onAuto(); }, maxSec * 1000);
+  return { stop: () => { clearTimeout(t); return stop(); } };
+}

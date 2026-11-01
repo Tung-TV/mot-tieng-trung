@@ -402,3 +402,24 @@ begin
          user_id = coalesce(public.roadmap_leads.user_id, excluded.user_id), updated_at = now();
 end $$;
 grant execute on function public.save_lead(uuid, jsonb) to anon, authenticated;
+
+-- AI chấm phát âm (Cloudflare Workers AI): chỉ Học viên, tối đa N lượt / ngày / người
+create table if not exists public.ai_usage (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  day     date not null default current_date,
+  n       int  not null default 0,
+  primary key (user_id, day)
+);
+alter table public.ai_usage enable row level security;
+create or replace function public.ai_take(p_limit int default 60) returns int
+language plpgsql security definer set search_path = public as $$
+declare v int;
+begin
+  if not public.has_role(array['student','editor','admin']) then raise exception 'Chấm bằng AI dành cho Học viên Khoá học Mọt Tiếng Trung.'; end if;
+  insert into public.ai_usage (user_id, day, n) values (auth.uid(), current_date, 1)
+  on conflict (user_id, day) do update set n = public.ai_usage.n + 1
+  returning n into v;
+  if v > greatest(p_limit, 1) then raise exception 'Hôm nay bạn đã dùng hết % lượt chấm bằng AI, mai quay lại nhé!', p_limit; end if;
+  return greatest(p_limit, 1) - v;
+end $$;
+grant execute on function public.ai_take(int) to authenticated;
