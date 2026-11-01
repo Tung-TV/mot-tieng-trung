@@ -123,6 +123,16 @@ export default function LessonsAdmin() {
   const [lv, setLv] = useState(1);
   const [list, setList] = useState(null);
   const [edit, setEdit] = useState(null);
+  const [addLv, setAddLv] = useState(false);
+  const nextLv = Math.max(6, ...levels.map(stageLevel)) + 1;
+  const createLevel = async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target), n = Number(f.get('n'));
+    if (!n || n < 1) { toast('Nhập số cấp, VD 8.', 'err'); return; }
+    if (levels.some((s) => stageLevel(s) === n)) { toast('Đã có cấp HSK' + n + '.', 'err'); return; }
+    await store.saveStage({ key: String(f.get('key') || 'HSK' + n).trim(), emoji: f.get('emoji') || '📘', color: f.get('color') || '#c0392b', whiteText: true, title: 'HSK' + n, badge: n >= 7 ? 'Cao cấp' : n >= 4 ? 'Trung cấp' : 'Sơ cấp', desc: String(f.get('desc') || '').trim(), chips: ['Bài giảng', 'Từ vựng', 'Luyện viết', 'Nghe hiểu', 'Ngữ pháp', 'Thi HSK'], keyword: 'HSK' + n, sections: [], info: [], lessons: [], freeLessons: [], free: false, ribbon: '', ribbonColor: '#c4001d', affKey: '', cover: '', boxes: [], test: null, completion: 'test' });
+    await reload(); setAddLv(false); setLv(n); toast('Đã thêm cấp HSK' + n + '. Bấm “+ Thêm bài mới” để soạn bài.');
+  };
   const stage = levels.find((s) => stageLevel(s) === lv);
   const load = useCallback(() => { setList(null); store.listLessons(lv).then(setList, (e) => { toast(e.message, 'err'); setList([]); }); }, [lv, store, toast]);
   useEffect(() => { load(); }, [load]);
@@ -149,7 +159,10 @@ export default function LessonsAdmin() {
         </div>
       </div>
       <p className="note-box">Mỗi bài: video bài giảng (ghim giữa trang) + 5 phần ôn tập. Tên bài sửa ở đây sẽ cập nhật luôn danh sách bài trong lộ trình. Bài đánh dấu <b>🎁 Miễn phí</b> ai cũng học được; còn lại chỉ Học viên. Dữ liệu gốc từ bản HTML nằm ở thư mục <code>data/lessons</code> của dự án — dùng nút “Nhập dữ liệu” để đưa vào lần đầu.</p>
-      <div className="seg">{levels.map((s) => <button key={s.id} type="button" className={stageLevel(s) === lv ? 'on' : ''} onClick={() => setLv(stageLevel(s))}>{s.title} · {s.key}</button>)}</div>
+      <div className="seg">
+        {levels.map((s) => <button key={s.id} type="button" className={stageLevel(s) === lv ? 'on' : ''} onClick={() => setLv(stageLevel(s))}>{s.title} · {s.key}</button>)}
+        <button type="button" className="seg-add" onClick={() => setAddLv(true)} title="Thêm cấp mới">＋ Thêm cấp</button>
+      </div>
       {!list ? <p className="muted">Đang tải…</p> : (
         <div className="tbl-wrap">
           <table className="tbl-adm">
@@ -174,6 +187,23 @@ export default function LessonsAdmin() {
           {!rows.length && <Empty>Chặng này chưa có danh sách bài. Thêm bài ở mục Lộ trình học (Sửa chặng › Danh sách bài học) hoặc nhập dữ liệu.</Empty>}
           <div className="row-btns" style={{ marginTop: 8 }}><button type="button" className="btn-s small" onClick={() => setEdit(blank(lv, rows.length + extra.length + 1))}>+ Thêm bài mới</button></div>
         </div>
+      )}
+      {addLv && (
+        <Modal title="＋ Thêm cấp HSK mới" onClose={() => setAddLv(false)}>
+          <form className="form" onSubmit={createLevel}>
+            <p className="muted">Cấp mới được thêm thành một chặng ở cuối Lộ trình (sắp xếp lại, sửa mô tả, bài kiểm tra ở mục Lộ trình học), và có ngay mục bài học ở đây, trên trang Khoá học, Thống kê.</p>
+            <div className="grid3">
+              <Field label="Cấp số"><input name="n" type="number" min="1" defaultValue={nextLv} required /></Field>
+              <Field label="Tên chặng"><input name="key" placeholder="VD: Bậc thầy" required /></Field>
+              <Field label="Biểu tượng"><input name="emoji" defaultValue="👑" maxLength={4} /></Field>
+            </div>
+            <div className="grid2">
+              <Field label="Màu"><input name="color" type="color" defaultValue="#c0392b" /></Field>
+              <Field label="Mô tả ngắn"><input name="desc" placeholder="VD: Văn bản học thuật, chuyên ngành" /></Field>
+            </div>
+            <div className="form-act"><button type="button" className="btn-s" onClick={() => setAddLv(false)}>Huỷ</button><button className="btn-p">Thêm cấp</button></div>
+          </form>
+        </Modal>
       )}
       {edit && <LessonEditor initial={edit} onSave={save} onClose={() => setEdit(null)} />}
     </>
