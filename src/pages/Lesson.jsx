@@ -23,11 +23,14 @@ function Video({ videos, part, setPart, startAt, onTime }) {
   const frame = useRef(null), slot = useRef(null), cur = useRef(startAt || 0);
   const [docked, setDocked] = useState(false);
   const [pin, setPin] = useState(true);
+  // giây bắt đầu chỉ lấy MỘT lần khi mở video: tiến độ lưu liên tục, nếu đưa vào src thì iframe tải lại và video dừng
+  const [start, setStart] = useState(() => ({ id, t: startAt || 0 }));
+  if (start.id !== id) setStart({ id, t: startAt || 0 });
   // YouTube nhúng thẳng bằng iframe; nhận giây đang xem qua postMessage (không cần tải thêm thư viện)
   useEffect(() => {
     if (!id) return undefined;
     cur.current = startAt || 0;
-    let last = 0;
+    let last = Date.now();
     const onMsg = (e) => {
       if (!/youtube(-nocookie)?\.com$/.test(new URL(e.origin).hostname) || !frame.current || e.source !== frame.current.contentWindow) return;
       let d; try { d = typeof e.data === 'string' ? JSON.parse(e.data) : e.data; } catch { return; }
@@ -48,7 +51,7 @@ function Video({ videos, part, setPart, startAt, onTime }) {
   }, [id]);
 
   if (!videos.length) return <div className="lsn-soon"><span className="em">🎬</span>Mọt đang cập nhật video bài giảng này.</div>;
-  const src = id && 'https://www.youtube.com/embed/' + id + '?enablejsapi=1&rel=0&playsinline=1&modestbranding=1' + (startAt > 5 ? '&start=' + Math.floor(startAt) : '') + '&origin=' + encodeURIComponent(location.origin);
+  const src = id && 'https://www.youtube.com/embed/' + id + '?enablejsapi=1&rel=0&playsinline=1&modestbranding=1' + (start.t > 5 ? '&start=' + Math.floor(start.t) : '') + '&origin=' + encodeURIComponent(location.origin);
   return (
     <section className="lv-wrap">
       {videos.length > 1 && <div className="lv-parts">{videos.map((x, i) => <button key={i} type="button" className={i === part ? 'on' : ''} onClick={() => setPart(i)}>{x.title || 'Phần ' + (i + 1)}</button>)}</div>}
