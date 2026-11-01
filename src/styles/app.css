@@ -521,3 +521,13 @@ b.warn{color:#b0352a}
 .gift-win{text-align:center;display:grid;gap:8px;justify-items:center}.gift-win .em{font-size:48px}.gift-win h3{margin:0}
 .gift-win .btn-p{text-decoration:none}
 .dp-wrap{display:grid;gap:6px;justify-items:start}
+/* khoá học: mỗi cấp một hàng ngang, danh sách bài 2 cột thẳng hàng như bản HTML */
+.kc-lvs{grid-template-columns:1fr;align-items:start}
+.kc-lv{align-content:start}
+.kc-lv .ls15{grid-template-columns:repeat(2,minmax(0,1fr))}
+.ls15 li{align-items:center}
+.ls15 .lt{min-width:0;flex:1}
+.ls15 .lt b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ls15 .lt small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ls15 .lbtn{flex:none}
+@media (max-width:760px){.kc-lv .ls15{grid-template-columns:1fr}}
