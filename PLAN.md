@@ -201,7 +201,7 @@ Lưu ý cách B: trang kiểm tra token có đúng do Google cấp cho Client ID
 1. Thành viên vào `#/nang-cap` (bắt buộc đăng nhập) → **Tạo mã giao dịch** → mã dạng `MOTXXXXXX` (riêng cho từng người, bấm lại vẫn giữ mã cũ khi chưa xử lý).
 2. Trang hiện số tiền, ngân hàng, số TK, mã QR **VietQR có sẵn số tiền + nội dung = mã giao dịch** (img.vietqr.io, miễn phí; lỗi thì dùng ảnh QR tĩnh), nhắc **ghi đúng mã vào nội dung chuyển khoản**. Người dùng bấm “Tôi đã chuyển khoản”.
 3. Admin: CMS › **Nâng cấp học viên** → đối chiếu mã + số tiền trong app ngân hàng → **Xác nhận đã nhận tiền** → tài khoản thành Học viên ngay.
-- Giá, tên gói, thời hạn (tháng, 0 = vĩnh viễn), quyền lợi, mã ngân hàng VietQR: CMS › Cài đặt › Gói học viên. **Giá mặc định 199.000đ, vĩnh viễn — cần chủ web xác nhận.**
+- Giá, tên gói, thời hạn (tháng, 0 = vĩnh viễn), quyền lợi, mã ngân hàng VietQR: CMS › Cài đặt › Gói học viên. **Gói Học viên = Khóa học trọn bộ HSK1–6: 365.000đ / 12 tháng** (chủ web xác nhận ngày 01/11/2026).
 
 ### Hỗ trợ qua Zalo / Facebook
 - CMS › Cài đặt › **Hỗ trợ**: số Zalo (hoặc link zalo.me), link trang Facebook, tên Messenger (tuỳ chọn), giờ hỗ trợ, bật/tắt nút nổi.
@@ -214,7 +214,36 @@ Lưu ý cách B: trang kiểm tra token có đúng do Google cấp cho Client ID
 - Bảng `upgrade_requests` + hàm `create_upgrade_request`, `claim_upgrade`, `cancel_upgrade`, `confirm_upgrade` (chỉ admin).
 - Đã chạy thử toàn bộ SQL trên PostgreSQL 16 (dữ liệu kiểu cũ → chuyển đổi đúng; chạy lại không lỗi; phân quyền đúng cho khách/thành viên/học viên/admin).
 
+### Bài kiểm tra kiểu HSK
+- “Nhập môn” hoàn thành bằng nút; mọi chặng khác phải đạt bài kiểm tra (mặc định 70%).
+- Admin soạn đề trong CMS › Lộ trình › Sửa chặng: nhiều **phần** (Nghe / Đọc / Viết / Nói), mỗi phần có thể kèm file nghe, ảnh, đoạn văn. Dạng câu: trắc nghiệm, đúng/sai, điền từ (nhiều đáp án chấp nhận), sắp xếp câu, viết tự luận, nói (ghi âm ≤ 90 giây). Điểm từng câu, thời gian làm bài, đảo câu.
+- Câu tự động chấm ngay trong database; câu viết/nói vào CMS › **Chấm bài** để giáo viên cho điểm + nhận xét. Đạt thì chặng sau tự mở.
+- Đã chạy thử trên PostgreSQL 16: dữ liệu cũ của web thật → chạy 002 → nạp nội dung mới → học viên nộp bài (tự chấm + chờ chấm) → admin chấm → chặng sau mở; học viên không đọc được đáp án.
+
 ### Khi đăng web (chưa làm)
 1. Supabase › SQL Editor: chạy `docs/migrations/002_hoc-vien.sql`.
 2. Gộp nhánh `feature/hoc-vien` vào `main` → Cloudflare tự đăng.
-3. Admin đăng nhập: database trống thì app tự ghi dữ liệu gốc (kèm bài kiểm tra mẫu HSK1–3); nếu đã có dữ liệu cũ thì vào CMS › Lộ trình › Sửa chặng › “Tạo tự động từ danh sách bài học”.
+3. Admin đăng nhập → CMS › Tổng quan hiện **“Có bản cập nhật nội dung” → Áp dụng cập nhật**: cập nhật 9 chặng theo nội dung mới, thêm tài liệu mới vào Kho, đổi gói thành 365K/năm, tạo bài kiểm tra mẫu cho chặng chưa có đề. Bài kiểm tra, tài liệu admin đã sửa được giữ nguyên.
+
+## Cập nhật 01/11/2026: theo bản HTML mới (mottiengtrung_1.html)
+
+| Mục | Trang | Ai dùng được |
+|---|---|---|
+| **Khóa học Mọt Tiếng Trung HSK1–6** (mục HOT trên menu) | `#khoa-hoc` | Mọi người xem; nút “Đăng ký” → trang Nâng cấp (365K/năm). Nút vào bài học bị ẩn với tài khoản thường. |
+| **Ôn tập** | `#on-tap` | Mọi người (miễn phí như bản gốc) |
+| · Bảng Pinyin + nghe từng âm, bài tập nghe chọn pinyin | `#pinyin`, `#bai-tap-pinyin` | |
+| · Luyện thi HSK 1–6: đề thi thử có file nghe, chấm điểm, đánh dấu đề đã làm; HSKK nhìn tranh nói; địa điểm thi HSK | `#thi-hsk`, `#thi-hsk-1`, `#de-thi-1-1`, `#hskk-so-cap`, `#dia-diem-thi` | |
+| · Luyện gõ từ vựng HSK1–6 (nhắc ôn từ sai) | `#luyen-go` | |
+| · Shadowing theo video 4 kênh | `#shadowing` | |
+| **Cộng đồng** | `#cong-dong` | Mọi người |
+| **Bài học từng bài** (bài giảng, luyện viết, từ vựng, nghe, ngữ pháp, luyện nói) | `#bai-hoc-<cấp>-<bài>` | Chỉ **Học viên**, và chặng HSK tương ứng phải đã mở. Vào từ trang chặng › “BẮT ĐẦU HỌC”. |
+| Quà “Nhận ngay lộ trình” (khảo sát + nhiệm vụ) | nút trên trang Lộ trình | Mọi người |
+
+Kỹ thuật: các trang trên chạy bằng mã gốc của bản HTML (tách ra `public/legacy/`, xem `scripts/legacy/README.md`), chỉ tải khi mở; dữ liệu nặng (đề thi, từ vựng, chữ Hán luyện viết) tách gói, mở đúng trang mới tải. Trang chủ không nặng thêm.
+
+**Còn thiếu từ bản gốc (file đi kèm, không có trong file HTML):**
+- `audio/ … audio6/de*.mp3`: file nghe đề thi thử (hiện chỉ đề 1 HSK1 có tiếng, đã nhúng sẵn).
+- `hskk/p01–p25.jpg`: 25 tranh HSKK (đang dùng ảnh tạm “Tranh N”).
+- `hsk/b4–b6.jpg`: bìa giáo trình HSK4–6 (đang dùng bìa tạm).
+- `kho/c01…c40.jpg`: ảnh bìa tài liệu (web đang dùng hình vẽ tự tạo nên không bắt buộc).
+- Khảo sát “Nhận lộ trình” hiện chỉ lưu trên máy người dùng như bản gốc.
