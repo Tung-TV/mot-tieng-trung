@@ -26,6 +26,6 @@ export async function copyText(text) {
   }
 }
 
-export const ROLE_LABEL = { admin: 'Quản trị', editor: 'Biên tập', member: 'Học viên' };
+export const ROLE_LABEL = { admin: 'Quản trị', editor: 'Biên tập', student: 'Học viên', member: 'Thành viên' };
 export const canEdit = (u) => !!u && u.status === 'active' && (u.role === 'admin' || u.role === 'editor');
 export const isAdmin = (u) => !!u && u.status === 'active' && u.role === 'admin';

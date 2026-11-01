@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { navigate } from '../router.jsx';
-import { ROLE_LABEL, canEdit } from '../services/util.js';
+import { ROLE_LABEL } from '../services/util.js';
 
 const NAV = [
   { r: '/', cls: 'n1', s: '--bg1:#d6e9fd;--bg2:#b9d8f8;--tc:#1f4f9a;--sc:#c1440e', ck: '#3b82d6', b: ['KHO TÀI LIỆU', 'TIẾNG TRUNG'], sm: 'MIỄN PHÍ 100%', img: 'nav1' },
@@ -12,7 +12,7 @@ const NAV = [
 const styleObj = (s) => Object.fromEntries(s.split(';').map((x) => x.split(':')));
 
 export function Header() {
-  const { user, auth, setAuthOpen, content } = useApp();
+  const { user, auth, setAuthOpen, content, tier } = useApp();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const img = content.settings.images;
@@ -48,8 +48,16 @@ export function Header() {
               {user ? (
                 <>
                   <b>Xin chào, {user.name}!<small className="role-tag">{ROLE_LABEL[user.role]}</small></b>
-                  <button type="button" onClick={go(() => navigate('/kho-cua-toi'))}>📚 Kho của tôi</button>
-                  {canEdit(user) && <button type="button" onClick={go(() => navigate('/admin'))}>🛠️ Trang quản trị (CMS)</button>}
+                  {tier === 'staff' ? (
+                    <button type="button" onClick={go(() => navigate('/admin'))}>🛠️ Trang quản trị (CMS)</button>
+                  ) : (
+                    <>
+                      <button type="button" onClick={go(() => navigate('/kho-cua-toi'))}>📚 Kho của tôi</button>
+                      {tier === 'student'
+                        ? <button type="button" onClick={go(() => navigate('/lo-trinh'))}>🪜 Lộ trình của tôi</button>
+                        : <button type="button" className="menu-up" onClick={go(() => navigate('/nang-cap'))}>⭐ Nâng cấp tài khoản</button>}
+                    </>
+                  )}
                   <button type="button" onClick={go(() => auth.logout())}>Đăng xuất</button>
                 </>
               ) : (
@@ -73,7 +81,7 @@ export function TopNav({ path }) {
   return (
     <nav className="topnav" aria-label="Chuyên mục">
       {NAV.map((n) => (
-        <a key={n.r} className={'nv ' + n.cls + (path === n.r ? ' on' : '')} href={'#' + n.r} style={styleObj(n.s)}>
+        <a key={n.r} className={'nv ' + n.cls + (path === n.r || (n.r !== '/' && path.startsWith(n.r + '/')) ? ' on' : '')} href={'#' + n.r} style={styleObj(n.s)}>
           <i className="ck" style={{ background: n.ck }}>✓</i>
           <span><b>{n.b[0]}<br />{n.b[1]}</b><small>{n.sm}</small></span>
           <img src={img[n.img]} alt="" />

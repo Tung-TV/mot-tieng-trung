@@ -3,9 +3,11 @@ import { useApp } from '../context/AppContext.jsx';
 import DocCard from '../components/DocCard.jsx';
 import { useDocActions, hotSet } from './Library.jsx';
 import { ROLE_LABEL } from '../services/util.js';
+import { stageStates } from '../services/model.js';
+import { navigate } from '../router.jsx';
 
 export default function MyLibrary() {
-  const { user, content, setAuthOpen, store, setUser, toast, progress } = useApp();
+  const { user, content, setAuthOpen, store, setUser, toast, progress, tier } = useApp();
   const { saved, toggleSave, download } = useDocActions();
   const [name, setName] = useState(user ? user.name : '');
   const [pw, setPw] = useState({ old: '', next: '' });
@@ -26,8 +28,9 @@ export default function MyLibrary() {
   const docs = content.documents.filter((d) => saved.includes(d.id));
   const hot = hotSet(content.documents);
   const maxDl = Math.max(1, ...content.documents.map((d) => d.downloads || 0));
-  const curStage = content.stages.find((s) => s.id === progress.current);
-  const doneN = (progress.done || []).length;
+  const states = stageStates(content.stages, progress);
+  const passedN = states.filter((x) => x.state === 'passed').length;
+  const curStage = content.stages[states.findIndex((x) => x.state === 'open')];
 
   const saveName = async (e) => { e.preventDefault(); try { setUser(await store.updateProfile({ name: name.trim() })); toast('Đã cập nhật tên.'); } catch (x) { toast(x.message, 'err'); } };
   const savePw = async (e) => {
@@ -46,9 +49,13 @@ export default function MyLibrary() {
         <div>
           <h2>Kho của tôi</h2>
           <p>Xin chào <b>{user.name}</b> · {ROLE_LABEL[user.role]} · {user.email}{(user.providers || []).includes('google') && <span className="prov">Google</span>}</p>
-          <p className="muted">Chặng hiện tại: <b>{curStage ? curStage.key + ' · ' + curStage.title : 'chưa chọn'}</b> · Đã hoàn thành {doneN}/{content.stages.length} chặng · Đã lưu {docs.length} tài liệu</p>
+          {tier === 'student'
+            ? <p className="muted">Đang học: <b>{curStage ? curStage.key + ' · ' + curStage.title : 'đã xong lộ trình'}</b> · Đã qua {passedN}/{content.stages.length} chặng · Đã lưu {docs.length} tài liệu{user.studentUntil ? ' · Học viên đến ' + new Date(user.studentUntil).toLocaleDateString('vi-VN') : ''}</p>
+            : <p className="muted">Tài khoản thường: xem và tải tài liệu trong Kho. Nâng cấp lên Học viên để học theo lộ trình và làm bài kiểm tra.</p>}
         </div>
-        <a className="btn-s" href="#/lo-trinh">Tiếp tục lộ trình ›</a>
+        {tier === 'student'
+          ? <button className="btn-s" type="button" onClick={() => navigate(curStage ? '/lo-trinh/' + curStage.id : '/lo-trinh')}>Tiếp tục lộ trình ›</button>
+          : <button className="btn-p" type="button" onClick={() => navigate('/nang-cap')}>⭐ Nâng cấp tài khoản</button>}
       </section>
 
       <main className="panel">

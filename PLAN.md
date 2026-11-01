@@ -185,3 +185,31 @@ Lưu ý cách B: trang kiểm tra token có đúng do Google cấp cho Client ID
 - Đăng nhập Google: Google Cloud project `mot-tieng-trung`, OAuth client “Mot Tieng Trung - Supabase” (Web), trạng thái **In production**; redirect URI `https://uyrolkmqiguqjpomxvsc.supabase.co/auth/v1/callback`. Đã bật trong Supabase › Authentication › Providers › Google.
   - Trang bắt buộc cho màn hình đồng ý: `/privacy.html`, `/terms.html`.
 - Quản trị viên: `kaitoshion53@gmail.com` (đăng nhập Google). Cấp quyền cho người khác trong CMS › Tài khoản.
+
+---
+
+## Cập nhật: 3 loại tài khoản, nâng cấp Học viên, bài kiểm tra (nhánh `feature/hoc-vien` — CHƯA đăng web)
+
+### Loại tài khoản
+| Loại | Vai trò trong DB | Được làm gì |
+|---|---|---|
+| Khách / **Thành viên** (tài khoản thường) | — / `member` | Xem & tải tài liệu ở Kho. Lộ trình chỉ thấy khung (tên, mô tả, kỹ năng): không nút, không link, không chi tiết. Bấm vào chặng → hộp “Cần nâng cấp tài khoản” + nút **Nâng cấp tài khoản**. |
+| **Học viên** | `student` (+ `student_until`, trống = vĩnh viễn) | Học lộ trình: trang chi tiết từng chặng `#/lo-trinh/<id>` (bài học, giáo trình, túi đồ nghề, app học, tài liệu của chặng), bài kiểm tra cuối chặng. Phải **đạt điểm** (mặc định 70%) mới mở chặng sau. Chặng chưa có bài kiểm tra: bấm “Hoàn thành chặng”. Có lộ trình cá nhân (trạng thái + điểm từng chặng). |
+| Biên tập / **Quản trị** | `editor` / `admin` | Đăng nhập xong vào thẳng CMS. Menu chỉ còn CMS + Đăng xuất. Xem trước lộ trình không bị khoá. |
+
+### Nâng cấp bằng chuyển khoản
+1. Thành viên vào `#/nang-cap` (bắt buộc đăng nhập) → **Tạo mã giao dịch** → mã dạng `MOTXXXXXX` (riêng cho từng người, bấm lại vẫn giữ mã cũ khi chưa xử lý).
+2. Trang hiện số tiền, ngân hàng, số TK, mã QR **VietQR có sẵn số tiền + nội dung = mã giao dịch** (img.vietqr.io, miễn phí; lỗi thì dùng ảnh QR tĩnh), nhắc **ghi đúng mã vào nội dung chuyển khoản**. Người dùng bấm “Tôi đã chuyển khoản”.
+3. Admin: CMS › **Nâng cấp học viên** → đối chiếu mã + số tiền trong app ngân hàng → **Xác nhận đã nhận tiền** → tài khoản thành Học viên ngay.
+- Giá, tên gói, thời hạn (tháng, 0 = vĩnh viễn), quyền lợi, mã ngân hàng VietQR: CMS › Cài đặt › Gói học viên. **Giá mặc định 199.000đ, vĩnh viễn — cần chủ web xác nhận.**
+
+### Bảo mật (Supabase)
+- Dữ liệu chặng tách 3 dòng: `stage` (công khai), `stage_detail` (chỉ học viên trở lên), `test_key` (đáp án, chỉ biên tập/quản trị). Cài đặt tách `settings` (công khai) / `premium` (link mua, túi đồ nghề, app học, prompt — học viên trở lên). Tài khoản thường không tải được link/chi tiết dù gọi thẳng API.
+- Chấm điểm trong database (`submit_test`), kiểm tra thứ tự chặng (`stage_open`); người dùng không tự ghi điểm, không tự đổi vai trò/email/hạn học viên (trigger `protect_profile_fields`). Tài liệu đang ẩn không đọc được từ API.
+- Bảng `upgrade_requests` + hàm `create_upgrade_request`, `claim_upgrade`, `cancel_upgrade`, `confirm_upgrade` (chỉ admin).
+- Đã chạy thử toàn bộ SQL trên PostgreSQL 16 (dữ liệu kiểu cũ → chuyển đổi đúng; chạy lại không lỗi; phân quyền đúng cho khách/thành viên/học viên/admin).
+
+### Khi đăng web (chưa làm)
+1. Supabase › SQL Editor: chạy `docs/migrations/002_hoc-vien.sql`.
+2. Gộp nhánh `feature/hoc-vien` vào `main` → Cloudflare tự đăng.
+3. Admin đăng nhập: database trống thì app tự ghi dữ liệu gốc (kèm bài kiểm tra mẫu HSK1–3); nếu đã có dữ liệu cũ thì vào CMS › Lộ trình › Sửa chặng › “Tạo tự động từ danh sách bài học”.

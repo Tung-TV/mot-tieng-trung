@@ -6,7 +6,12 @@ import { fmtN, isAdmin, ROLE_LABEL } from '../services/util.js';
 export default function Dashboard() {
   const { content, user, store } = useApp();
   const [users, setUsers] = useState(null);
-  useEffect(() => { if (isAdmin(user)) store.listUsers().then(setUsers).catch(() => setUsers(null)); }, [user, store]);
+  const [ups, setUps] = useState(null);
+  useEffect(() => {
+    if (!isAdmin(user)) return;
+    store.listUsers().then(setUsers).catch(() => setUsers(null));
+    store.listUpgrades().then(setUps).catch(() => setUps(null));
+  }, [user, store]);
   const docs = content.documents;
   const total = docs.reduce((s, d) => s + (d.downloads || 0), 0);
   const top = [...docs].sort((a, b) => b.downloads - a.downloads).slice(0, 5);
@@ -19,6 +24,7 @@ export default function Dashboard() {
         <div className="kpi"><small>Tài liệu</small><b>{docs.length}</b><span>{docs.filter((d) => d.published === false).length} đang ẩn</span></div>
         <div className="kpi"><small>Tổng lượt tải</small><b>{fmtN(total)}</b><span>{total.toLocaleString('vi-VN')} lượt</span></div>
         <div className="kpi"><small>Chặng lộ trình</small><b>{content.stages.length}</b><span>{content.stages.reduce((s, x) => s + x.lessons.length, 0)} bài học</span></div>
+        {ups && <a className="kpi kpi-link" href="#/admin/nang-cap"><small>Chờ kích hoạt học viên</small><b>{ups.filter((r) => r.status === 'pending' || r.status === 'claimed').length}</b><span>{ups.filter((r) => r.status === 'claimed').length} đã báo chuyển khoản · {ups.filter((r) => r.status === 'paid').length} đã kích hoạt</span></a>}
         {users && <div className="kpi"><small>Tài khoản</small><b>{users.length}</b><span>{Object.entries(ROLE_LABEL).map(([r, l]) => users.filter((u) => u.role === r).length + ' ' + l.toLowerCase()).join(' · ')}</span></div>}
       </div>
       <div className="adm-cols">

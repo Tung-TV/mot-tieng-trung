@@ -2,8 +2,9 @@
 import { buildSeed, uid } from './seed.js';
 import { hashPassword, newSalt } from './crypto.js';
 import { checkGoogleClaims, decodeJwt } from './google.js';
+import { DEFAULT_PLAN, grade, hasTest, newTxnCode, questionsFromLessons, stageStates, tierOf, viewFor } from './model.js';
 
-const K = { db: 'mot.db.v1', users: 'mot.users.v1', session: 'mot.session.v1' };
+const K = { db: 'mot.db.v1', users: 'mot.users.v1', session: 'mot.session.v1', upgrades: 'mot.upgrades.v1' };
 const mem = {}; // dự phòng khi localStorage bị chặn
 const ls = {
   get(k) { try { const v = localStorage.getItem(k); return v == null ? mem[k] ?? null : v; } catch { return mem[k] ?? null; } },
@@ -15,9 +16,22 @@ const write = (k, v) => ls.set(k, JSON.stringify(v));
 
 const publicUser = (u) => u && ({
   id: u.id, name: u.name, email: u.email, role: u.role, status: u.status, createdAt: u.createdAt, progress: u.progress || {},
-  avatar: u.avatar || '', hasPassword: !!u.passHash, providers: [u.passHash && 'email', u.googleSub && 'google'].filter(Boolean),
+  avatar: u.avatar || '', hasPassword: !!u.passHash, studentUntil: u.studentUntil || null, providers: [u.passHash && 'email', u.googleSub && 'google'].filter(Boolean),
 });
-const can = (u, need) => u && u.status === 'active' && (need === 'member' || u.role === 'admin' || (need === 'editor' && u.role === 'editor'));
+const can = (u, need) => {
+  const t = tierOf(u && { ...u, studentUntil: u.studentUntil || null });
+  if (t === 'guest') return false;
+  if (need === 'member') return true;
+  if (need === 'student') return t === 'student' || t === 'staff';
+  return u.role === 'admin' || (need === 'editor' && u.role === 'editor');
+};
+// Bản lưu trên trình duyệt từ phiên bản trước: bổ sung gói học viên + bài kiểm tra mẫu
+function upgradeDb(db) {
+  if (!db.settings.plan) db.settings.plan = { ...DEFAULT_PLAN };
+  if (!db.settings.bank.bankId) db.settings.bank.bankId = 'MB';
+  db.stages.forEach((s) => { if (s.test === undefined) s.test = (s.lessons || []).length >= 4 ? { pass: 70, questions: questionsFromLessons(s.lessons, 10) } : null; });
+  return db;
+}
 
 export function createLocalAdapter({ googleClientId = '' } = {}) {
   let db = null;
@@ -47,11 +61,12 @@ export function createLocalAdapter({ googleClientId = '' } = {}) {
           if (j && j.documents && j.stages && j.settings && (!db || (j.publishedAt || 0) > (db.publishedAt || 0))) db = j;
         }
       } catch { /* không có file — bỏ qua */ }
-      if (!db) db = buildSeed();
+      db = db ? upgradeDb(db) : buildSeed();
       persist();
       if (!users().length) saveUsers([await makeUser({ name: 'Quản trị Mọt', email: 'admin@mot.vn', password: 'admin123', role: 'admin' })]);
     },
-    async getContent() { return structuredClone(db); },
+    // mỗi loại tài khoản chỉ nhận phần dữ liệu được phép xem
+    async getContent() { return viewFor(db, tierOf(publicUser(me()))); },
 
     // ---- Tài liệu
     async saveDocument(doc) {
@@ -145,7 +160,7 @@ export function createLocalAdapter({ googleClientId = '' } = {}) {
       const admin = require('admin');
       const list = users();
       const target = list.find((u) => u.id === id); if (!target) throw new Error('Không tìm thấy tài khoản.');
-      const next = { ...target, ...('name' in patch ? { name: patch.name } : {}), ...('role' in patch ? { role: patch.role } : {}), ...('status' in patch ? { status: patch.status } : {}) };
+      const next = { ...target, ...('name' in patch ? { name: patch.name } : {}), ...('role' in patch ? { role: patch.role } : {}), ...('status' in patch ? { status: patch.status } : {}), ...('studentUntil' in patch ? { studentUntil: patch.studentUntil } : {}) };
       const admins = list.filter((u) => u.role === 'admin' && u.status === 'active' && u.id !== id).length;
       if (target.role === 'admin' && (next.role !== 'admin' || next.status !== 'active') && admins === 0) throw new Error('Phải còn ít nhất một quản trị viên đang hoạt động.');
       if (patch.password) { next.salt = newSalt(); next.passHash = await hashPassword(patch.password, next.salt); }
@@ -159,12 +174,82 @@ export function createLocalAdapter({ googleClientId = '' } = {}) {
       saveUsers(users().filter((u) => u.id !== id));
     },
 
+    // ---- Học tập
+    async submitTest(stageId, answers) {
+      const u = require('student');
+      const i = db.stages.findIndex((s) => s.id === stageId);
+      const s = db.stages[i]; if (!s || !hasTest(s)) throw new Error('Chặng này không có bài kiểm tra.');
+      const st = stageStates(db.stages, u.progress || {});
+      if (tierOf(publicUser(u)) !== 'staff' && st[i].state === 'locked') throw new Error('Bạn cần hoàn thành chặng trước để mở chặng này.');
+      const r = grade(s, answers);
+      const prev = (u.progress && u.progress.tests && u.progress.tests[stageId]) || {};
+      const rec = { best: Math.max(prev.best || 0, r.pct), last: r.pct, passed: !!prev.passed || r.passed, attempts: (prev.attempts || 0) + 1, at: Date.now() };
+      const list = users().map((x) => (x.id === u.id ? { ...x, progress: { ...(x.progress || {}), tests: { ...((x.progress || {}).tests || {}), [stageId]: rec } } } : x));
+      saveUsers(list);
+      return { ...r, record: rec, user: publicUser(list.find((x) => x.id === u.id)) };
+    },
+    async completeStage(stageId) {
+      const u = require('student');
+      const i = db.stages.findIndex((s) => s.id === stageId);
+      if (i < 0 || hasTest(db.stages[i])) throw new Error('Chặng này cần làm bài kiểm tra để hoàn thành.');
+      if (tierOf(publicUser(u)) !== 'staff' && stageStates(db.stages, u.progress || {})[i].state === 'locked') throw new Error('Bạn cần hoàn thành chặng trước.');
+      const done = [...new Set([...((u.progress || {}).done || []), stageId])];
+      const list = users().map((x) => (x.id === u.id ? { ...x, progress: { ...(x.progress || {}), done } } : x));
+      saveUsers(list); return publicUser(list.find((x) => x.id === u.id));
+    },
+
+    // ---- Nâng cấp tài khoản (chuyển khoản, admin xác nhận)
+    async myUpgrade() {
+      const u = require('member');
+      return read(K.upgrades, []).filter((r) => r.userId === u.id).sort((a, b) => b.createdAt - a.createdAt)[0] || null;
+    },
+    async createUpgrade() {
+      const u = require('member');
+      if (tierOf(publicUser(u)) !== 'member') throw new Error('Tài khoản của bạn không cần nâng cấp.');
+      const all = read(K.upgrades, []);
+      const open = all.find((r) => r.userId === u.id && (r.status === 'pending' || r.status === 'claimed'));
+      if (open) return open;
+      let code; do { code = newTxnCode(); } while (all.some((r) => r.code === code));
+      const plan = db.settings.plan || DEFAULT_PLAN;
+      const r = { id: uid('up'), userId: u.id, name: u.name, email: u.email, code, amount: plan.price, months: plan.months || 0, status: 'pending', createdAt: Date.now() };
+      write(K.upgrades, [...all, r]); return r;
+    },
+    async claimUpgrade(id) {
+      const u = require('member');
+      const all = read(K.upgrades, []);
+      write(K.upgrades, all.map((r) => (r.id === id && r.userId === u.id && r.status === 'pending' ? { ...r, status: 'claimed', claimedAt: Date.now() } : r)));
+    },
+    async cancelUpgrade(id) {
+      const u = require('member');
+      const all = read(K.upgrades, []);
+      const r = all.find((x) => x.id === id); if (!r) return;
+      if (r.userId !== u.id && u.role !== 'admin') throw new Error('Bạn không có quyền huỷ yêu cầu này.');
+      if (r.status === 'paid') throw new Error('Yêu cầu đã được xác nhận, không huỷ được.');
+      write(K.upgrades, all.map((x) => (x.id === id ? { ...x, status: 'cancelled', closedAt: Date.now() } : x)));
+    },
+    async listUpgrades() { require('admin'); return read(K.upgrades, []).sort((a, b) => b.createdAt - a.createdAt); },
+    async confirmUpgrade(id) {
+      const admin = require('admin');
+      const all = read(K.upgrades, []);
+      const r = all.find((x) => x.id === id); if (!r) throw new Error('Không tìm thấy yêu cầu.');
+      if (r.status === 'paid') return r;
+      if (r.status === 'cancelled') throw new Error('Yêu cầu đã huỷ.');
+      const list = users().map((x) => {
+        if (x.id !== r.userId) return x;
+        const base = Math.max(Date.now(), x.studentUntil || 0);
+        return { ...x, role: x.role === 'member' || x.role === 'student' ? 'student' : x.role, studentUntil: r.months > 0 ? base + r.months * 30 * 86400000 : null };
+      });
+      saveUsers(list);
+      const nr = { ...r, status: 'paid', paidAt: Date.now(), confirmedBy: admin.email };
+      write(K.upgrades, all.map((x) => (x.id === id ? nr : x))); return nr;
+    },
+
     // ---- Sao lưu
     async exportContent() { require('admin'); db.publishedAt = Date.now(); persist(); return structuredClone(db); },
     async importContent(json) {
       require('admin');
       if (!json || !Array.isArray(json.documents) || !Array.isArray(json.stages) || !json.settings) throw new Error('File không đúng định dạng sao lưu của Mọt.');
-      db = json; persist();
+      db = upgradeDb(json); persist();
     },
     async resetContent() { require('admin'); db = buildSeed(); persist(); },
   };

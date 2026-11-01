@@ -83,3 +83,16 @@ code{background:var(--bg);border:1px solid var(--line);border-radius:5px;padding
   .stage-list .acts{width:100%;text-align:left}
 }
 .adm-side{order:0;text-align:left}
+.pill-s.warn{background:#fff3cf;color:#8a5a12}
+.pill-s.mute{background:var(--bg);color:var(--muted)}
+.kpi-link{text-decoration:none;color:inherit;border-color:#e8b14a}
+.kpi-link:hover{box-shadow:0 0 0 2px #e8b14a}
+.until{display:block;font-size:11px;margin-top:2px}
+.adm-out{border:0;background:none;font:inherit;text-align:left;cursor:pointer}
+.q-edit{gap:8px}
+.q-opts{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}
+.q-opt{display:flex;align-items:center;gap:6px;border-radius:9px;padding:2px 4px}
+.q-opt.on{background:#dff3dc}
+.q-opt input[type=radio]{width:18px;height:18px;accent-color:#2f7d32;flex:none}
+.q-opt span{font-weight:800;font-size:12px;width:14px}
+@media (max-width:640px){.q-opts{grid-template-columns:1fr}}

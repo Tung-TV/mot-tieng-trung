@@ -59,8 +59,8 @@ export default function UsersAdmin() {
               return (
                 <tr key={u.id}>
                   <td><b>{u.name}{me && ' (bạn)'}</b><span className="url">{u.email}{(u.providers || []).includes('google') && <span className="prov">Google</span>}</span></td>
-                  <td><select value={u.role} onChange={(e) => act(() => store.updateUser(u.id, { role: e.target.value }), 'Đã đổi vai trò.')}>{Object.entries(ROLE_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></td>
-                  <td className="muted">{(p.done || []).length} chặng xong · {(p.saved || []).length} tài liệu lưu</td>
+                  <td><select value={u.role} onChange={(e) => act(() => store.updateUser(u.id, { role: e.target.value }), 'Đã đổi vai trò.')}>{Object.entries(ROLE_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>{u.role === 'student' && <small className="muted until">{u.studentUntil ? 'đến ' + new Date(u.studentUntil).toLocaleDateString('vi-VN') : 'không thời hạn'}</small>}</td>
+                  <td className="muted">{Object.values(p.tests || {}).filter((t) => t.passed).length} bài kiểm tra đạt · {(p.saved || []).length} tài liệu lưu</td>
                   <td className="muted">{u.createdAt ? new Date(u.createdAt).toLocaleDateString('vi-VN') : '—'}</td>
                   <td><button type="button" className={'pill-s ' + (u.status === 'active' ? 'on' : 'off')} disabled={me} onClick={() => act(() => store.updateUser(u.id, { status: u.status === 'active' ? 'locked' : 'active' }), u.status === 'active' ? 'Đã khoá tài khoản.' : 'Đã mở khoá.')}>{u.status === 'active' ? 'Hoạt động' : 'Đã khoá'}</button></td>
                   <td className="acts">

@@ -8,8 +8,10 @@ import Roadmap from './pages/Roadmap.jsx';
 import MyLibrary from './pages/MyLibrary.jsx';
 import ComingSoon from './pages/ComingSoon.jsx';
 import AdminLayout from './admin/AdminLayout.jsx';
+import StageDetail from './pages/StageDetail.jsx';
+import Upgrade, { UpgradeModal } from './pages/Upgrade.jsx';
 
-const TITLES = { '/': 'Kho tài liệu', '/lo-trinh': 'Lộ trình học', '/kho-cua-toi': 'Kho của tôi', '/on-tap': 'Ôn tập', '/cong-dong': 'Cộng đồng' };
+const TITLES = { '/': 'Kho tài liệu', '/lo-trinh': 'Lộ trình học', '/kho-cua-toi': 'Kho của tôi', '/on-tap': 'Ôn tập', '/cong-dong': 'Cộng đồng', '/nang-cap': 'Nâng cấp tài khoản' };
 
 function Shell() {
   const { content, error } = useApp();
@@ -17,7 +19,7 @@ function Shell() {
   const isAdmin = path === '/admin' || path.startsWith('/admin/');
 
   useEffect(() => {
-    document.title = 'Mọt Tiếng Trung - ' + (isAdmin ? 'Quản trị' : TITLES[path] || 'Kho tài liệu');
+    document.title = 'Mọt Tiếng Trung - ' + (isAdmin ? 'Quản trị' : TITLES[path] || (path.startsWith('/lo-trinh/') ? 'Chi tiết chặng' : 'Kho tài liệu'));
     if (!isAdmin) window.scrollTo(0, 0);
   }, [path, isAdmin]);
 
@@ -28,7 +30,9 @@ function Shell() {
   if (isAdmin) page = <AdminLayout path={path} />;
   else if (path === '/') page = <Library />;
   else if (path === '/lo-trinh') page = <Roadmap />;
+  else if (path.startsWith('/lo-trinh/')) page = <StageDetail id={decodeURIComponent(path.slice('/lo-trinh/'.length))} />;
   else if (path === '/kho-cua-toi') page = <MyLibrary />;
+  else if (path === '/nang-cap') page = <Upgrade />;
   else page = <ComingSoon path={path} />;
 
   return (
@@ -39,6 +43,7 @@ function Shell() {
       {page}
       {!isAdmin && <footer className="foot">© {new Date().getFullYear()} Mọt Tiếng Trung · Tài liệu miễn phí cho người tự học · <a href="privacy.html">Quyền riêng tư</a> · <a href="terms.html">Điều khoản</a></footer>}
       <AuthModal />
+      <UpgradeModal />
       <ConfirmDialog />
       <Toasts />
     </div>

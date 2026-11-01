@@ -1,32 +1,45 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { Field, ImageInput } from './ui.jsx';
+import { DEFAULT_PLAN, fmtVnd } from '../services/model.js';
 
 const AFF_LABEL = { giaotrinh: 'Giáo trình HSK 1 (túi đồ nghề)', giaotrinh2: 'Giáo trình HSK 2', giaotrinh3: 'Giáo trình HSK 3', but: 'Bút viết', vo: 'Vở ô ly' };
 const PR_LABEL = { p1: 'Prompt phân tích chữ Hán', p2: 'Prompt 2', p3: 'Prompt 3', p4: 'Prompt 4' };
 
 export default function SettingsAdmin() {
   const { content, store, run, toast } = useApp();
-  const [s, setS] = useState(() => structuredClone(content.settings));
-  const [tab, setTab] = useState('bank');
+  const [s, setS] = useState(() => { const x = structuredClone(content.settings); x.plan = { ...DEFAULT_PLAN, ...(x.plan || {}) }; return x; });
+  const [tab, setTab] = useState('plan');
   const set = (k, v) => setS({ ...s, [k]: v });
   const setIn = (k, sub, v) => setS({ ...s, [k]: { ...s[k], [sub]: v } });
   const setArr = (k, i, sub, v) => setS({ ...s, [k]: s[k].map((x, j) => (j === i ? { ...x, [sub]: v } : x)) });
-  const save = () => run(() => store.saveSettings(s), 'Đã lưu cài đặt.');
+  const save = () => run(() => store.saveSettings({ ...s, plan: { ...s.plan, benefits: (s.plan.benefits || []).map((x) => x.trim()).filter(Boolean) } }), 'Đã lưu cài đặt.');
   const err = (m) => toast(m, 'err');
-  const TABS = [['bank', '💝 Ủng hộ'], ['aff', '🛒 Link mua'], ['tools', '🎒 Túi đồ nghề'], ['apps', '📱 App học'], ['pr', '🤖 Prompt AI']];
+  const TABS = [['plan', '⭐ Gói học viên'], ['bank', '💝 Ngân hàng'], ['aff', '🛒 Link mua'], ['tools', '🎒 Túi đồ nghề'], ['apps', '📱 App học'], ['pr', '🤖 Prompt AI']];
 
   return (
     <>
       <div className="adm-top"><h1 className="adm-h">Cài đặt</h1><button type="button" className="btn-p" onClick={save}>Lưu thay đổi</button></div>
       <div className="seg">{TABS.map(([k, l]) => <button key={k} type="button" className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>
       <div className="card form">
+        {tab === 'plan' && (<>
+          <p className="muted">Thông tin hiển thị ở trang “Nâng cấp tài khoản”. Giá và thời hạn áp dụng cho các mã giao dịch tạo từ nay về sau.</p>
+          <div className="grid3">
+            <Field label="Tên gói"><input value={s.plan.name} onChange={(e) => setIn('plan', 'name', e.target.value)} /></Field>
+            <Field label="Giá (đồng)" hint={fmtVnd(s.plan.price)}><input type="number" min="0" step="1000" value={s.plan.price} onChange={(e) => setIn('plan', 'price', Math.max(0, parseInt(e.target.value, 10) || 0))} /></Field>
+            <Field label="Thời hạn (tháng)" hint="0 = không giới hạn thời gian"><input type="number" min="0" value={s.plan.months} onChange={(e) => setIn('plan', 'months', Math.max(0, parseInt(e.target.value, 10) || 0))} /></Field>
+          </div>
+          <Field label="Quyền lợi — mỗi dòng một ý"><textarea rows={5} value={(s.plan.benefits || []).join('\n')} onChange={(e) => setIn('plan', 'benefits', e.target.value.split('\n'))} /></Field>
+        </>)}
+
         {tab === 'bank' && (<>
+          <p className="muted">Dùng cho hộp “Ủng hộ Mọt” và trang thanh toán nâng cấp.</p>
           <div className="grid3">
             <Field label="Ngân hàng"><input value={s.bank.name} onChange={(e) => setIn('bank', 'name', e.target.value)} /></Field>
             <Field label="Số tài khoản"><input value={s.bank.number} onChange={(e) => setIn('bank', 'number', e.target.value)} /></Field>
             <Field label="Chủ tài khoản"><input value={s.bank.owner} onChange={(e) => setIn('bank', 'owner', e.target.value)} /></Field>
           </div>
+          <Field label="Mã ngân hàng cho VietQR" hint="VD: MB, VCB, TCB, ACB, BIDV… (hoặc mã BIN 6 số). Dùng để tạo mã QR có sẵn số tiền + mã giao dịch."><input value={s.bank.bankId || ''} onChange={(e) => setIn('bank', 'bankId', e.target.value.trim())} /></Field>
           <Field label="Ảnh mã QR"><ImageInput value={s.bank.qr} onChange={(v) => setIn('bank', 'qr', v)} onError={err} /></Field>
         </>)}
 

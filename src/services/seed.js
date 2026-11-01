@@ -1,5 +1,6 @@
 // Chuyển dữ liệu thô trích từ HTML gốc (seed.json) sang mô hình dữ liệu của app
 import raw from '../data/seed.json';
+import { DEFAULT_PLAN, questionsFromLessons } from './model.js';
 
 export const uid = (p = 'id') => p + '_' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
 
@@ -42,13 +43,16 @@ export function buildSeed() {
     affKey: s.aff || '',
     cover: s.cover || '',
     boxes: s.bx || [],
+    // bài kiểm tra mẫu tạo từ danh sách bài học (chặng không có bài học: học viên bấm “Hoàn thành chặng”)
+    test: (s.lessons || []).length >= 4 ? { pass: 70, questions: questionsFromLessons(s.lessons, 10) } : null,
   }));
   return {
     version: 1,
     documents,
     stages,
     settings: {
-      bank: { ...raw.BANK },
+      bank: { bankId: 'MB', ...raw.BANK },
+      plan: { ...DEFAULT_PLAN },
       affiliate: { ...raw.AFF },
       tools: raw.TOOLS,
       apps: raw.APPS,

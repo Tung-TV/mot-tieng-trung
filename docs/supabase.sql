@@ -109,6 +109,7 @@ drop policy if exists "profiles admin xoá" on public.profiles;
 create policy "profiles admin xoá" on public.profiles for delete
   using (public.has_role(array['admin']));
 
+-- 3b) Tiếp theo chạy docs/migrations/002_hoc-vien.sql (học viên, nâng cấp, bài kiểm tra).
 -- 4) Dữ liệu ban đầu: chạy tiếp file docs/seed.sql (chỉ thêm khi bảng content còn trống).
 -- 5) Sau khi tự đăng ký tài khoản đầu tiên trên web, nâng nó thành admin:
 -- update public.profiles set role = 'admin' where email = 'email-cua-ban@gmail.com';
