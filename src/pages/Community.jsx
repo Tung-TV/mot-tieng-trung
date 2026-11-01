@@ -18,7 +18,7 @@ export function resolveLink(link, platforms) {
 }
 
 export default function Community() {
-  const { content, toast, user } = useApp();
+  const { content, toast } = useApp();
   const c = communityOf(content.settings);
   const { gift, d, doneN, all, mark, share } = useGiftState();
   const total = c.platforms.reduce((n, p) => n + (Number(p.members) || 0), 0);
@@ -32,7 +32,7 @@ export default function Community() {
         <p>Mọt có mặt ở nhiều nơi để bạn học mọi lúc: xem mẹo trên TikTok, hỏi bài trong nhóm, điểm danh cùng bạn bè. Chọn nơi bạn thích, hoặc theo dõi tất cả!</p>
         <div className="cd-stage">
           <div className="cd-mas">
-            <div className="cd-bub">Chào {user && user.name ? user.name.trim().split(/\s+/).pop() : 'bạn'}! 👋<br />Cùng học nhé!</div>
+            <div className="cd-bub">Chào MỌTer! 👋<br />Cùng học nhé!</div>
             <div className="cd-mid"><img src={logo} alt="Mọt Tiếng Trung" /></div>
             <div className="cd-tot"><small>TỔNG MỌTer</small><b>{total ? fmt(total) : 'Sắp cập nhật'}</b></div>
           </div>
