@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import DocCard from '../components/DocCard.jsx';
 import { useDocActions, hotSet } from './Library.jsx';
-import { ROLE_LABEL } from '../services/util.js';
+import { ROLE_LABEL, shownDl } from '../services/util.js';
 import { stageStates } from '../services/model.js';
 import { navigate } from '../router.jsx';
 
@@ -27,7 +27,7 @@ export default function MyLibrary() {
   }
   const docs = content.documents.filter((d) => saved.includes(d.id));
   const hot = hotSet(content.documents);
-  const maxDl = Math.max(1, ...content.documents.map((d) => d.downloads || 0));
+  const maxDl = Math.max(1, ...content.documents.map(shownDl));
   const states = stageStates(content.stages, progress);
   const passedN = states.filter((x) => x.state === 'passed').length;
   const curStage = content.stages[states.findIndex((x) => x.state === 'open')];

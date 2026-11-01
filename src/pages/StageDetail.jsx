@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext.jsx';
 import { navigate } from '../router.jsx';
 import { SKILLS, allQuestions, byButton, canEnterStage, hasTest, isManual, passPct, qPoints } from '../services/model.js';
 import Exam from '../components/Exam.jsx';
-import { nrm } from '../services/util.js';
+import { nrm, shownDl } from '../services/util.js';
 import DocCard from '../components/DocCard.jsx';
 import { Boxes, Chip, InfoBlock, Sections } from '../components/StageParts.jsx';
 import { useStageStates } from './Roadmap.jsx';
@@ -107,7 +107,7 @@ function StageDocs({ stage }) {
   const k = nrm((stage.keyword || '').trim());
   const docs = useMemo(() => (k ? content.documents.filter((d) => d.published !== false && nrm(d.name).includes(k)) : []), [content, k]);
   if (!docs.length) return null;
-  const hot = hotSet(content.documents), maxDl = Math.max(1, ...content.documents.map((d) => d.downloads || 0));
+  const hot = hotSet(content.documents), maxDl = Math.max(1, ...content.documents.map(shownDl));
   return (
     <section className="panel st-docs">
       <div className="head"><span>📚 Tài liệu cho chặng này <small>{docs.length} tài liệu</small></span></div>

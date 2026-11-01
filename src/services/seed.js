@@ -22,7 +22,9 @@ export function buildSeed() {
       name: d.n,
       format: d.f,
       url: d.u,
-      downloads: raw.DL[i] || 0,
+      // số lượt tải ban đầu từ bản HTML chỉ để hiển thị; downloads = lượt tải thật đếm từ khi chạy web
+      baseDownloads: raw.DL[i] || 0,
+      downloads: 0,
       art: { kind: a[0], l1: a[1], l2: a[2], ch: a[3], color: a[4] },
       published: true,
       // giữ thứ tự gốc cho "Mới nhất"
@@ -73,13 +75,13 @@ export function buildSeed() {
       chipColors: raw.CC,
       chipEmojis: raw.CE,
       images: raw.IMGS,
-      contentRev: 3,
+      contentRev: 4,
     },
   };
 }
 
 // ----- Cập nhật nội dung theo bản HTML mới (rev 2: lộ trình HSK1–6 đủ bài học, khoá học 365K/năm, kho 62 tài liệu) -----
-export const CONTENT_REV = 3;
+export const CONTENT_REV = 4;
 const STAGE_FIELDS = ['title', 'desc', 'chips', 'sections', 'info', 'lessons', 'ribbon', 'ribbonColor', 'affKey', 'cover', 'soon', 'boxes'];
 // trường chỉ thêm khi chặng chưa có (không đè cấu hình admin)
 const STAGE_DEFAULTS = ['free', 'freeLessons'];
@@ -100,6 +102,8 @@ export function contentUpdate(content) {
     if (JSON.stringify(next) !== JSON.stringify(cur)) stages.push(next);
   });
   const names = new Set(content.documents.map((d) => d.name.trim().toLowerCase()));
+  // lượt tải cũ (số lấy từ bản HTML) chuyển thành “số hiển thị ban đầu”, lượt tải thật đếm lại từ 0
+  const docsChanged = content.documents.filter((d) => d.baseDownloads === undefined).map((d) => ({ ...d, baseDownloads: d.downloads || 0, downloads: 0 }));
   const documents = fresh.documents.filter((d) => !names.has(d.name.trim().toLowerCase())).map((d) => ({ ...d, id: uid('doc'), createdAt: Date.now() }));
   const s = content.settings;
   const oldPlan = !s.plan || (s.plan.price === 199000 && !s.plan.months);
@@ -113,5 +117,5 @@ export function contentUpdate(content) {
     plan: oldPlan ? { ...fresh.settings.plan } : s.plan,
     contentRev: CONTENT_REV,
   };
-  return { stages, documents, settings, planChanged: oldPlan };
+  return { stages, documents, docsChanged, settings, planChanged: oldPlan };
 }

@@ -30,7 +30,7 @@ function upgradeDb(db) {
   if ((db.settings.contentRev || 1) < CONTENT_REV) {
     const u = contentUpdate(db);
     u.stages.forEach((st) => { const i = db.stages.findIndex((x) => x.id === st.id); if (i < 0) db.stages.push(st); else db.stages[i] = st; });
-    db.documents = [...db.documents, ...u.documents];
+    db.documents = [...db.documents.map((d) => u.docsChanged.find((x) => x.id === d.id) || d), ...u.documents];
     db.settings = u.settings;
   }
   if (!db.settings.plan) db.settings.plan = { ...DEFAULT_PLAN };

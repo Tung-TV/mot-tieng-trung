@@ -19,7 +19,7 @@ function DocForm({ initial, onSave, onClose }) {
     e.preventDefault();
     if (!d.name.trim()) return setErr('Nhập tên tài liệu.');
     if (!/^https?:\/\//i.test(d.url.trim())) return setErr('Đường dẫn phải bắt đầu bằng http:// hoặc https://');
-    onSave({ ...d, name: d.name.trim(), url: d.url.trim(), downloads: Math.max(0, parseInt(d.downloads, 10) || 0) });
+    onSave({ ...d, name: d.name.trim(), url: d.url.trim(), baseDownloads: Math.max(0, parseInt(d.baseDownloads, 10) || 0) });
   };
   return (
     <Modal title={initial.id ? 'Sửa tài liệu' : 'Thêm tài liệu'} onClose={onClose} wide>
@@ -30,7 +30,7 @@ function DocForm({ initial, onSave, onClose }) {
             <select value={d.format} onChange={(e) => set('format', e.target.value)}>{Object.keys(FM).map((f) => <option key={f}>{f}</option>)}</select>
           </Field>
           <Field label="Đường dẫn tải (Google Drive…)" hint="Nhớ bật chia sẻ “Bất kỳ ai có đường liên kết”."><input type="url" value={d.url} onChange={(e) => set('url', e.target.value)} required /></Field>
-          <Field label="Lượt tải"><input type="number" min="0" value={d.downloads} onChange={(e) => set('downloads', e.target.value)} /></Field>
+          <Field label="Số lượt tải hiển thị thêm (số ban đầu)" hint={'Lượt tải thật: ' + (d.downloads || 0) + ' — chỉ đếm khi có người bấm tải, không sửa được. Ngoài web hiện tổng hai số.'}><input type="number" min="0" value={d.baseDownloads || 0} onChange={(e) => set('baseDownloads', e.target.value)} /></Field>
           <label className="chk"><input type="checkbox" checked={d.published !== false} onChange={(e) => set('published', e.target.checked)} /> Hiển thị trên Kho tài liệu</label>
           <Field label="Ai được tải"><select value={d.access === 'student' ? 'student' : 'free'} onChange={(e) => set('access', e.target.value)}><option value="free">🎁 Miễn phí — mọi người</option><option value="student">⭐ Chỉ Học viên (người thường thấy thẻ nhưng không lấy được link)</option></select></Field>
         </div>
@@ -80,7 +80,7 @@ export default function DocsAdmin() {
                 <td className="mini-art" style={{ '--fc': d.art?.color }}><DocArt doc={d} idx={'m' + d.id} /></td>
                 <td><b>{d.name}</b><a className="url" href={d.url} target="_blank" rel="noopener noreferrer">{d.url}</a></td>
                 <td><span className="fmt" style={{ background: (FM[d.format] || FM.PDF).c }}>{d.format}</span></td>
-                <td>{fmtN(d.downloads)}</td>
+                <td><b>{fmtN(d.downloads || 0)}</b>{d.baseDownloads ? <span className="url">hiển thị {fmtN((d.downloads || 0) + d.baseDownloads)}</span> : null}</td>
                 <td><button type="button" className={'pill-s ' + (d.published === false ? 'off' : 'on')} onClick={() => toggle(d)}>{d.published === false ? 'Đang ẩn' : 'Hiển thị'}</button>{d.access === 'student' && <span className="pill-s warn" style={{ marginLeft: 4 }}>⭐ Học viên</span>}</td>
                 <td className="acts"><button type="button" className="btn-s small" onClick={() => setEdit(d)}>Sửa</button><button type="button" className="btn-d small" onClick={() => del(d)}>Xoá</button></td>
               </tr>

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import DocCard, { FileIcon } from '../components/DocCard.jsx';
 import DonateBox from '../components/DonateBox.jsx';
-import { nrm } from '../services/util.js';
+import { nrm, shownDl } from '../services/util.js';
 import { navigate } from '../router.jsx';
 
 const TB = [['ALL', 'Tất cả'], ['PDF', 'PDF'], ['PPT', 'PPT'], ['SHEET', 'SHEET'], ['DOCX', 'DOCX']];
@@ -23,7 +23,7 @@ export function useDocActions() {
 }
 
 export function hotSet(docs) {
-  return new Set([...docs].sort((a, b) => b.downloads - a.downloads).slice(0, 3).map((d) => d.id));
+  return new Set([...docs].sort((a, b) => shownDl(b) - shownDl(a)).slice(0, 3).map((d) => d.id));
 }
 
 export default function Library() {
@@ -45,11 +45,11 @@ export default function Library() {
   }, [libQuery, setLibQuery]);
 
   const hot = useMemo(() => hotSet(docs), [docs]);
-  const maxDl = Math.max(1, ...docs.map((d) => d.downloads || 0));
+  const maxDl = Math.max(1, ...docs.map(shownDl));
   const list = useMemo(() => {
     const k = nrm(q.trim());
     const a = docs.filter((d) => (tab === 'ALL' || d.format === tab) && (!k || nrm(d.name).includes(k)));
-    if (sort === 'dl') a.sort((x, y) => y.downloads - x.downloads);
+    if (sort === 'dl') a.sort((x, y) => shownDl(y) - shownDl(x));
     else a.sort((x, y) => (y.createdAt || 0) - (x.createdAt || 0));
     return a;
   }, [docs, tab, q, sort]);
