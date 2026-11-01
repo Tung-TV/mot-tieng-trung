@@ -2,6 +2,31 @@ import { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { FM } from '../components/docArt.js';
 import { fmtN, isAdmin, ROLE_LABEL } from '../services/util.js';
+import { CONTENT_REV, contentUpdate } from '../services/seed.js';
+
+function ContentUpdate() {
+  const { content, store, reload, toast, ask } = useApp();
+  const [busy, setBusy] = useState(false);
+  if ((content.settings.contentRev || 1) >= CONTENT_REV) return null;
+  const u = contentUpdate(content);
+  const apply = async () => {
+    if (!(await ask({ title: 'Cập nhật nội dung', message: 'Áp dụng nội dung mới? Bài kiểm tra, cách hoàn thành chặng và tài liệu bạn đã sửa được giữ nguyên.', ok: 'Áp dụng' }))) return;
+    setBusy(true);
+    try {
+      for (const st of u.stages) await store.saveStage(st);
+      for (const d of u.documents) await store.saveDocument(d);
+      await store.saveSettings(u.settings);
+      await reload(); toast('Đã cập nhật nội dung mới.');
+    } catch (e) { toast(e.message, 'err'); } finally { setBusy(false); }
+  };
+  return (
+    <section className="note-box up-note">
+      <b>🆕 Có bản cập nhật nội dung</b> — lộ trình HSK1–6 đủ danh sách bài học, khoá học trọn bộ 365K/năm, kho tài liệu thêm {u.documents.length} tài liệu.
+      <div className="muted">Sẽ cập nhật {u.stages.length} chặng{u.planChanged ? ', đổi gói Học viên thành 365.000đ / 12 tháng' : ''}. Bài kiểm tra và tài liệu đã sửa được giữ nguyên.</div>
+      <button className="btn-p" type="button" disabled={busy} onClick={apply}>{busy ? 'Đang cập nhật…' : 'Áp dụng cập nhật'}</button>
+    </section>
+  );
+}
 
 export default function Dashboard() {
   const { content, user, store } = useApp();
@@ -22,6 +47,7 @@ export default function Dashboard() {
   return (
     <>
       <h1 className="adm-h">Tổng quan</h1>
+      {isAdmin(user) && <ContentUpdate />}
       <div className="kpis">
         <div className="kpi"><small>Tài liệu</small><b>{docs.length}</b><span>{docs.filter((d) => d.published === false).length} đang ẩn</span></div>
         <div className="kpi"><small>Tổng lượt tải</small><b>{fmtN(total)}</b><span>{total.toLocaleString('vi-VN')} lượt</span></div>

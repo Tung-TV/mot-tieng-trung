@@ -1,11 +1,28 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { navigate } from '../router.jsx';
+import { loadLegacy } from './LegacyView.jsx';
 import MOUNTAIN from '../data/mountain.svg.js';
 import { byButton, stageStates } from '../services/model.js';
 import { Boxes, Chip, InfoBlock, Sections } from '../components/StageParts.jsx';
 
 const PHASES = [['Bắt đầu', 'Chuẩn bị', '#7fc8a9'], ['Nhập môn', 'Pinyin', '#ecb857'], ['HSK 1–3', 'Sơ cấp', '#74b5e4'], ['HSK 4–6', 'Trung cấp', '#b86fa3'], ['HSK 7–9', 'Cao cấp', '#c0392b']];
+
+function GiftCta() {
+  const { content, toast } = useApp();
+  const [busy, setBusy] = useState(false);
+  const open = async () => {
+    setBusy(true);
+    try { await loadLegacy(content.settings.bank); window.__lgOpenLr && window.__lgOpenLr(); } catch (e) { toast(e.message, 'err'); } finally { setBusy(false); }
+  };
+  return (
+    <button type="button" className="rm-cta" onClick={open} disabled={busy}>
+      <span className="gf">🎁</span>
+      <span className="tx"><b>NHẬN NGAY LỘ TRÌNH</b><small>{busy ? 'Đang mở…' : 'Làm nhiệm vụ nhỏ · nhận file Lộ trình học tiếng Trung cho người mới'}</small></span>
+      <span className="ar">›</span>
+    </button>
+  );
+}
 
 function Hero({ learner }) {
   return (
@@ -19,6 +36,7 @@ function Hero({ learner }) {
         <p className="sub">{learner
           ? 'Mỗi chặng là một cấp bậc. Vượt qua bài kiểm tra cuối chặng để mở chặng tiếp theo, từ Vỡ lòng đến Bậc thầy.'
           : 'Mỗi chặng là một cấp bậc: học xong là lên bậc, từ Vỡ lòng đến Bậc thầy. Nâng cấp tài khoản Học viên để vào học và làm bài kiểm tra từng chặng.'}</p>
+        <GiftCta />
       </div>
       <div className="rh-r" dangerouslySetInnerHTML={{ __html: MOUNTAIN }} />
       <div className="stamp" aria-label="Chương trình HSK 3.0">HSK<b>3.0</b></div>

@@ -219,10 +219,10 @@ export function vietQrPayload(bank, amount, info) {
 
 export const fmtVnd = (n) => (Number(n) || 0).toLocaleString('vi-VN') + 'đ';
 export const DEFAULT_PLAN = {
-  name: 'Học viên Mọt Tiếng Trung',
-  price: 199000,
-  months: 0,
-  benefits: ['Mở toàn bộ lộ trình 9 chặng, từ Vỡ lòng tới HSK 7–9', 'Chi tiết từng chặng: bài học, giáo trình, tài liệu đi kèm', 'Bài kiểm tra cuối chặng, lưu điểm và tiến độ cá nhân', 'Túi đồ nghề và hướng dẫn app học'],
+  name: 'Khóa học Mọt Tiếng Trung trọn bộ HSK1–6',
+  price: 365000,
+  months: 12,
+  benefits: ['Trọn bộ HSK 1–6 chỉ 365K/năm (≈ 1K/ngày)', 'Mở toàn bộ lộ trình: bài giảng, từ vựng, luyện viết, nghe, ngữ pháp, luyện nói từng bài', 'Bài kiểm tra cuối chặng, lưu điểm và tiến độ cá nhân', 'Đề thi thử HSK 1–6, luyện gõ, shadowing, HSKK'],
 };
 
 // ----- Kênh hỗ trợ (Zalo / Facebook) -----

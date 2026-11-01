@@ -49,13 +49,14 @@ export function buildSeed() {
     affKey: s.aff || '',
     cover: s.cover || '',
     boxes: s.bx || [],
+    soon: !!s.soon,
     // “Nhập môn” hoàn thành bằng nút; các chặng khác phải qua bài kiểm tra (admin soạn trong CMS)
     completion: s.k === 'Nhập môn' ? 'button' : 'test',
     // bài kiểm tra mẫu tạo từ danh sách bài học (HSK1–3); chặng khác admin tự soạn
     test: i === 0 ? starterTest(raw.TOOLS) : testFromLessons(s.lessons || [], 8, SAMPLE_EXTRA[s.k] || {}),
   }));
   return {
-    version: 1,
+    version: 2,
     documents,
     stages,
     settings: {
@@ -69,6 +70,42 @@ export function buildSeed() {
       chipColors: raw.CC,
       chipEmojis: raw.CE,
       images: raw.IMGS,
+      contentRev: 2,
     },
   };
+}
+
+// ----- Cập nhật nội dung theo bản HTML mới (rev 2: lộ trình HSK1–6 đủ bài học, khoá học 365K/năm, kho 62 tài liệu) -----
+export const CONTENT_REV = 2;
+const STAGE_FIELDS = ['title', 'desc', 'chips', 'sections', 'info', 'lessons', 'ribbon', 'ribbonColor', 'affKey', 'cover', 'soon', 'boxes'];
+
+/** Tính phần thay đổi so với dữ liệu hiện có. Giữ nguyên bài kiểm tra, cách hoàn thành và tài liệu admin đã sửa. */
+export function contentUpdate(content) {
+  const fresh = buildSeed();
+  const stages = [];
+  fresh.stages.forEach((f) => {
+    const cur = content.stages.find((s) => s.id === f.id);
+    if (!cur) { stages.push(f); return; }
+    const next = { ...cur };
+    STAGE_FIELDS.forEach((k) => { next[k] = f[k]; });
+    // chặng chưa có câu hỏi nào → dùng bài mẫu tạo từ danh sách bài học mới
+    const nq = (t) => ((t && t.sections) || []).reduce((n, x) => n + (x.questions || []).length, 0);
+    if (!nq(cur.test) && nq(f.test)) next.test = f.test;
+    if (JSON.stringify(next) !== JSON.stringify(cur)) stages.push(next);
+  });
+  const names = new Set(content.documents.map((d) => d.name.trim().toLowerCase()));
+  const documents = fresh.documents.filter((d) => !names.has(d.name.trim().toLowerCase())).map((d) => ({ ...d, id: uid('doc'), createdAt: Date.now() }));
+  const s = content.settings;
+  const oldPlan = !s.plan || (s.plan.price === 199000 && !s.plan.months);
+  const settings = {
+    ...s,
+    affiliate: { ...(s.affiliate || {}), ...fresh.settings.affiliate },
+    tools: fresh.settings.tools,
+    apps: fresh.settings.apps,
+    chipColors: fresh.settings.chipColors,
+    chipEmojis: fresh.settings.chipEmojis,
+    plan: oldPlan ? { ...fresh.settings.plan } : s.plan,
+    contentRev: CONTENT_REV,
+  };
+  return { stages, documents, settings, planChanged: oldPlan };
 }

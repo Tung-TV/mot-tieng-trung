@@ -1,5 +1,5 @@
 // Backend mặc định: lưu toàn bộ dữ liệu trong localStorage của trình duyệt (miễn phí, chạy offline)
-import { buildSeed, uid } from './seed.js';
+import { CONTENT_REV, buildSeed, contentUpdate, uid } from './seed.js';
 import { hashPassword, newSalt } from './crypto.js';
 import { checkGoogleClaims, decodeJwt } from './google.js';
 import { DEFAULT_SUPPORT, DEFAULT_PLAN, allQuestions, byButton, gradeAuto, hasTest, isManual, newTxnCode, normTest, passPct, pctOf, qPoints, stageStates, testFromLessons, tierOf, viewFor } from './model.js';
@@ -27,6 +27,12 @@ const can = (u, need) => {
 };
 // Bản lưu trên trình duyệt từ phiên bản trước: bổ sung gói học viên + bài kiểm tra mẫu
 function upgradeDb(db) {
+  if ((db.settings.contentRev || 1) < CONTENT_REV) {
+    const u = contentUpdate(db);
+    u.stages.forEach((st) => { const i = db.stages.findIndex((x) => x.id === st.id); if (i < 0) db.stages.push(st); else db.stages[i] = st; });
+    db.documents = [...db.documents, ...u.documents];
+    db.settings = u.settings;
+  }
   if (!db.settings.plan) db.settings.plan = { ...DEFAULT_PLAN };
   if (!db.settings.support) db.settings.support = { ...DEFAULT_SUPPORT };
   if (!db.settings.bank.bankId) db.settings.bank.bankId = 'MB';

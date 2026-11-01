@@ -54,8 +54,10 @@ export function AppsPanel({ settings }) {
   );
 }
 
-export function InfoBlock({ s, settings }) {
+/** learn: hiện nút “Bắt đầu học” từng bài + “Thi thử” (chỉ dùng ở trang chặng của Học viên) */
+export function InfoBlock({ s, settings, learn = false }) {
   const u = (settings.affiliate || {})[s.affKey];
+  const lv = learn && (/^HSK\s*([1-6])\b/.exec(s.title || '') || [])[1];
   return (
     <div className="inf">
       {s.ribbon && <div className="ribbon" style={{ background: s.ribbonColor }}>{s.ribbon}</div>}
@@ -70,8 +72,9 @@ export function InfoBlock({ s, settings }) {
         ) : <div key={k} className="ic"><b>{r[0]}</b><span>{r[1]}</span></div>)}
       </div>
       {(s.lessons || []).length > 0 && (
-        <details className="dd"><summary>📖 Danh sách {s.lessons.length} bài học trong giáo trình</summary>
-          <div><ol className="ls15">{s.lessons.map((l, i) => <li key={i}><span className="bn">Bài {i + 1}</span><span className="lt"><b>{l[0]}</b><small>{l[1]}</small></span></li>)}</ol></div>
+        <details className="dd" open={!!lv}><summary>📖 Danh sách {s.lessons.length} bài học trong giáo trình</summary>
+          <div><ol className="ls15">{s.lessons.map((l, i) => <li key={i}><span className="bn">Bài {i + 1}</span><span className="lt"><b>{l[0]}</b><small>{l[1]}</small></span>{lv && <a className="lbtn" href={'#bai-hoc-' + lv + '-' + (i + 1)}>BẮT ĐẦU HỌC ›</a>}</li>)}
+            {lv && <li className="ls-exam"><span className="bn">🏆 Thi</span><span className="lt"><b>THI THỬ HSK{lv}</b><small>Làm đề thi thử HSK {lv} để kiểm tra những gì đã học</small></span><a className="lbtn lbx" href={'#thi-hsk-' + lv}>VÀO THI THỬ ›</a></li>}</ol></div>
         </details>
       )}
     </div>

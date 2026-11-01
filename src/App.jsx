@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext.jsx';
-import { useRoute } from './router.jsx';
+import { isLegacy, useRoute } from './router.jsx';
+import LegacyView from './pages/LegacyView.jsx';
 import { Header, TopNav, Banner } from './components/Header.jsx';
 import { AuthModal, ConfirmDialog, Toasts } from './components/Overlays.jsx';
 import Library from './pages/Library.jsx';
@@ -12,7 +13,7 @@ import StageDetail from './pages/StageDetail.jsx';
 import Upgrade, { UpgradeModal } from './pages/Upgrade.jsx';
 import { SupportFab } from './components/Support.jsx';
 
-const TITLES = { '/': 'Kho tài liệu', '/lo-trinh': 'Lộ trình học', '/kho-cua-toi': 'Kho của tôi', '/on-tap': 'Ôn tập', '/cong-dong': 'Cộng đồng', '/nang-cap': 'Nâng cấp tài khoản' };
+const TITLES = { '/': 'Kho tài liệu', '/lo-trinh': 'Lộ trình học', '/kho-cua-toi': 'Kho của tôi', '/on-tap': 'Ôn tập', '/cong-dong': 'Cộng đồng', '/nang-cap': 'Nâng cấp tài khoản', '/khoa-hoc': 'Khóa học HSK1–6', '/pinyin': 'Bảng Pinyin', '/bai-tap-pinyin': 'Bài tập Pinyin', '/thi-hsk': 'Luyện thi HSK', '/luyen-go': 'Luyện gõ từ vựng', '/shadowing': 'Luyện shadowing', '/hskk-so-cap': 'HSKK sơ cấp', '/dia-diem-thi': 'Địa điểm thi HSK' };
 
 function Shell() {
   const { content, error } = useApp();
@@ -20,8 +21,8 @@ function Shell() {
   const isAdmin = path === '/admin' || path.startsWith('/admin/');
 
   useEffect(() => {
-    document.title = 'Mọt Tiếng Trung - ' + (isAdmin ? 'Quản trị' : TITLES[path] || (path.startsWith('/lo-trinh/') ? 'Chi tiết chặng' : 'Kho tài liệu'));
-    if (!isAdmin) window.scrollTo(0, 0);
+    document.title = 'Mọt Tiếng Trung - ' + (isAdmin ? 'Quản trị' : TITLES[path] || (path.startsWith('/lo-trinh/') ? 'Chi tiết chặng' : /^\/bai-hoc-/.test(path) ? 'Bài học' : /^\/(de-thi|lam-bai|thi-hsk)/.test(path) ? 'Thi thử HSK' : 'Kho tài liệu'));
+    if (!isAdmin && !/^\/(lam-bai|de-thi)/.test(path)) window.scrollTo(0, 0);
   }, [path, isAdmin]);
 
   if (error) return <div className="page"><section className="sk soon"><div className="soon-e">⚠️</div><h2>Không tải được dữ liệu</h2><p>{error}</p><div className="soon-a"><button className="btn-p" type="button" onClick={() => location.reload()}>Thử lại</button></div></section></div>;
@@ -34,6 +35,7 @@ function Shell() {
   else if (path.startsWith('/lo-trinh/')) page = <StageDetail id={decodeURIComponent(path.slice('/lo-trinh/'.length))} />;
   else if (path === '/kho-cua-toi') page = <MyLibrary />;
   else if (path === '/nang-cap') page = <Upgrade />;
+  else if (isLegacy(path)) page = <LegacyView path={path} />;
   else page = <ComingSoon path={path} />;
 
   return (

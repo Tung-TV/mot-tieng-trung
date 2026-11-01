@@ -146,7 +146,7 @@ export default function StageDetail({ id }) {
 
       {((s.info || []).length > 0 || (s.sections || []).length > 0 || (s.boxes || []).length > 0) && (
         <section className="sk sd-body stage">
-          {(s.info || []).length > 0 && <InfoBlock s={s} settings={content.settings} />}
+          {(s.info || []).length > 0 && <InfoBlock s={s} settings={content.settings} learn />}
           <Sections s={s} />
           <Boxes s={s} settings={content.settings} owned={owned} toggleOwned={toggleOwned} />
         </section>

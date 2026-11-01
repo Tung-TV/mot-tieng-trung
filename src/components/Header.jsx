@@ -1,14 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
-import { navigate } from '../router.jsx';
+import { hrefOf, navigate } from '../router.jsx';
 import { ROLE_LABEL } from '../services/util.js';
 
 const NAV = [
   { r: '/', cls: 'n1', s: '--bg1:#d6e9fd;--bg2:#b9d8f8;--tc:#1f4f9a;--sc:#c1440e', ck: '#3b82d6', b: ['KHO TÀI LIỆU', 'TIẾNG TRUNG'], sm: 'MIỄN PHÍ 100%', img: 'nav1' },
   { r: '/lo-trinh', cls: 'n2', s: '--bg1:#fde5b8;--bg2:#fbd08a;--tc:#b3541a;--sc:#5a3a1a', ck: '#f0a030', b: ['LỘ TRÌNH HỌC', 'TIẾNG TRUNG'], sm: 'DÀNH CHO NGƯỜI MỚI', img: 'nav2' },
+  { r: '/khoa-hoc', cls: 'n5', s: '--bg1:#ffd9d6;--bg2:#fbb7b1;--tc:#a3261f;--sc:#6b1d18', ck: '#d9453d', b: ['KHÓA HỌC', 'MỌT TIẾNG TRUNG HSK1-6'], sm: 'ƯU ĐÃI CHỈ 1K/NGÀY', hot: true, emoji: '🎓' },
   { r: '/on-tap', cls: 'n3', s: '--bg1:#d8f3d3;--bg2:#bde8b6;--tc:#1f7a2f;--sc:#2f5d34', ck: '#3fae49', b: ['ÔN TẬP', 'TIẾNG TRUNG'], sm: 'Luyện từ vựng, nghe, nói, đọc, viết', img: 'nav3' },
   { r: '/cong-dong', cls: 'n4', s: '--bg1:#f1dcf8;--bg2:#e4c3f1;--tc:#7b2f9c;--sc:#7b2f9c', ck: '#a855c7', b: ['CỘNG ĐỒNG', 'HỌC TIẾNG TRUNG'], sm: 'GIAO LƯU & CHIA SẺ', img: 'nav4' },
 ];
+// trang luyện tập thuộc mục Ôn tập; bài học thuộc Lộ trình
+const navKey = (p) => (/^\/bai-hoc-/.test(p) ? '/lo-trinh' : /^\/(on-tap|luyen-go|shadowing|pinyin|bai-tap-pinyin|thi-hsk|dia-diem-thi|hskk|de-thi|lam-bai)/.test(p) ? '/on-tap' : p);
+const navOn = (p, r) => { const k = navKey(p); return k === r || (r !== '/' && k.startsWith(r + '/')); };
 const styleObj = (s) => Object.fromEntries(s.split(';').map((x) => x.split(':')));
 
 export function Header() {
@@ -29,7 +33,7 @@ export function Header() {
     <header className="topbar">
       <a className="brand" href="#/" aria-label="Mọt Tiếng Trung - Trang chủ"><img src={img.logo} alt="Mọt Tiếng Trung - Kho tài liệu tự học" /></a>
       <div className="acct">
-        <a className="com" href="#/cong-dong">
+        <a className="com" href="#cong-dong">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2" /><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5" /><circle cx="17" cy="9" r="2.4" /><path d="M17.5 14.2c2.2.3 3.5 2 3.5 4.3" /></svg>
           Cộng đồng
         </a>
@@ -81,10 +85,11 @@ export function TopNav({ path }) {
   return (
     <nav className="topnav" aria-label="Chuyên mục">
       {NAV.map((n) => (
-        <a key={n.r} className={'nv ' + n.cls + (path === n.r || (n.r !== '/' && path.startsWith(n.r + '/')) ? ' on' : '')} href={'#' + n.r} style={styleObj(n.s)}>
+        <a key={n.r} className={'nv ' + n.cls + (navOn(path, n.r) ? ' on' : '')} href={hrefOf(n.r)} style={styleObj(n.s)}>
+          {n.hot && <em className="hotb">HOT</em>}
           <i className="ck" style={{ background: n.ck }}>✓</i>
-          <span><b>{n.b[0]}<br />{n.b[1]}</b><small>{n.sm}</small></span>
-          <img src={img[n.img]} alt="" />
+          <span><b>{n.b[0]}<br />{n.b[1]}</b><small>{n.hot && <span className="fire" aria-hidden="true">🔥 </span>}{n.sm}</small></span>
+          {n.emoji ? <span className="nv-e" aria-hidden="true">{n.emoji}</span> : <img src={img[n.img]} alt="" />}
         </a>
       ))}
     </nav>

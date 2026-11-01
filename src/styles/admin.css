@@ -111,3 +111,4 @@ code{background:var(--bg);border:1px solid var(--line);border-radius:5px;padding
 .media-in audio{height:34px;max-width:100%}
 .g-ans audio{width:100%}
 .ok{color:#1f6b2a} .err-t{color:#b0352a}
+.up-note{display:grid;gap:8px;margin-bottom:14px}.up-note .btn-p{justify-self:start}
