@@ -1,11 +1,17 @@
 // Chuyển dữ liệu thô trích từ HTML gốc (seed.json) sang mô hình dữ liệu của app
 import raw from '../data/seed.json';
-import { DEFAULT_PLAN, DEFAULT_SUPPORT, questionsFromLessons } from './model.js';
+import { DEFAULT_PLAN, DEFAULT_SUPPORT, starterTest, testFromLessons } from './model.js';
 
 export const uid = (p = 'id') => p + '_' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
 
 const ARTKIND = ['book', 'slide', 'kids', 'sheet', 'radical', 'grid', 'exam', 'doc', 'letter'];
 export { ARTKIND };
+
+// thêm câu tự luận / nói vào bài mẫu để minh hoạ phần chấm tay
+const SAMPLE_EXTRA = {
+  'Vỡ lòng': { write: 'Viết 2 câu tự giới thiệu bằng chữ Hán (tên, bạn là người nước nào).' },
+  'Tập sự': { speak: 'Đọc to: 我们去机场接你们。你们几点到？' },
+};
 
 export function buildSeed() {
   const now = Date.now();
@@ -43,8 +49,10 @@ export function buildSeed() {
     affKey: s.aff || '',
     cover: s.cover || '',
     boxes: s.bx || [],
-    // bài kiểm tra mẫu tạo từ danh sách bài học (chặng không có bài học: học viên bấm “Hoàn thành chặng”)
-    test: (s.lessons || []).length >= 4 ? { pass: 70, questions: questionsFromLessons(s.lessons, 10) } : null,
+    // “Nhập môn” hoàn thành bằng nút; các chặng khác phải qua bài kiểm tra (admin soạn trong CMS)
+    completion: s.k === 'Nhập môn' ? 'button' : 'test',
+    // bài kiểm tra mẫu tạo từ danh sách bài học (HSK1–3); chặng khác admin tự soạn
+    test: i === 0 ? starterTest(raw.TOOLS) : testFromLessons(s.lessons || [], 8, SAMPLE_EXTRA[s.k] || {}),
   }));
   return {
     version: 1,

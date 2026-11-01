@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { navigate } from '../router.jsx';
-import { hasTest, passPct } from '../services/model.js';
+import { SKILLS, allQuestions, byButton, hasTest, isManual, passPct, qPoints } from '../services/model.js';
+import Exam from '../components/Exam.jsx';
 import { nrm } from '../services/util.js';
 import DocCard from '../components/DocCard.jsx';
 import { Boxes, Chip, InfoBlock, Sections } from '../components/StageParts.jsx';
@@ -24,96 +25,67 @@ export function UpgradeGate({ title = 'Nội dung dành cho Học viên' }) {
   );
 }
 
-function Quiz({ stage, onDone }) {
-  const { store, toast, setUser, reload } = useApp();
-  const qs = stage.test.questions;
-  const [ans, setAns] = useState(() => qs.map(() => null));
-  const [busy, setBusy] = useState(false);
-  const left = ans.filter((x) => x === null).length;
-  const submit = async (e) => {
-    e.preventDefault();
-    if (left) return toast('Bạn còn ' + left + ' câu chưa trả lời.', 'err');
-    setBusy(true);
-    try {
-      const r = await store.submitTest(stage.id, ans);
-      if (r.user) setUser(r.user);
-      await reload();
-      onDone(r);
-    } catch (x) { toast(x.message || 'Không nộp được bài', 'err'); } finally { setBusy(false); }
-  };
-  return (
-    <form className="quiz" onSubmit={submit}>
-      {qs.map((q, i) => (
-        <fieldset key={i} className={'qz' + (ans[i] !== null ? ' ok' : '')}>
-          <legend><span className="qn">Câu {i + 1}</span>{q.q}</legend>
-          {q.options.map((o, j) => (
-            <label key={j} className={'opt' + (ans[i] === j ? ' on' : '')}>
-              <input type="radio" name={'q' + i} checked={ans[i] === j} onChange={() => setAns(ans.map((x, k) => (k === i ? j : x)))} />
-              <span className="ol">{'ABCD'[j] || j + 1}</span><span>{o}</span>
-            </label>
-          ))}
-        </fieldset>
-      ))}
-      <div className="qz-foot">
-        <span className="muted">{qs.length - left}/{qs.length} câu đã trả lời · cần đạt {passPct(stage)}%</span>
-        <button className="btn-p" disabled={busy}>{busy ? 'Đang chấm…' : 'Nộp bài'}</button>
-      </div>
-    </form>
-  );
-}
-
-function TestCard({ stage, idx, state, best, attempts }) {
-  const { content, store, toast, setUser, reload } = useApp();
-  const [mode, setMode] = useState('intro'); // intro | quiz | result
-  const [res, setRes] = useState(null);
+function TestCard({ stage, idx, st }) {
+  const { content, store, toast, setUser, reload, tier } = useApp();
+  const [taking, setTaking] = useState(false);
+  const [subs, setSubs] = useState(null);
   const next = content.stages[idx + 1];
+  const nextBtn = next && <button className="btn-p" type="button" onClick={() => navigate('/lo-trinh/' + next.id)}>Sang chặng “{next.key}” ›</button>;
+  useEffect(() => { if (!byButton(stage)) store.mySubmissions(stage.id).then(setSubs, () => setSubs([])); }, [stage, store, st.attempts, st.pending]);
 
-  if (!hasTest(stage)) {
+  if (byButton(stage)) {
     const complete = async () => {
       try { setUser(await store.completeStage(stage.id)); await reload(); toast('Đã hoàn thành chặng “' + stage.key + '”.'); } catch (x) { toast(x.message, 'err'); }
     };
     return (
       <section className="sk test-card">
         <h3>✅ Hoàn thành chặng</h3>
-        {state === 'passed'
-          ? <p>Bạn đã hoàn thành chặng này.{next && ' Chặng tiếp theo đã mở.'}</p>
-          : <p>Chặng này chưa có bài kiểm tra. Học xong nội dung ở trên rồi bấm “Hoàn thành chặng” để mở chặng tiếp theo.</p>}
-        <div className="row-btns">
-          {state !== 'passed' && <button className="btn-p" type="button" onClick={complete}>Hoàn thành chặng</button>}
-          {state === 'passed' && next && <button className="btn-p" type="button" onClick={() => navigate('/lo-trinh/' + next.id)}>Sang chặng “{next.key}” ›</button>}
-        </div>
+        <p>{st.state === 'passed' ? 'Bạn đã hoàn thành chặng này.' + (next ? ' Chặng tiếp theo đã mở.' : '') : 'Học xong nội dung ở trên rồi bấm “Hoàn thành chặng” để mở chặng tiếp theo.'}</p>
+        <div className="row-btns">{st.state !== 'passed' ? <button className="btn-p" type="button" onClick={complete}>Hoàn thành chặng</button> : nextBtn}</div>
       </section>
     );
   }
-
+  if (!hasTest(stage)) {
+    return (
+      <section className="sk test-card">
+        <h3>📝 Bài kiểm tra cuối chặng</h3>
+        <p>Bài kiểm tra của chặng này đang được cập nhật. Bạn cần đạt bài kiểm tra để mở chặng tiếp theo — Mọt sẽ báo khi có bài.</p>
+        {tier === 'staff' && <p className="note-box">Quản trị: vào CMS › Lộ trình học › Sửa chặng “{stage.key}” để soạn bài kiểm tra, hoặc đổi cách hoàn thành sang “Bấm nút”.</p>}
+      </section>
+    );
+  }
+  const qs = allQuestions(stage.test);
+  const skills = [...new Set(stage.test.sections.map((x) => x.skill))];
+  const last = subs && subs[0];
+  if (taking) {
+    return (
+      <section className="sk test-card" id="kiem-tra">
+        <h3>📝 Bài kiểm tra · {stage.key}</h3>
+        <Exam stage={stage} onSubmit={async (ans) => { const r = await store.submitTest(stage.id, ans); if (r.user) setUser(r.user); await reload(); return r; }}
+          onClose={() => { setTaking(false); store.mySubmissions(stage.id).then(setSubs, () => {}); }} />
+      </section>
+    );
+  }
   return (
     <section className="sk test-card" id="kiem-tra">
       <h3>📝 Bài kiểm tra cuối chặng</h3>
-      {mode === 'intro' && (
-        <>
-          <p>{stage.test.questions.length} câu trắc nghiệm · cần đạt <b>{passPct(stage)}%</b> để mở chặng tiếp theo · làm lại không giới hạn.</p>
-          <div className="t-stats">
-            <span>Trạng thái: <b className={state === 'passed' ? 'ok' : ''}>{state === 'passed' ? 'Đã đạt' : 'Chưa đạt'}</b></span>
-            <span>Điểm cao nhất: <b>{best != null ? best + '%' : '—'}</b></span>
-            <span>Số lần làm: <b>{attempts || 0}</b></span>
-          </div>
-          <div className="row-btns">
-            <button className="btn-p" type="button" onClick={() => setMode('quiz')}>{attempts ? 'Làm lại bài kiểm tra' : 'Bắt đầu làm bài'}</button>
-            {state === 'passed' && next && <button className="btn-s" type="button" onClick={() => navigate('/lo-trinh/' + next.id)}>Sang chặng “{next.key}” ›</button>}
-          </div>
-        </>
-      )}
-      {mode === 'quiz' && <Quiz stage={stage} onDone={(r) => { setRes(r); setMode('result'); window.scrollTo({ top: document.getElementById('kiem-tra').offsetTop - 12, behavior: 'smooth' }); }} />}
-      {mode === 'result' && res && (
-        <div className={'t-result ' + (res.passed ? 'pass' : 'fail')}>
-          <div className="big">{res.pct}%</div>
-          <p><b>{res.score}/{res.total}</b> câu đúng. {res.passed ? (next ? 'Chúc mừng! Bạn đã mở khoá chặng “' + next.key + '”.' : 'Chúc mừng! Bạn đã hoàn thành toàn bộ lộ trình.') : 'Chưa đạt ' + passPct(stage) + '%. Ôn lại bài học rồi thử lại nhé.'}</p>
-          <div className="row-btns">
-            {res.passed && next && <button className="btn-p" type="button" onClick={() => navigate('/lo-trinh/' + next.id)}>Sang chặng “{next.key}” ›</button>}
-            <button className={res.passed ? 'btn-s' : 'btn-p'} type="button" onClick={() => setMode('quiz')}>Làm lại</button>
-            <button className="btn-s" type="button" onClick={() => setMode('intro')}>Đóng</button>
-          </div>
-        </div>
+      <div className="t-skills">{skills.map((k) => <span key={k} className="t-sk">{(SKILLS[k] || ['', '📝'])[1]} {(SKILLS[k] || ['Phần'])[0]}</span>)}</div>
+      <p>{stage.test.sections.length} phần · {qs.length} câu · {qs.reduce((n, q) => n + qPoints(q), 0)} điểm{stage.test.minutes ? ' · ' + stage.test.minutes + ' phút' : ''} · cần đạt <b>{passPct(stage)}%</b> để mở chặng tiếp theo.{qs.some(isManual) ? ' Phần tự luận / nói do giáo viên chấm.' : ''}</p>
+      <div className="t-stats">
+        <span>Trạng thái: <b className={st.state === 'passed' ? 'ok' : ''}>{st.pending ? 'Đang chờ chấm' : st.state === 'passed' ? 'Đã đạt' : 'Chưa đạt'}</b></span>
+        <span>Điểm cao nhất: <b>{st.best != null ? st.best + '%' : '—'}</b></span>
+        <span>Số lần làm: <b>{st.attempts || 0}</b></span>
+      </div>
+      {last && last.status === 'graded' && last.feedback && <div className="t-feedback"><b>Nhận xét của giáo viên</b> ({last.pct}%): {last.feedback}</div>}
+      <div className="row-btns">
+        {st.pending ? <span className="pill-s warn">Bài gần nhất đang chờ chấm — chưa làm lại được</span>
+          : <button className="btn-p" type="button" onClick={() => setTaking(true)}>{st.attempts ? 'Làm lại bài kiểm tra' : 'Bắt đầu làm bài'}</button>}
+        {st.state === 'passed' && nextBtn}
+      </div>
+      {subs && subs.length > 0 && (
+        <details className="dd"><summary>Lịch sử làm bài ({subs.length})</summary>
+          <ol className="t-hist">{subs.map((x) => <li key={x.id}>{new Date(x.createdAt).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })} — {x.status === 'pending' ? '⏳ chờ chấm' : x.pct + '% ' + (x.passed ? '✓ đạt' : '✗ chưa đạt')}{x.feedback ? ' · ' + x.feedback : ''}</li>)}</ol>
+        </details>
       )}
     </section>
   );
@@ -148,7 +120,7 @@ export default function StageDetail({ id }) {
       <section className="sk soon">
         <div className="soon-e">🔒</div>
         <h2>Chặng “{s.key}” chưa mở</h2>
-        <p>Vượt qua bài kiểm tra của chặng “{prev.key}” (đạt từ {passPct(prev)}%) để mở chặng này.</p>
+        <p>{byButton(prev) ? 'Hoàn thành chặng “' + prev.key + '” để mở chặng này.' : 'Vượt qua bài kiểm tra của chặng “' + prev.key + '” (đạt từ ' + passPct(prev) + '%) để mở chặng này.'}</p>
         <div className="soon-a"><button className="btn-p" type="button" onClick={() => navigate('/lo-trinh/' + prev.id)}>Tới chặng “{prev.key}”</button><button className="btn-s" type="button" onClick={() => navigate('/lo-trinh')}>Về lộ trình</button></div>
       </section>
     );
@@ -169,7 +141,7 @@ export default function StageDetail({ id }) {
           <p>{s.desc}</p>
           <div className="chips">{(s.chips || []).map((c) => <Chip key={c} label={c} settings={content.settings} />)}</div>
         </div>
-        <span className={'sd-state st-' + st.state}>{st.state === 'passed' ? '✓ Đã hoàn thành' : 'Đang học'}</span>
+        <span className={'sd-state st-' + st.state}>{st.state === 'passed' ? '✓ Đã hoàn thành' : st.pending ? '⏳ Chờ chấm' : 'Đang học'}</span>
       </section>
 
       {((s.info || []).length > 0 || (s.sections || []).length > 0 || (s.boxes || []).length > 0) && (
@@ -181,7 +153,7 @@ export default function StageDetail({ id }) {
       )}
 
       <StageDocs stage={s} />
-      <TestCard key={s.id} stage={s} idx={idx} state={st.state} best={st.best} attempts={st.attempts} />
+      <TestCard key={s.id} stage={s} idx={idx} st={st} />
 
       <nav className="sd-pn">
         {prev ? <button className="btn-s" type="button" onClick={() => navigate('/lo-trinh/' + prev.id)}>‹ {prev.key}</button> : <span />}

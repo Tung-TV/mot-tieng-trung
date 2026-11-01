@@ -96,3 +96,18 @@ code{background:var(--bg);border:1px solid var(--line);border-radius:5px;padding
 .q-opt input[type=radio]{width:18px;height:18px;accent-color:#2f7d32;flex:none}
 .q-opt span{font-weight:800;font-size:12px;width:14px}
 @media (max-width:640px){.q-opts{grid-template-columns:1fr}}
+.t-edit{display:grid;gap:12px}
+.q-edit{display:grid;gap:8px;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--panel)}
+.q-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.q-head select,.q-head input{width:auto}
+.q-head .grow{flex:1 1 200px}
+.q-head .acts{margin-left:auto}
+.q-pts{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--muted)}
+.q-pts input{width:70px!important}
+.q-opt button{flex:none}
+.media-in{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.media-in>input{flex:1 1 220px}
+.media-in img{max-height:80px;border-radius:8px}
+.media-in audio{height:34px;max-width:100%}
+.g-ans audio{width:100%}
+.ok{color:#1f6b2a} .err-t{color:#b0352a}

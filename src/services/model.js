@@ -23,21 +23,66 @@ export const SETTINGS_PREMIUM = ['affiliate', 'tools', 'apps', 'prompts'];
 const pick = (o, keys) => Object.fromEntries(keys.filter((k) => k in o).map((k) => [k, o[k]]));
 const omit = (o, keys) => Object.fromEntries(Object.entries(o).filter(([k]) => !keys.includes(k)));
 
-/** stage đầy đủ → { pub, detail, key } — key là đáp án bài kiểm tra (chỉ biên tập/quản trị đọc được) */
-export function splitStage(s) {
+// ----- Bài kiểm tra kiểu HSK -----
+// test = { pass, minutes, sections: [{ id, skill, title, intro, audio, image, passage, questions: [q] }] }
+// q    = { id, type, prompt, points, image?, options?, tokens?, key? }   (key = đáp án, chỉ biên tập/quản trị thấy)
+//   choice    : chọn 1 đáp án             key = { answer: số thứ tự }
+//   truefalse : đúng / sai                key = { answer: 0 (Đúng) | 1 (Sai) }
+//   fill      : điền từ                   key = { accept: ['đáp án 1', 'cách viết khác', …] }
+//   order     : sắp xếp từ thành câu      key = { answer: ['我', '是', '学生'] } — học viên thấy tokens đã xáo
+//   write     : viết tự luận (chấm tay)   key = { guide: 'gợi ý chấm / bài mẫu' }
+//   speak     : nói, ghi âm (chấm tay)    key = { guide: 'gợi ý chấm' }
+export const SKILLS = { listening: ['Nghe', '🎧'], reading: ['Đọc', '📖'], writing: ['Viết', '✍️'], speaking: ['Nói', '🗣️'] };
+export const QTYPES = { choice: 'Trắc nghiệm', truefalse: 'Đúng / Sai', fill: 'Điền từ', order: 'Sắp xếp câu', write: 'Viết tự luận (chấm tay)', speak: 'Nói – ghi âm (chấm tay)' };
+export const MANUAL_TYPES = ['write', 'speak'];
+export const isManual = (q) => MANUAL_TYPES.includes(q.type);
+export const qPoints = (q) => Math.max(0, Number(q.points) || 1);
+
+export const rid = (p) => p + Math.random().toString(36).slice(2, 8);
+// mã cố định theo nội dung (dữ liệu mẫu dựng lại nhiều lần vẫn cùng mã câu)
+const hid = (p, str) => { let h = 2166136261; for (const c of String(str)) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return p + (h >>> 0).toString(36); };
+/** Đổi định dạng cũ { questions:[{q, options, answer}] } sang dạng có phần thi */
+export function normTest(t) {
+  if (!t) return null;
+  if (Array.isArray(t.sections)) return t;
+  if (!Array.isArray(t.questions)) return null;
+  return {
+    pass: t.pass || 70, minutes: t.minutes || 0,
+    sections: [{ id: 's1', skill: 'reading', title: 'Đọc hiểu', intro: 'Chọn đáp án đúng.', questions: t.questions.map((q, i) => ({
+      id: 'q' + (i + 1), type: 'choice', prompt: q.q, options: q.options, points: 1, ...(Number.isInteger(q.answer) ? { key: { answer: q.answer } } : {}),
+    })) }],
+  };
+}
+export const allQuestions = (t) => (t && t.sections ? t.sections.flatMap((s) => s.questions || []) : []);
+/** Chặng này hoàn thành bằng nút (không cần bài kiểm tra) hay bằng bài kiểm tra */
+export const byButton = (s) => !!s && s.completion === 'button';
+export const hasTest = (s) => allQuestions(s && s.test).length > 0;
+export const passPct = (s) => (s && s.test && Number(s.test.pass)) || 70;
+const stripKeys = (t) => t && { ...t, sections: t.sections.map((sec) => ({ ...sec, questions: sec.questions.map(({ key, ...q }) => q) })) }; // eslint-disable-line no-unused-vars
+
+/** stage đầy đủ → { pub, detail, key } — key = { keys: { [mã câu]: đáp án } } chỉ biên tập/quản trị đọc được */
+export function splitStage(s0) {
+  const s = { ...s0, test: normTest(s0.test) };
   const pub = pick(s, STAGE_PUBLIC);
   const detail = omit(s, STAGE_PUBLIC);
   let key = null;
-  if (s.test && Array.isArray(s.test.questions)) {
-    key = { answers: s.test.questions.map((q) => (Number.isInteger(q.answer) ? q.answer : 0)) };
-    detail.test = { ...s.test, questions: s.test.questions.map(({ answer, ...q }) => q) }; // eslint-disable-line no-unused-vars
+  if (s.test) {
+    const keys = {};
+    allQuestions(s.test).forEach((q) => { keys[q.id] = { type: q.type, points: qPoints(q), ...(q.key || {}) }; });
+    key = { keys };
+    detail.test = stripKeys(s.test);
   }
   return { pub, detail: { id: s.id, ...detail }, key };
 }
 export function mergeStage(pub, detail, key) {
   const s = { ...pub, ...(detail ? omit(detail, ['id']) : {}) };
-  if (s.test && key && Array.isArray(key.answers)) {
-    s.test = { ...s.test, questions: s.test.questions.map((q, i) => ({ ...q, answer: key.answers[i] ?? 0 })) };
+  s.test = normTest(s.test);
+  if (s.test && key && key.keys) {
+    s.test = { ...s.test, sections: s.test.sections.map((sec) => ({ ...sec, questions: sec.questions.map((q) => {
+      const k = key.keys[q.id]; if (!k) return q;
+      const { type, points, ...rest } = k; // eslint-disable-line no-unused-vars
+      return { ...q, key: rest };
+    }) })) };
   }
   return s;
 }
@@ -46,29 +91,45 @@ export const splitSettings = (st) => ({ pub: omit(st, SETTINGS_PREMIUM), premium
 /** Lọc nội dung đầy đủ theo loại tài khoản (dùng cho chế độ lưu trên trình duyệt; Supabase làm bằng RLS) */
 export function viewFor(full, tier) {
   const c = structuredClone(full);
+  c.stages = c.stages.map((s) => ({ ...s, test: normTest(s.test) }));
   if (tier !== 'staff') c.documents = c.documents.filter((d) => d.published !== false);
   if (tier === 'staff') return c;
-  if (tier === 'student') {
-    c.stages = c.stages.map((s) => (s.test ? { ...s, test: { ...s.test, questions: s.test.questions.map(({ answer, ...q }) => q) } } : s)); // eslint-disable-line no-unused-vars
-    return c;
-  }
+  if (tier === 'student') { c.stages = c.stages.map((s) => (s.test ? { ...s, test: stripKeys(s.test) } : s)); return c; }
   c.stages = c.stages.map((s) => pick(s, STAGE_PUBLIC));
   c.settings = omit(c.settings, SETTINGS_PREMIUM);
   return c;
 }
 
-// ----- Bài kiểm tra & mở khoá -----
-export const hasTest = (s) => !!(s && s.test && Array.isArray(s.test.questions) && s.test.questions.length);
-export const passPct = (s) => (s && s.test && Number(s.test.pass)) || 70;
+// ----- Chấm điểm -----
+export const normAnswer = (x) => String(x ?? '').toLowerCase().normalize('NFC').replace(/[\s\p{P}\p{S}]/gu, '');
+/** Chấm phần tự động. answers = { [mã câu]: trả lời }. Trả về điểm từng câu (null = chờ chấm tay) */
+export function gradeAuto(test, answers = {}) {
+  const items = {};
+  let earned = 0, total = 0, manual = 0;
+  for (const q of allQuestions(test)) {
+    const pts = qPoints(q), a = answers[q.id], k = q.key || {};
+    total += pts;
+    if (isManual(q)) { manual += pts; items[q.id] = null; continue; }
+    let ok = false;
+    if (q.type === 'choice' || q.type === 'truefalse') ok = a !== undefined && a !== null && a !== '' && Number(a) === Number(k.answer);
+    else if (q.type === 'fill') ok = normAnswer(a) !== '' && (k.accept || []).some((x) => normAnswer(x) === normAnswer(a));
+    else if (q.type === 'order') ok = Array.isArray(a) && Array.isArray(k.answer) && a.join('\u0001') === k.answer.join('\u0001');
+    items[q.id] = ok ? pts : 0; earned += ok ? pts : 0;
+  }
+  return { items, earned, total, manual };
+}
+export const pctOf = (earned, total) => (total ? Math.round((earned * 100) / total) : 0);
 
-export function grade(stage, answers) {
-  const qs = stage.test.questions;
-  const score = qs.reduce((n, q, i) => n + (Number(answers[i]) === q.answer ? 1 : 0), 0);
-  const pct = Math.round((score / qs.length) * 100);
-  return { score, total: qs.length, pct, passed: pct >= passPct(stage) };
+/** Xáo trộn cố định (cùng câu luôn cùng thứ tự) cho câu sắp xếp */
+export function shuffled(arr, seed = 'x') {
+  let h = 2166136261; for (const c of seed) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { h = Math.imul(h ^ (h >>> 13), 1274126177); const j = Math.abs(h) % (i + 1); [a[i], a[j]] = [a[j], a[i]]; }
+  if (a.length > 1 && a.every((x, i) => x === arr[i])) a.push(a.shift());
+  return a;
 }
 
-/** Trạng thái từng chặng của một học viên: passed | open | locked (+ điểm cao nhất) */
+/** Trạng thái từng chặng của một học viên: passed | open | locked (+ điểm cao nhất, đang chờ chấm) */
 export function stageStates(stages, progress = {}) {
   const tests = progress.tests || {};
   const done = progress.done || [];
@@ -76,18 +137,18 @@ export function stageStates(stages, progress = {}) {
   let prevPassed = true;
   for (const s of stages) {
     const t = tests[s.id];
-    const passed = hasTest(s) ? !!(t && t.passed) : done.includes(s.id);
+    const passed = byButton(s) ? done.includes(s.id) : !!(t && t.passed);
     const state = passed ? 'passed' : prevPassed ? 'open' : 'locked';
-    out.push({ id: s.id, state, best: t ? t.best : null, attempts: t ? t.attempts || 0 : 0 });
+    out.push({ id: s.id, state, best: t ? t.best ?? null : null, attempts: t ? t.attempts || 0 : 0, pending: !!(t && t.pending) });
     prevPassed = passed;
   }
   return out;
 }
 
-/** Câu hỏi mẫu tạo từ danh sách bài học: "「你好」 nghĩa là gì?" — 4 lựa chọn */
-export function questionsFromLessons(lessons, n = 10) {
+/** Bài kiểm tra mẫu tạo từ danh sách bài học: phần Đọc (trắc nghiệm) + phần Viết (sắp xếp câu) */
+export function testFromLessons(lessons, n = 8, extra = {}) {
   const pool = lessons.filter((l) => l[0] && l[1]);
-  if (pool.length < 4) return [];
+  if (pool.length < 4) return null;
   const step = Math.max(1, Math.floor(pool.length / n));
   const qs = [];
   for (let i = 0; i < pool.length && qs.length < n; i += step) {
@@ -96,9 +157,28 @@ export function questionsFromLessons(lessons, n = 10) {
     const opts = [vi, ...wrong.slice(0, 3)];
     const rot = qs.length % 4; // đổi vị trí đáp án đúng
     const options = [...opts.slice(opts.length - rot), ...opts.slice(0, opts.length - rot)];
-    qs.push({ q: `Bài “${zh}” có nghĩa là gì?`, options, answer: options.indexOf(vi) });
+    qs.push({ id: hid('q', 'c' + zh), type: 'choice', prompt: `“${zh}” có nghĩa là gì?`, options, points: 1, key: { answer: options.indexOf(vi) } });
   }
-  return qs;
+  // sắp xếp lại các chữ Hán của 2 câu ngắn nhất thành câu đúng
+  const orders = pool.map((l) => l[0].replace(/[，。！？、,.!?；：“”]/g, '')).filter((z) => /^[一-鿿]{3,8}$/.test(z)).sort((a, b) => a.length - b.length).slice(0, 2)
+    .map((z) => ({ id: hid('q', 'o' + z), type: 'order', prompt: 'Sắp xếp các chữ thành câu đúng', tokens: shuffled([...z], z), points: 2, key: { answer: [...z] } }));
+  const sections = [{ id: 's1', skill: 'reading', title: 'Phần 1 · Đọc hiểu', intro: 'Chọn nghĩa tiếng Việt đúng của mỗi câu.', questions: qs }];
+  const fill = pool.find((l) => /^[\u4e00-\u9fff，。！？]{2,10}$/.test(l[0]));
+  if (fill) { const zh = fill[0].replace(/[，。！？、,.!?；：“”]/g, ''); orders.push({ id: hid('q', 'f' + zh), type: 'fill', prompt: `Viết lại bằng chữ Hán câu có nghĩa: “${fill[1]}”`, points: 2, key: { accept: [zh] } }); }
+  if (extra.write) orders.push({ id: hid('q', 'w' + extra.write), type: 'write', prompt: extra.write, points: 3, key: { guide: 'Đúng chữ Hán, đúng ngữ pháp, đủ ý: 3 điểm. Sai 1–2 chỗ: 2 điểm. Chỉ viết được một phần: 1 điểm.' } });
+  if (orders.length) sections.push({ id: 's2', skill: 'writing', title: 'Phần 2 · Viết', intro: 'Ghép câu, viết chữ Hán theo yêu cầu.', questions: orders });
+  if (extra.speak) sections.push({ id: 's3', skill: 'speaking', title: 'Phần 3 · Nói', intro: 'Bấm “Ghi âm”, đọc to rõ ràng rồi bấm “Dừng”. Có thể ghi lại nhiều lần trước khi nộp.', questions: [{ id: hid('q', 's' + extra.speak), type: 'speak', prompt: extra.speak, points: 3, key: { guide: 'Phát âm đúng thanh điệu, trôi chảy: 3 điểm.' } }] });
+  return { pass: 70, minutes: 20, sections };
+}
+
+/** Bài kiểm tra mẫu cho chặng “Bắt đầu”, dựng từ túi đồ nghề (admin sửa lại trong CMS) */
+export function starterTest(tools = []) {
+  const t = tools.filter((x) => x && x.t && x.d);
+  if (t.length < 2) return null;
+  const qs = t.map((x, i) => ({ id: hid('q', 't' + x.t), type: 'choice', prompt: `“${x.t}” dùng để làm gì?`, options: shuffled(t.map((y) => y.d), x.k || String(i)), points: 1 }));
+  qs.forEach((q, i) => { q.key = { answer: q.options.indexOf(t[i].d) }; });
+  qs.push({ id: 'qtf1', type: 'truefalse', prompt: 'Nên chuẩn bị giáo trình, bút và vở ô ly trước khi bắt đầu học.', points: 1, key: { answer: 0 } });
+  return { pass: 70, minutes: 10, sections: [{ id: 's1', skill: 'reading', title: 'Kiểm tra chuẩn bị', intro: 'Bài mẫu: quản trị viên có thể sửa trong CMS › Lộ trình học.', questions: qs }] };
 }
 
 /** Mã giao dịch nâng cấp: MOT + 6 ký tự dễ đọc (bỏ 0/O/1/I) */

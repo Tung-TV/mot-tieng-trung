@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { navigate } from '../router.jsx';
 import MOUNTAIN from '../data/mountain.svg.js';
-import { stageStates } from '../services/model.js';
+import { byButton, stageStates } from '../services/model.js';
 import { Boxes, Chip, InfoBlock, Sections } from '../components/StageParts.jsx';
 
 const PHASES = [['Bắt đầu', 'Chuẩn bị', '#7fc8a9'], ['Nhập môn', 'Pinyin', '#ecb857'], ['HSK 1–3', 'Sơ cấp', '#74b5e4'], ['HSK 4–6', 'Trung cấp', '#b86fa3'], ['HSK 7–9', 'Cao cấp', '#c0392b']];
@@ -78,7 +78,7 @@ function LockedRoadmap() {
 }
 
 // ---------- Học viên (và biên tập/quản trị xem trước) ----------
-const STATE_LABEL = { passed: 'Đã hoàn thành', open: 'Đang học', locked: 'Chưa mở khoá' };
+const STATE_LABEL = { passed: 'Đã hoàn thành', open: 'Đang học', locked: 'Chưa mở khoá', pending: 'Bài kiểm tra chờ chấm' };
 
 export function useStageStates() {
   const { content, progress, tier } = useApp();
@@ -97,7 +97,7 @@ function LearnerRoadmap() {
   const pct = stages.length ? Math.round((passedN / stages.length) * 100) : 0;
   const curIdx = Math.max(0, states.findIndex((x) => x.state === 'open'));
   const cur = stages[curIdx];
-  const open = (s, i) => (states[i].state === 'locked' ? toast('Hoàn thành bài kiểm tra chặng “' + stages[i - 1].key + '” để mở chặng này.', 'err') : navigate('/lo-trinh/' + s.id));
+  const open = (s, i) => (states[i].state === 'locked' ? toast((byButton(stages[i - 1]) ? 'Hoàn thành chặng “' : 'Đạt bài kiểm tra chặng “') + stages[i - 1].key + '” để mở chặng này.', 'err') : navigate('/lo-trinh/' + s.id));
   const toggleOwned = (k) => setProgress({ owned: owned.includes(k) ? owned.filter((x) => x !== k) : [...owned, k] });
   const goLib = (keyword) => { setLibQuery(keyword || ' '); navigate('/'); };
   const jump = (id) => {
@@ -152,9 +152,9 @@ function LearnerRoadmap() {
                 {!locked && (s.boxes || []).length > 0
                   ? <Boxes s={s} settings={settings} owned={owned} toggleOwned={toggleOwned} />
                   : <div className="chips">{(s.chips || []).map((c) => <Chip key={c} label={c} settings={settings} />)}</div>}
-                <div className="sbar"><div className="bar" style={{ flex: 1 }}><i style={{ width: stt.state === 'passed' ? '100%' : stt.state === 'open' ? '40%' : 0 }} /></div>{STATE_LABEL[stt.state]}{stt.best != null ? ' · điểm cao nhất ' + stt.best + '%' : ''}</div>
+                <div className="sbar"><div className="bar" style={{ flex: 1 }}><i style={{ width: stt.state === 'passed' ? '100%' : stt.state === 'open' ? '40%' : 0 }} /></div>{STATE_LABEL[stt.pending && stt.state !== 'passed' ? 'pending' : stt.state]}{stt.best != null ? ' · điểm cao nhất ' + stt.best + '%' : ''}</div>
                 {locked ? (
-                  <div className="act"><span className="lock-note">Qua bài kiểm tra “{stages[i - 1].key}” để mở</span></div>
+                  <div className="act"><span className="lock-note">{byButton(stages[i - 1]) ? 'Hoàn thành' : 'Qua bài kiểm tra'} “{stages[i - 1].key}” để mở</span></div>
                 ) : (
                   <div className="act" style={{ gridRow: '1/span ' + ((s.sections || []).length || (s.info || []).length ? 5 : 4) }}>
                     <button className={'go' + (stt.state === 'open' ? ' on' : '')} type="button" onClick={() => open(s, i)}>{stt.state === 'passed' ? 'Ôn lại' : 'Vào học'}</button>

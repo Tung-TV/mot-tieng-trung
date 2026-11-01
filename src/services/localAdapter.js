@@ -2,9 +2,9 @@
 import { buildSeed, uid } from './seed.js';
 import { hashPassword, newSalt } from './crypto.js';
 import { checkGoogleClaims, decodeJwt } from './google.js';
-import { DEFAULT_SUPPORT, DEFAULT_PLAN, grade, hasTest, newTxnCode, questionsFromLessons, stageStates, tierOf, viewFor } from './model.js';
+import { DEFAULT_SUPPORT, DEFAULT_PLAN, allQuestions, byButton, gradeAuto, hasTest, isManual, newTxnCode, normTest, passPct, pctOf, qPoints, stageStates, testFromLessons, tierOf, viewFor } from './model.js';
 
-const K = { db: 'mot.db.v1', users: 'mot.users.v1', session: 'mot.session.v1', upgrades: 'mot.upgrades.v1' };
+const K = { db: 'mot.db.v1', users: 'mot.users.v1', session: 'mot.session.v1', upgrades: 'mot.upgrades.v1', subs: 'mot.subs.v1' };
 const mem = {}; // dự phòng khi localStorage bị chặn
 const ls = {
   get(k) { try { const v = localStorage.getItem(k); return v == null ? mem[k] ?? null : v; } catch { return mem[k] ?? null; } },
@@ -30,7 +30,11 @@ function upgradeDb(db) {
   if (!db.settings.plan) db.settings.plan = { ...DEFAULT_PLAN };
   if (!db.settings.support) db.settings.support = { ...DEFAULT_SUPPORT };
   if (!db.settings.bank.bankId) db.settings.bank.bankId = 'MB';
-  db.stages.forEach((s) => { if (s.test === undefined) s.test = (s.lessons || []).length >= 4 ? { pass: 70, questions: questionsFromLessons(s.lessons, 10) } : null; });
+  db.stages.forEach((s) => {
+    if (s.test === undefined) s.test = testFromLessons(s.lessons || []);
+    s.test = normTest(s.test);
+    if (!s.completion) s.completion = s.key === 'Nhập môn' ? 'button' : 'test';
+  });
   return db;
 }
 
@@ -175,29 +179,71 @@ export function createLocalAdapter({ googleClientId = '' } = {}) {
       saveUsers(users().filter((u) => u.id !== id));
     },
 
-    // ---- Học tập
+    // ---- Học tập: nộp bài, chấm tự động, phần tự luận / nói chờ chấm tay
     async submitTest(stageId, answers) {
       const u = require('student');
       const i = db.stages.findIndex((s) => s.id === stageId);
-      const s = db.stages[i]; if (!s || !hasTest(s)) throw new Error('Chặng này không có bài kiểm tra.');
-      const st = stageStates(db.stages, u.progress || {});
-      if (tierOf(publicUser(u)) !== 'staff' && st[i].state === 'locked') throw new Error('Bạn cần hoàn thành chặng trước để mở chặng này.');
-      const r = grade(s, answers);
+      const s = db.stages[i]; if (!s || !hasTest(s)) throw new Error('Chặng này chưa có bài kiểm tra.');
+      if (tierOf(publicUser(u)) !== 'staff' && stageStates(db.stages, u.progress || {})[i].state === 'locked') throw new Error('Bạn cần hoàn thành chặng trước để mở chặng này.');
       const prev = (u.progress && u.progress.tests && u.progress.tests[stageId]) || {};
-      const rec = { best: Math.max(prev.best || 0, r.pct), last: r.pct, passed: !!prev.passed || r.passed, attempts: (prev.attempts || 0) + 1, at: Date.now() };
+      if (prev.pending) throw new Error('Bài trước của bạn đang chờ chấm, chưa nộp lại được.');
+      const g = gradeAuto(s.test, answers);
+      const pending = g.manual > 0;
+      const sub = { id: uid('sub'), userId: u.id, name: u.name, email: u.email, stageId, stageKey: s.key, answers, items: g.items, auto: g.earned, total: g.total, manualTotal: g.manual, status: pending ? 'pending' : 'graded', createdAt: Date.now() };
+      if (!pending) { sub.pct = pctOf(g.earned, g.total); sub.passed = sub.pct >= passPct(s); }
+      write(K.subs, [...read(K.subs, []), sub]);
+      const rec = pending
+        ? { ...prev, pending: true, attempts: (prev.attempts || 0) + 1, at: Date.now(), lastSub: sub.id }
+        : { ...prev, pending: false, best: Math.max(prev.best || 0, sub.pct), last: sub.pct, passed: !!prev.passed || sub.passed, attempts: (prev.attempts || 0) + 1, at: Date.now(), lastSub: sub.id };
       const list = users().map((x) => (x.id === u.id ? { ...x, progress: { ...(x.progress || {}), tests: { ...((x.progress || {}).tests || {}), [stageId]: rec } } } : x));
       saveUsers(list);
-      return { ...r, record: rec, user: publicUser(list.find((x) => x.id === u.id)) };
+      return { status: sub.status, earned: g.earned, total: g.total, manual: g.manual, pct: sub.pct ?? null, passed: sub.passed ?? false, items: g.items, user: publicUser(list.find((x) => x.id === u.id)) };
     },
     async completeStage(stageId) {
       const u = require('student');
       const i = db.stages.findIndex((s) => s.id === stageId);
-      if (i < 0 || hasTest(db.stages[i])) throw new Error('Chặng này cần làm bài kiểm tra để hoàn thành.');
+      if (i < 0 || !byButton(db.stages[i])) throw new Error('Chặng này cần làm bài kiểm tra để hoàn thành.');
       if (tierOf(publicUser(u)) !== 'staff' && stageStates(db.stages, u.progress || {})[i].state === 'locked') throw new Error('Bạn cần hoàn thành chặng trước.');
       const done = [...new Set([...((u.progress || {}).done || []), stageId])];
       const list = users().map((x) => (x.id === u.id ? { ...x, progress: { ...(x.progress || {}), done } } : x));
       saveUsers(list); return publicUser(list.find((x) => x.id === u.id));
     },
+    async mySubmissions(stageId) {
+      const u = require('member');
+      return read(K.subs, []).filter((x) => x.userId === u.id && (!stageId || x.stageId === stageId)).sort((a, b) => b.createdAt - a.createdAt);
+    },
+    async listSubmissions() { require('editor'); return read(K.subs, []).sort((a, b) => b.createdAt - a.createdAt); },
+    async gradeSubmission(id, manual, feedback) {
+      const grader = require('editor');
+      const all = read(K.subs, []);
+      const sub = all.find((x) => x.id === id); if (!sub) throw new Error('Không tìm thấy bài làm.');
+      const s = db.stages.find((x) => x.id === sub.stageId); if (!s) throw new Error('Chặng đã bị xoá.');
+      const items = { ...sub.items };
+      allQuestions(s.test).filter(isManual).forEach((q) => { items[q.id] = Math.min(qPoints(q), Math.max(0, Number(manual[q.id]) || 0)); });
+      const earned = Object.values(items).reduce((n, v) => n + (Number(v) || 0), 0);
+      const pct = pctOf(earned, sub.total), passed = pct >= passPct(s);
+      const nsub = { ...sub, items, earned, pct, passed, status: 'graded', feedback: feedback || '', gradedAt: Date.now(), gradedBy: grader.email };
+      write(K.subs, all.map((x) => (x.id === id ? nsub : x)));
+      saveUsers(users().map((x) => {
+        if (x.id !== sub.userId) return x;
+        const prev = ((x.progress || {}).tests || {})[sub.stageId] || {};
+        const rec = { ...prev, pending: prev.lastSub === id ? false : prev.pending, best: Math.max(prev.best || 0, pct), last: pct, passed: !!prev.passed || passed, feedback: feedback || '' };
+        return { ...x, progress: { ...(x.progress || {}), tests: { ...((x.progress || {}).tests || {}), [sub.stageId]: rec } } };
+      }));
+      return nsub;
+    },
+    // tệp âm thanh / hình ảnh: bản lưu trên trình duyệt giữ dạng data URL (giới hạn dung lượng)
+    async uploadMedia(file) {
+      require('editor');
+      if (file.size > 3 * 1024 * 1024) throw new Error('Tệp quá lớn (tối đa 3 MB ở chế độ lưu trên trình duyệt). Hãy dán đường dẫn tệp thay vì tải lên.');
+      return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(new Error('Không đọc được tệp')); r.readAsDataURL(file); });
+    },
+    async uploadRecording(blob) {
+      require('student');
+      if (blob.size > 1.5 * 1024 * 1024) throw new Error('Bản ghi quá dài, hãy ghi ngắn hơn.');
+      return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(new Error('Không đọc được bản ghi')); r.readAsDataURL(blob); });
+    },
+    async recordingUrl(ref) { return ref; },
 
     // ---- Nâng cấp tài khoản (chuyển khoản, admin xác nhận)
     async myUpgrade() {

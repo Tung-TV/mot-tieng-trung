@@ -38,6 +38,12 @@ export function createSupabaseAdapter(url, anonKey) {
   const toUser = (p) => p && ({ id: p.id, name: p.name, email: p.email, role: p.role, status: p.status, createdAt: Date.parse(p.created_at), progress: p.progress || {}, avatar: p.avatar || '', providers: p.providers || [p.provider || 'email'], studentUntil: p.student_until ? Date.parse(p.student_until) : null });
   const toUp = (r) => r && ({ id: r.id, userId: r.user_id, name: r.name, email: r.email, code: r.code, amount: r.amount, months: r.months, status: r.status, createdAt: Date.parse(r.created_at), claimedAt: r.claimed_at && Date.parse(r.claimed_at), paidAt: r.paid_at && Date.parse(r.paid_at), confirmedBy: r.confirmed_by });
   const rpc = (fn, body = {}) => rest('rpc/' + fn, { method: 'POST', body });
+  const toSub = (r) => r && ({ id: r.id, userId: r.user_id, name: r.name, email: r.email, stageId: r.stage_id, stageKey: r.stage_key, answers: r.answers || {}, items: r.items || {}, auto: r.auto, earned: r.earned, total: r.total, manualTotal: r.manual_total, status: r.status, pct: r.pct, passed: r.passed, feedback: r.feedback, createdAt: Date.parse(r.created_at), gradedAt: r.graded_at && Date.parse(r.graded_at), gradedBy: r.graded_by });
+  async function storagePut(bucket, path, body) {
+    if (session && session.expires_at * 1000 < Date.now() + 30000) await refresh();
+    const r = await fetch(url + '/storage/v1/object/' + bucket + '/' + path, { method: 'POST', headers: { apikey: anonKey, Authorization: 'Bearer ' + session.access_token, 'Content-Type': body.type || 'application/octet-stream', 'x-upsert': 'true' }, body });
+    if (!r.ok) { let m = ''; try { m = (await r.json()).message; } catch { /* */ } throw new Error('Tải tệp lên không được: ' + (m || r.status)); }
+  }
   const inIds = (ids) => 'id=in.(' + ids.map((x) => '"' + encodeURIComponent(x) + '"').join(',') + ')';
 
   // Một chặng được lưu thành 3 dòng: công khai (stage), chi tiết cho học viên (stage_detail), đáp án (test_key)
@@ -196,10 +202,33 @@ export function createSupabaseAdapter(url, anonKey) {
 
     // ---- Học tập: chấm điểm trong database (đáp án không bao giờ gửi xuống trình duyệt của học viên)
     async submitTest(stageId, answers) {
-      const r = await rpc('submit_test', { p_stage: stageId, p_answers: answers.map((x) => (Number.isInteger(x) ? x : -1)) });
+      const r = await rpc('submit_test', { p_stage: stageId, p_answers: answers || {} });
       return { ...r, user: await myProfile() };
     },
     async completeStage(stageId) { await rpc('complete_stage', { p_stage: stageId }); return myProfile(); },
+    async mySubmissions(stageId) {
+      if (!session) return [];
+      return (await rest('test_submissions?select=*&user_id=eq.' + session.user.id + (stageId ? '&stage_id=eq.' + encodeURIComponent(stageId) : '') + '&order=created_at.desc')).map(toSub);
+    },
+    async listSubmissions() { return (await rest('test_submissions?select=*&order=created_at.desc&limit=300')).map(toSub); },
+    async gradeSubmission(id, manual, feedback) { return toSub(await rpc('grade_submission', { p_id: id, p_manual: manual || {}, p_feedback: feedback || '' })); },
+    // Âm thanh/hình cho đề thi → bucket công khai "media"; bản ghi âm của học viên → bucket riêng "speaking"
+    async uploadMedia(file) {
+      const path = 'de-thi/' + Date.now().toString(36) + '-' + file.name.replace(/[^\w.-]+/g, '_');
+      await storagePut('media', path, file);
+      return url + '/storage/v1/object/public/media/' + path;
+    },
+    async uploadRecording(blob) {
+      const path = session.user.id + '/' + Date.now().toString(36) + '.webm';
+      await storagePut('speaking', path, blob);
+      return 'speaking:' + path;
+    },
+    async recordingUrl(ref) {
+      if (!String(ref).startsWith('speaking:')) return ref;
+      const r = await fetch(url + '/storage/v1/object/authenticated/speaking/' + ref.slice(9), { headers: { apikey: anonKey, Authorization: 'Bearer ' + session.access_token } });
+      if (!r.ok) throw new Error('Không tải được bản ghi âm');
+      return URL.createObjectURL(await r.blob());
+    },
 
     // ---- Nâng cấp tài khoản
     async myUpgrade() {
