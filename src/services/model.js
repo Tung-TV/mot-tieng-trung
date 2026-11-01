@@ -21,7 +21,7 @@ export const canOpenLesson = (stage, n, tier) => paid(tier) || ((stage && stage.
 /** Tài liệu: access = 'free' (mặc định) | 'student' */
 export const docLocked = (d, tier) => d.access === 'student' && !paid(tier);
 /** Cấp HSK của chặng (HSK1 → 1), không phải chặng HSK thì null */
-export const stageLevel = (s) => { const m = /^HSK\s*([1-6])\b/.exec((s && s.title) || ''); return m ? +m[1] : null; };
+export const stageLevel = (s) => { const m = /^HSK\s*(\d+)/.exec((s && s.title) || ''); return m ? +m[1] : null; };
 /** Trạng thái học một bài: new | doing | done */
 export const lessonState = (progress, id) => ((progress && progress.lessons && progress.lessons[id]) || {}).s || 'new';
 

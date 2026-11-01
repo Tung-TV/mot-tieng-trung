@@ -133,7 +133,7 @@ export default function LessonsAdmin() {
     try {
       let all = [];
       for (const f of files) { const j = JSON.parse(await f.text()); all = all.concat(Array.isArray(j) ? j : [j]); }
-      const ok = all.filter((x) => x && x.level >= 1 && x.level <= 6 && x.n >= 1);
+      const ok = all.filter((x) => x && x.level >= 1 && x.n >= 1);
       if (!ok.length) throw new Error('File không đúng định dạng bài học.');
       const n = await store.importLessons(ok); await reload(); toast('Đã nhập ' + n + ' bài học.'); load();
     } catch (e) { toast(e.message, 'err'); }

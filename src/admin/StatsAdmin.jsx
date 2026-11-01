@@ -69,7 +69,7 @@ export default function StatsAdmin() {
     }));
     const name = (id) => { const [lv, n] = id.split('-').map(Number); const s = stages.find((x) => stageLevel(x) === lv); return 'HSK' + lv + ' · Bài ' + n + (s && s.lessons[n - 1] ? ' · ' + s.lessons[n - 1][0] : ''); };
     const ls = Object.values(lessons).map((x) => ({ ...x, name: name(x.id) }));
-    const byLevel = [1, 2, 3, 4, 5, 6].map((lv) => { const m = ls.filter((x) => x.id.startsWith(lv + '-')); return ['HSK' + lv, m.reduce((n, x) => n + x.done, 0), m.reduce((n, x) => n + x.start, 0) + ' lượt bắt đầu']; });
+    const byLevel = [...new Set(stages.map(stageLevel).filter(Boolean))].map((lv) => { const m = ls.filter((x) => x.id.startsWith(lv + '-')); return ['HSK' + lv, m.reduce((n, x) => n + x.done, 0), m.reduce((n, x) => n + x.start, 0) + ' lượt bắt đầu']; });
     return { learners, tiers, active, started, perStage, qs: qs.slice(0, 12), stuckLessons: [...ls].sort((a, b) => b.doing - a.doing).filter((x) => x.doing).slice(0, 10), topLessons: [...ls].sort((a, b) => b.start - a.start).slice(0, 10), byLevel, rs, doneLessons: ls.reduce((n, x) => n + x.done, 0), gradedAll: rs.filter((x) => x.status === 'graded') };
   }, [users, subs, content, days]);
 

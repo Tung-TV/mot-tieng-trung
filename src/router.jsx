@@ -23,7 +23,7 @@ export function navigate(path) {
 
 function canon() {
   const h = location.hash;
-  const m = /^#\/?bai-hoc-([1-6])-(\d+)$/.exec(h); // link bài học kiểu cũ
+  const m = /^#\/?bai-hoc-(\d+)-(\d+)$/.exec(h); // link bài học kiểu cũ
   if (m) { location.replace('#/bai-hoc/' + m[1] + '/' + m[2]); return true; }
   if (/^#\//.test(h) && isLegacy(currentPath())) { location.replace('#' + currentPath().slice(1)); return true; }
   return false;

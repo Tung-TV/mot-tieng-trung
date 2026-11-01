@@ -264,3 +264,5 @@ Kỹ thuật: các trang trên chạy bằng mã gốc của bản HTML (tách r
 - Video không phải YouTube: chỉ hiện nút “▶ Mở video bài giảng”. Video YouTube nhúng bằng iframe thường (không cần tải thư viện YouTube), kèm link “Mở trên YouTube” dự phòng.
 - Lộ trình › Thi chứng chỉ HSK: nút › và các chip HSK mở phần Luyện thi HSK (miễn phí).
 - Quà “Nhận ngay lộ trình” viết lại bằng React: bấm nhiệm vụ là mở link ngay và tính hoàn thành; khảo sát + nhiệm vụ lưu lên máy chủ (bảng `roadmap_leads`, hàm `save_lead`, khách cũng ghi được, chỉ admin đọc). Cấu hình link nhiệm vụ + file lộ trình: CMS › Cài đặt › 🎁 Quà lộ trình. Thống kê + tải danh sách .csv: CMS › Thống kê học tập.
+
+- Cấp HSK không còn cố định 1–6: chặng có tên bắt đầu bằng “HSK” + số (HSK7, HSK7–9 …) tự có mục Bài học trong CMS, trang bài học, trang Khoá học, thống kê.

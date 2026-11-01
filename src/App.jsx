@@ -37,7 +37,7 @@ function Shell() {
   else if (path.startsWith('/lo-trinh/')) page = <StageDetail id={decodeURIComponent(path.slice('/lo-trinh/'.length))} />;
   else if (path === '/kho-cua-toi') page = <MyLibrary />;
   else if (path === '/nang-cap') page = <Upgrade />;
-  else if (/^\/bai-hoc\/[1-6]\/\d+$/.test(path)) { const [, , lv, n] = path.split('/'); page = <Lesson key={path} lv={+lv} n={+n} />; }
+  else if (/^\/bai-hoc\/\d+\/\d+$/.test(path)) { const [, , lv, n] = path.split('/'); page = <Lesson key={path} lv={+lv} n={+n} />; }
   else if (path === '/khoa-hoc') page = <Course />;
   else if (isLegacy(path)) page = <LegacyView path={path} />;
   else page = <ComingSoon path={path} />;
