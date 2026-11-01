@@ -128,3 +128,14 @@ code{background:var(--bg);border:1px solid var(--line);border-radius:5px;padding
 .row-miss td{opacity:.6}
 .vid-row{grid-template-columns:1fr 2fr auto;align-items:end}
 textarea.mono{font-family:ui-monospace,Menlo,monospace;font-size:13px}
+.chip-pick{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chip-pick .chip{display:inline-flex;align-items:center;gap:4px}
+.cp-x,.cp-mv{border:0;background:rgba(0,0,0,.12);border-radius:50%;width:18px;height:18px;line-height:16px;padding:0;cursor:pointer;font-weight:800;color:inherit}
+.cp-plus{border:1.5px dashed var(--ink);background:var(--panel);border-radius:999px;padding:3px 12px;font:inherit;font-weight:700;cursor:pointer}
+.cp-add{display:inline-flex;gap:6px;align-items:center}.cp-add input{min-width:180px}
+.cp-sug{display:flex;flex-wrap:wrap;gap:4px;width:100%}.cp-s{opacity:.55;border:0;cursor:pointer;font:inherit;font-size:12px}.cp-s:hover{opacity:1}
+.tag-list{display:grid;gap:6px}
+.tag-row,.tag-new{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.tag-row .chip{min-width:150px}
+.tag-emo{width:56px;text-align:center}
+.tag-new{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}

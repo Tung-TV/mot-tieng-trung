@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { Modal } from '../components/Overlays.jsx';
-import { Field, ImageInput, pairsToText, textToPairs } from './ui.jsx';
+import { ChipPicker, Field, ImageInput, pairsToText, textToPairs } from './ui.jsx';
 import { allQuestions, normTest } from '../services/model.js';
 import TestEditor, { cleanTest } from './TestEditor.jsx';
 
 const BLANK = { key: 'Bậc mới', emoji: '📘', color: '#74b5e4', whiteText: false, title: 'HSK', badge: 'Sơ cấp', desc: '', chips: ['Bài giảng', 'Từ vựng'], keyword: 'HSK', sections: [], info: [], lessons: [], ribbon: '', ribbonColor: '#c4001d', affKey: '', cover: '', boxes: [], test: null, completion: 'test' };
 
 function StageForm({ initial, onSave, onClose, affKeys, toast }) {
+  const { content } = useApp();
   const [s, setS] = useState(() => ({ ...structuredClone(initial), test: normTest(initial.test), completion: initial.completion || 'test' }));
   const [txt, setTxt] = useState({
-    chips: initial.chips.join(', '),
+    chips: [...(initial.chips || [])],
     lessons: pairsToText(initial.lessons),
     info: pairsToText(initial.info),
   });
@@ -21,7 +22,7 @@ function StageForm({ initial, onSave, onClose, affKeys, toast }) {
     const mode = s.completion === 'button' ? 'button' : 'test';
     const { test, error } = mode === 'button' ? { test: cleanTest(s.test).test || null } : cleanTest(s.test);
     if (error) return toast('Bài kiểm tra: ' + error, 'err');
-    onSave({ ...s, completion: mode, test, chips: txt.chips.split(',').map((x) => x.trim()).filter(Boolean), lessons: textToPairs(txt.lessons), info: textToPairs(txt.info) });
+    onSave({ ...s, completion: mode, test, chips: txt.chips, lessons: textToPairs(txt.lessons), info: textToPairs(txt.info) });
   };
   return (
     <Modal title={initial.id ? 'Sửa chặng: ' + initial.key : 'Thêm chặng'} onClose={onClose} wide>
@@ -36,7 +37,7 @@ function StageForm({ initial, onSave, onClose, affKeys, toast }) {
         </div>
         <label className="chk"><input type="checkbox" checked={!!s.whiteText} onChange={(e) => set('whiteText', e.target.checked)} /> Chữ trắng trên nền màu</label>
         <Field label="Mô tả"><textarea rows={2} value={s.desc} onChange={(e) => set('desc', e.target.value)} /></Field>
-        <Field label="Kỹ năng (chip), cách nhau bằng dấu phẩy"><input value={txt.chips} onChange={(e) => setTxt({ ...txt, chips: e.target.value })} /></Field>
+        <div className="fld"><span>Tag kỹ năng (màu và biểu tượng sửa ở Cài đặt › 🏷️ Tag)</span><ChipPicker value={txt.chips} onChange={(v) => setTxt({ ...txt, chips: v })} settings={content.settings} /></div>
 
         <fieldset><legend>Thông tin giáo trình (tuỳ chọn)</legend>
           <div className="grid3">

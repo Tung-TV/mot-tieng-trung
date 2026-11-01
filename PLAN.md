@@ -266,3 +266,4 @@ Kỹ thuật: các trang trên chạy bằng mã gốc của bản HTML (tách r
 - Quà “Nhận ngay lộ trình” viết lại bằng React: bấm nhiệm vụ là mở link ngay và tính hoàn thành; khảo sát + nhiệm vụ lưu lên máy chủ (bảng `roadmap_leads`, hàm `save_lead`, khách cũng ghi được, chỉ admin đọc). Cấu hình link nhiệm vụ + file lộ trình: CMS › Cài đặt › 🎁 Quà lộ trình. Thống kê + tải danh sách .csv: CMS › Thống kê học tập.
 
 - Cấp HSK không còn cố định 1–6: chặng có tên bắt đầu bằng “HSK” + số (HSK7, HSK7–9 …) tự có mục Bài học trong CMS, trang bài học, trang Khoá học, thống kê.
+- Tag kỹ năng: Cài đặt › 🏷️ Tag (thêm tag mới bằng nút ＋, chọn màu, biểu tượng); Sửa chặng có ô chọn tag: ＋ Thêm tag, bấm gợi ý để thêm nhanh, × để bỏ, ‹ để đổi thứ tự.

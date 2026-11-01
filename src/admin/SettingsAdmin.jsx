@@ -15,7 +15,7 @@ export default function SettingsAdmin() {
   const setArr = (k, i, sub, v) => setS({ ...s, [k]: s[k].map((x, j) => (j === i ? { ...x, [sub]: v } : x)) });
   const save = () => run(() => store.saveSettings({ ...s, plan: { ...s.plan, benefits: (s.plan.benefits || []).map((x) => x.trim()).filter(Boolean) } }), 'Đã lưu cài đặt.');
   const err = (m) => toast(m, 'err');
-  const TABS = [['plan', '⭐ Gói học viên'], ['bank', '💝 Ngân hàng'], ['support', '💬 Hỗ trợ'], ['gift', '🎁 Quà lộ trình'], ['aff', '🛒 Link mua'], ['tools', '🎒 Túi đồ nghề'], ['apps', '📱 App học'], ['pr', '🤖 Prompt AI']];
+  const TABS = [['plan', '⭐ Gói học viên'], ['bank', '💝 Ngân hàng'], ['support', '💬 Hỗ trợ'], ['gift', '🎁 Quà lộ trình'], ['tags', '🏷️ Tag'], ['aff', '🛒 Link mua'], ['tools', '🎒 Túi đồ nghề'], ['apps', '📱 App học'], ['pr', '🤖 Prompt AI']];
 
   return (
     <>
@@ -32,6 +32,33 @@ export default function SettingsAdmin() {
           <Field label="Quyền lợi — mỗi dòng một ý"><textarea rows={5} value={(s.plan.benefits || []).join('\n')} onChange={(e) => setIn('plan', 'benefits', e.target.value.split('\n'))} /></Field>
         </>)}
 
+        {tab === 'tags' && (() => {
+          const cc = s.chipColors || {}, ce = s.chipEmojis || {};
+          const names = [...new Set([...Object.keys(cc), ...Object.keys(ce), ...content.stages.flatMap((x) => x.chips || [])])];
+          const setTag = (k, color, emoji) => setS({ ...s, chipColors: { ...cc, [k]: color }, chipEmojis: { ...ce, [k]: emoji } });
+          const del = (k) => { const a = { ...cc }, b = { ...ce }; delete a[k]; delete b[k]; setS({ ...s, chipColors: a, chipEmojis: b }); };
+          return (<>
+            <p className="muted">Tag kỹ năng hiện trên từng chặng (Bài giảng, Từ vựng, Thi HSK…). Thêm tag ở đây để chọn nhanh khi sửa chặng; gắn tag vào chặng ở Lộ trình học › Sửa chặng.</p>
+            <div className="tag-list">{names.map((k) => {
+              const used = content.stages.filter((x) => (x.chips || []).includes(k)).length;
+              return (
+                <div key={k} className="tag-row">
+                  <span className="chip" style={{ background: cc[k] || '#e6dfc7' }}>{ce[k] && <span className="cs">{ce[k]}</span>}{k}</span>
+                  <input type="color" value={cc[k] || '#e6dfc7'} onChange={(e) => setTag(k, e.target.value, ce[k] || '')} aria-label={'Màu tag ' + k} />
+                  <input className="tag-emo" value={ce[k] || ''} maxLength={4} placeholder="😀" onChange={(e) => setTag(k, cc[k] || '#e6dfc7', e.target.value)} aria-label={'Biểu tượng tag ' + k} />
+                  <small className="muted">{used ? 'dùng ở ' + used + ' chặng' : 'chưa dùng'}</small>
+                  <button type="button" className="btn-d small" disabled={used > 0} title={used ? 'Bỏ tag khỏi các chặng trước rồi mới xoá' : ''} onClick={() => del(k)}>Xoá</button>
+                </div>
+              );
+            })}</div>
+            <form className="tag-new" onSubmit={(e) => { e.preventDefault(); const f = new FormData(e.target); const k = String(f.get('k') || '').trim(); if (!k) return; setTag(k, f.get('c') || '#f2c94c', String(f.get('e') || '')); e.target.reset(); }}>
+              <input name="k" placeholder="Tên tag mới, VD: Luyện đề HSK" />
+              <input name="e" className="tag-emo" placeholder="📝" maxLength={4} />
+              <input name="c" type="color" defaultValue="#f2c94c" />
+              <button className="btn-p small">＋ Thêm tag</button>
+            </form>
+          </>);
+        })()}
         {tab === 'gift' && (() => {
           const g = { ...DEFAULT_GIFT, ...(s.gift || {}) };
           const setG = (patch) => setS({ ...s, gift: { ...g, ...patch } });
