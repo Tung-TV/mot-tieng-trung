@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { GIFT_GOALS, GIFT_LEVELS, GIFT_SOURCES, GIFT_TIMES, giftOf } from '../services/model.js';
 import { Modal } from './Overlays.jsx';
+import { copyText } from '../services/util.js';
 
 const KEY = 'mot.gift.v1';
 const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch { return null; } };
@@ -24,13 +25,13 @@ export function useGiftState() {
   };
   // bấm nhiệm vụ = mở link ngay (thẻ <a> mở tab mới), đồng thời ghi nhận đã làm
   const mark = (k) => { if (!d.tasks[k]) persist({ ...d, tasks: { ...d.tasks, [k]: Date.now() } }); };
+  // chia sẻ = sao chép link (link admin đặt cho nhiệm vụ, để trống thì link trang web) rồi báo đã sao chép
   const share = async () => {
-    const url = location.href.split('#')[0];
-    try {
-      if (navigator.share) await navigator.share({ title: 'Mọt Tiếng Trung', text: 'Học tiếng Trung miễn phí cùng Mọt', url });
-      else { await navigator.clipboard.writeText(url); toast('Đã sao chép link, gửi cho bạn bè nhé!'); }
-      mark('share');
-    } catch { /* người dùng huỷ chia sẻ */ }
+    const t = gift.tasks.find((x) => x.k === 'share');
+    const url = (t && t.url) || location.href.split('#')[0];
+    if (await copyText(url)) toast('Đã sao chép link: ' + url + ' — gửi cho bạn bè nhé!');
+    else toast('Link trang: ' + url, 'err');
+    mark('share');
   };
   return { gift, d, doneN, all, persist, mark, share };
 }

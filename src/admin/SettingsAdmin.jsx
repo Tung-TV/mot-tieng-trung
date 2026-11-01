@@ -118,7 +118,7 @@ export default function SettingsAdmin() {
             {g.tasks.map((t, i) => (
               <div key={i} className="grid2 vid-row">
                 <Field label={'Nhiệm vụ ' + (i + 1)}><input value={t.label} onChange={(e) => setT(i, 'label', e.target.value)} /></Field>
-                <Field label={t.k === 'share' ? 'Chia sẻ trang web (không cần link)' : 'Link mở khi bấm'}><input value={t.url} disabled={t.k === 'share'} onChange={(e) => setT(i, 'url', e.target.value.trim())} placeholder="https://…" /></Field>
+                <Field label={t.k === 'share' ? 'Link để sao chép (trống = link trang web)' : 'Link mở khi bấm'}><input value={t.url} onChange={(e) => setT(i, 'url', e.target.value.trim())} placeholder="https://…" /></Field>
                 <button type="button" className="btn-d small" onClick={() => setG({ tasks: g.tasks.filter((_, j) => j !== i) })}>Xoá</button>
               </div>
             ))}
