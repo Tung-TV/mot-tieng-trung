@@ -9,7 +9,7 @@ const TB = [['ALL', 'Tất cả'], ['PDF', 'PDF'], ['PPT', 'PPT'], ['SHEET', 'SH
 const PER = 12;
 
 export function useDocActions() {
-  const { store, user, progress, setProgress, setAuthOpen, toast, reload } = useApp();
+  const { store, user, progress, setProgress, setAuthOpen, toast, reload, setUpgradeOpen } = useApp();
   const saved = progress.saved || [];
   return {
     saved,
@@ -18,6 +18,7 @@ export function useDocActions() {
       setProgress({ saved: saved.includes(id) ? saved.filter((x) => x !== id) : [...saved, id] });
     },
     download: (id) => { store.bumpDownload(id).then(reload); },
+    locked: () => setUpgradeOpen(true),
   };
 }
 
@@ -33,7 +34,7 @@ export default function Library() {
   const [sort, setSort] = useState('new');
   const [page, setPage] = useState(1);
   const [zoom, setZoom] = useState(false);
-  const { saved, toggleSave, download } = useDocActions();
+  const { saved, toggleSave, download, locked } = useDocActions();
 
   // nhận từ khoá khi bấm "Vào học" ở trang Lộ trình
   useEffect(() => {
@@ -87,7 +88,7 @@ export default function Library() {
           <div className="strip"><span className="heart" aria-hidden="true">❤️</span><div><b>Thấy tài liệu hữu ích?</b><span>Mời Mọt một ly cà phê để Mọt có thêm động lực chia sẻ nhiều tài liệu hơn.</span></div><button type="button" onClick={() => setZoom(true)}>☕ Ủng hộ Mọt</button></div>
           <div className="grid">
             {shown.length ? shown.map((d, k) => (
-              <DocCard key={d.id} doc={d} idx={k} hot={hot.has(d.id)} maxDl={maxDl} saved={saved.includes(d.id)} onSave={() => toggleSave(d.id)} onDownload={() => download(d.id)} />
+              <DocCard onLocked={locked} key={d.id} doc={d} idx={k} hot={hot.has(d.id)} maxDl={maxDl} saved={saved.includes(d.id)} onSave={() => toggleSave(d.id)} onDownload={() => download(d.id)} />
             )) : <p className="empty">Không tìm thấy tài liệu phù hợp. Thử từ khóa khác nhé!</p>}
           </div>
           <div className="pager">

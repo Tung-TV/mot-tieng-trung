@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 
 // Các trang luyện tập chuyển từ bản HTML gốc dùng hash kiểu cũ (#pinyin, #thi-hsk-1, #bai-hoc-1-3 …)
-export const LEGACY = /^\/(on-tap|luyen-go|shadowing(-[kv]-\d+(-\d+)?)?|pinyin|bai-tap-pinyin|thi-hsk(-\d+)?|dia-diem-thi|cong-dong|hskk-so-cap|khoa-hoc|de-thi-\d+-\d+|lam-bai|bai-hoc-[1-6]-\d+)$/;
+export const LEGACY = /^\/(on-tap|luyen-go|shadowing(-[kv]-\d+(-\d+)?)?|pinyin|bai-tap-pinyin|thi-hsk(-\d+)?|dia-diem-thi|cong-dong|hskk-so-cap|de-thi-\d+-\d+|lam-bai)$/;
 export const isLegacy = (path) => LEGACY.test(path);
 
 // Hỗ trợ cả link kiểu cũ của file gốc: #kho, #lo-trinh, #on-tap, #cong-dong
@@ -23,6 +23,8 @@ export function navigate(path) {
 
 function canon() {
   const h = location.hash;
+  const m = /^#\/?bai-hoc-([1-6])-(\d+)$/.exec(h); // link bài học kiểu cũ
+  if (m) { location.replace('#/bai-hoc/' + m[1] + '/' + m[2]); return true; }
   if (/^#\//.test(h) && isLegacy(currentPath())) { location.replace('#' + currentPath().slice(1)); return true; }
   return false;
 }

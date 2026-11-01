@@ -11,7 +11,7 @@ const NAV = [
   { r: '/cong-dong', cls: 'n4', s: '--bg1:#f1dcf8;--bg2:#e4c3f1;--tc:#7b2f9c;--sc:#7b2f9c', ck: '#a855c7', b: ['CỘNG ĐỒNG', 'HỌC TIẾNG TRUNG'], sm: 'GIAO LƯU & CHIA SẺ', img: 'nav4' },
 ];
 // trang luyện tập thuộc mục Ôn tập; bài học thuộc Lộ trình
-const navKey = (p) => (/^\/bai-hoc-/.test(p) ? '/lo-trinh' : /^\/(on-tap|luyen-go|shadowing|pinyin|bai-tap-pinyin|thi-hsk|dia-diem-thi|hskk|de-thi|lam-bai)/.test(p) ? '/on-tap' : p);
+const navKey = (p) => (/^\/bai-hoc/.test(p) ? '/khoa-hoc' : /^\/(on-tap|luyen-go|shadowing|pinyin|bai-tap-pinyin|thi-hsk|dia-diem-thi|hskk|de-thi|lam-bai)/.test(p) ? '/on-tap' : p);
 const navOn = (p, r) => { const k = navKey(p); return k === r || (r !== '/' && k.startsWith(r + '/')); };
 const styleObj = (s) => Object.fromEntries(s.split(';').map((x) => x.split(':')));
 
@@ -59,7 +59,7 @@ export function Header() {
                       <button type="button" onClick={go(() => navigate('/kho-cua-toi'))}>📚 Kho của tôi</button>
                       {tier === 'student'
                         ? <button type="button" onClick={go(() => navigate('/lo-trinh'))}>🪜 Lộ trình của tôi</button>
-                        : <button type="button" className="menu-up" onClick={go(() => navigate('/nang-cap'))}>⭐ Nâng cấp tài khoản</button>}
+                        : <button type="button" className="menu-up" onClick={go(() => navigate('/nang-cap'))}>🎓 Đăng ký Khoá học</button>}
                     </>
                   )}
                   <button type="button" onClick={go(() => auth.logout())}>Đăng xuất</button>

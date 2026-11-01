@@ -8,7 +8,7 @@ import { navigate } from '../router.jsx';
 
 export default function MyLibrary() {
   const { user, content, setAuthOpen, store, setUser, toast, progress, tier } = useApp();
-  const { saved, toggleSave, download } = useDocActions();
+  const { saved, toggleSave, download, locked } = useDocActions();
   const [name, setName] = useState(user ? user.name : '');
   const [pw, setPw] = useState({ old: '', next: '' });
 
@@ -55,13 +55,13 @@ export default function MyLibrary() {
         </div>
         {tier === 'student'
           ? <button className="btn-s" type="button" onClick={() => navigate(curStage ? '/lo-trinh/' + curStage.id : '/lo-trinh')}>Tiếp tục lộ trình ›</button>
-          : <button className="btn-p" type="button" onClick={() => navigate('/nang-cap')}>⭐ Nâng cấp tài khoản</button>}
+          : <button className="btn-p" type="button" onClick={() => navigate('/nang-cap')}>🎓 Đăng ký Khoá học</button>}
       </section>
 
       <main className="panel">
         <div className="head"><span>Tài liệu đã lưu <small>{docs.length} tài liệu</small></span></div>
         <div className="grid">
-          {docs.length ? docs.map((d, k) => <DocCard key={d.id} doc={d} idx={k} hot={hot.has(d.id)} maxDl={maxDl} saved onSave={() => toggleSave(d.id)} onDownload={() => download(d.id)} />)
+          {docs.length ? docs.map((d, k) => <DocCard onLocked={locked} key={d.id} doc={d} idx={k} hot={hot.has(d.id)} maxDl={maxDl} saved onSave={() => toggleSave(d.id)} onDownload={() => download(d.id)} />)
             : <p className="empty">Chưa có tài liệu nào. Bấm ♡ trên thẻ tài liệu ở <a href="#/">Kho tài liệu</a> để lưu lại.</p>}
         </div>
       </main>

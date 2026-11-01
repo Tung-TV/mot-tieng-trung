@@ -50,6 +50,9 @@ export function buildSeed() {
     cover: s.cover || '',
     boxes: s.bx || [],
     soon: !!s.soon,
+    // vào học miễn phí: chặng Bắt đầu, Nhập môn; bài 1 mỗi cấp HSK cho học thử (admin đổi được)
+    free: i < 2,
+    freeLessons: /^HSK[1-6]$/.test(s.t) ? [1] : [],
     // “Nhập môn” hoàn thành bằng nút; các chặng khác phải qua bài kiểm tra (admin soạn trong CMS)
     completion: s.k === 'Nhập môn' ? 'button' : 'test',
     // bài kiểm tra mẫu tạo từ danh sách bài học (HSK1–3); chặng khác admin tự soạn
@@ -70,14 +73,16 @@ export function buildSeed() {
       chipColors: raw.CC,
       chipEmojis: raw.CE,
       images: raw.IMGS,
-      contentRev: 2,
+      contentRev: 3,
     },
   };
 }
 
 // ----- Cập nhật nội dung theo bản HTML mới (rev 2: lộ trình HSK1–6 đủ bài học, khoá học 365K/năm, kho 62 tài liệu) -----
-export const CONTENT_REV = 2;
+export const CONTENT_REV = 3;
 const STAGE_FIELDS = ['title', 'desc', 'chips', 'sections', 'info', 'lessons', 'ribbon', 'ribbonColor', 'affKey', 'cover', 'soon', 'boxes'];
+// trường chỉ thêm khi chặng chưa có (không đè cấu hình admin)
+const STAGE_DEFAULTS = ['free', 'freeLessons'];
 
 /** Tính phần thay đổi so với dữ liệu hiện có. Giữ nguyên bài kiểm tra, cách hoàn thành và tài liệu admin đã sửa. */
 export function contentUpdate(content) {
@@ -88,6 +93,7 @@ export function contentUpdate(content) {
     if (!cur) { stages.push(f); return; }
     const next = { ...cur };
     STAGE_FIELDS.forEach((k) => { next[k] = f[k]; });
+    STAGE_DEFAULTS.forEach((k) => { if (cur[k] === undefined) next[k] = f[k]; });
     // chặng chưa có câu hỏi nào → dùng bài mẫu tạo từ danh sách bài học mới
     const nq = (t) => ((t && t.sections) || []).reduce((n, x) => n + (x.questions || []).length, 0);
     if (!nq(cur.test) && nq(f.test)) next.test = f.test;

@@ -14,14 +14,14 @@ export function UpgradeModal() {
   const plan = content.settings.plan || DEFAULT_PLAN;
   const close = () => setUpgradeOpen(false);
   return (
-    <Modal title="Cần nâng cấp tài khoản" onClose={close}>
+    <Modal title="Khoá học Mọt Tiếng Trung" onClose={close}>
       <div className="up-modal">
         <div className="up-ic" aria-hidden="true">⭐</div>
-        <p>Phần này dành cho <b>Học viên</b>. Nâng cấp tài khoản để mở toàn bộ lộ trình, bài học từng chặng và bài kiểm tra.</p>
+        <p>Phần này dành cho <b>Học viên Khoá học Mọt Tiếng Trung</b>. Đăng ký khoá học để vào học mọi chặng, mọi bài học (video + ôn tập), bài kiểm tra và tài liệu dành riêng.</p>
         <ul className="up-list">{(plan.benefits || []).map((b, i) => <li key={i}>{b}</li>)}</ul>
         <div className="form-act">
           <button type="button" className="btn-s" onClick={close}>Để sau</button>
-          <button type="button" className="btn-p" onClick={() => { close(); navigate('/nang-cap'); }}>Nâng cấp tài khoản · {fmtVnd(plan.price)}</button>
+          <button type="button" className="btn-p" onClick={() => { close(); navigate('/nang-cap'); }}>Đăng ký khoá học · {fmtVnd(plan.price)}</button>
         </div>
       </div>
     </Modal>
@@ -53,7 +53,7 @@ export default function Upgrade() {
     return (
       <section className="sk soon">
         <div className="soon-e">⭐</div>
-        <h2>Nâng cấp tài khoản Học viên</h2>
+        <h2>Đăng ký Khoá học Mọt Tiếng Trung</h2>
         <p>Vui lòng đăng nhập (hoặc tạo tài khoản miễn phí) trước khi thanh toán, để Mọt kích hoạt đúng tài khoản cho bạn.</p>
         <div className="soon-a"><button className="btn-p" type="button" onClick={() => setAuthOpen('login')}>Đăng nhập</button><button className="btn-s" type="button" onClick={() => setAuthOpen('register')}>Tạo tài khoản</button></div>
       </section>

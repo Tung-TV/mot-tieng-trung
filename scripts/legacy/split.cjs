@@ -28,6 +28,9 @@ let eng=engine.join('\n');
 const rep=(a,b,all)=>{if(!eng.includes(a))throw new Error('miss: '+a.slice(0,60));eng=all?eng.split(a).join(b):eng.replace(a,b)};
 rep('document.body.classList','LGR.classList',true);
 rep('function route(){','function route0(){');
+rep('window.addEventListener("hashchange",function(){route();','window.addEventListener("hashchange",function(){if(viewId(location.hash)==="none"){if(typeof EX!=="undefined"&&EX&&EX.on)exLeave();var au=document.getElementById("exAu");if(au)au.pause();if(window.speechSynthesis)speechSynthesis.cancel();return}route();');
+rep('.style.animation="flash 1.2s"','.style.animation="lg-flash 1.2s"');
+rep('.style.animation="spring "','.style.animation="lg-spring "');
 rep('document.querySelectorAll(".nv")','document.querySelectorAll("#lg .nv")');
 rep('function viewId(h){','function viewId(h){if(h==="#kho"||h==="#lo-trinh"||/^#\\//.test(h)||h===""||h==="#")return "none";');
 rep('function goLib(i){','function goLib(i){if(window.__motLib){window.__motLib(KWS[i<0?ST[cur].tab:i]||"");return}');
@@ -55,5 +58,5 @@ body=body.replace('class="avatar" id="meBtn"','class="lg-avatar" id="meBtn"').re
 const boot=`(function(){var r=document.getElementById("lg");if(!r){r=document.createElement("div");r.id="lg";document.body.appendChild(r)}r.innerHTML=${JSON.stringify(body)};})();\n`;
 const out=boot+rd('s0.js')+'\n;'+pre+eng+'\n;'+s3+'\n;'+s4+'\n;'+s5+'\n;window.__lgReady=1;if(window.__lgOnReady)window.__lgOnReady();';
 fs.writeFileSync(path.join(outdir,'engine.js'),out);
-for(const [c,arr] of Object.entries(chunks))fs.writeFileSync(path.join(outdir,'c-'+c+'.js'),arr.join('\n;\n'));
+for(const [c,arr] of Object.entries(chunks))if(!/^(gram|wr)/.test(c))fs.writeFileSync(path.join(outdir,'c-'+c+'.js'),arr.join('\n;\n'));
 console.log('engine',out.length,Object.entries(chunks).map(([c,a])=>c+':'+a.join('').length).join(' '),[...predecl].join(','));

@@ -3,10 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { navigate } from '../router.jsx';
-import { UpgradeGate } from './StageDetail.jsx';
-import { useStageStates } from './Roadmap.jsx';
 
-export const LG_V = '20261101';
+export const LG_V = '20261101b';
 let loading = null;
 
 /** Nạp engine (một lần). bank: thông tin chuyển khoản lấy từ CMS */
@@ -64,28 +62,6 @@ function Host({ path }) {
   );
 }
 
-function LessonGate({ path }) {
-  const { content, tier } = useApp();
-  const states = useStageStates();
-  if (tier !== 'student' && tier !== 'staff') return <UpgradeGate title="Bài học dành cho Học viên" />;
-  const lv = path.split('-')[2];
-  const idx = content.stages.findIndex((s) => new RegExp('^HSK\\s*' + lv + '\\b').test(s.title || ''));
-  if (tier === 'student' && idx >= 0 && states[idx] && states[idx].state === 'locked') {
-    const s = content.stages[idx];
-    return (
-      <section className="sk soon">
-        <div className="soon-e">🔒</div>
-        <h2>Chặng “{s.key}” chưa mở</h2>
-        <p>Hoàn thành chặng trước (đạt bài kiểm tra) để học các bài HSK {lv}.</p>
-        <div className="soon-a"><button className="btn-p" type="button" onClick={() => navigate('/lo-trinh')}>Về lộ trình</button></div>
-      </section>
-    );
-  }
-  return <Host path={path} />;
-}
-
 export default function LegacyView({ path }) {
-  // Trang bài học thuộc lộ trình → chỉ Học viên, và chặng tương ứng phải đã mở
-  if (/^\/bai-hoc-/.test(path)) return <LessonGate path={path} />;
   return <Host path={path} />;
 }

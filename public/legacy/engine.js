@@ -165,7 +165,7 @@ function viewId(h){if(h==="#kho"||h==="#lo-trinh"||/^#\//.test(h)||h===""||h==="
 var ALLV=["v-kho","v-lo-trinh","v-on-tap","v-go","v-sh","v-pinyin","v-pinyin-drill","v-thi","v-thi-dd","v-thi-lv","v-hskk","v-khoa-hoc","v-ex-info","v-ex-run","v-lesson","v-cong-dong"];
 function nvKey(h){if(h==="#cong-dong")return "cong-dong";if(h==="#khoa-hoc")return "khoa-hoc";return (h==="#lo-trinh"||/^#bai-hoc-/.test(h))?"lo-trinh":(h==="#on-tap"||h==="#luyen-go"||/^#shadowing/.test(h)||h==="#pinyin"||h==="#bai-tap-pinyin"||/^#thi-hsk/.test(h)||h==="#hskk-so-cap"||/^#de-thi-/.test(h)||h==="#lam-bai")?"on-tap":"kho"}
 function route0(){var h=location.hash,id=viewId(h);ALLV.forEach(function(v){var e=document.getElementById(v);if(e)e.hidden=v!==id});[].forEach.call(document.querySelectorAll("#lg .nv"),function(a){a.classList.toggle("on",a.dataset.r===nvKey(h))});if(id==="v-thi")renderThi();if(id==="v-go"&&window.goRender)goRender();if(id==="v-sh"&&window.shRender)shRender();if(id==="v-hskk")renderHskk();if(id==="v-khoa-hoc")renderKh();if(id==="v-thi-lv")renderLv(+h.replace("#thi-hsk-",""));if(id==="v-cong-dong")cdRender();if(id==="v-lesson")lsRender(+h.split("-")[3],+h.split("-")[2]);if(id==="v-ex-info"){var xm=h.match(/^#de-thi-(\d+)-(\d+)$/);exInfo(+xm[1],+xm[2])}if(id==="v-ex-run"){if(!EX||!EX.on){location.hash="#thi-hsk";return}exBuild()}else if(EX&&EX.on)exLeave();if(h==="#bai-tap-pinyin"){if(!Q.cur)qReset()}else if(window.speechSynthesis)speechSynthesis.cancel()}
-window.addEventListener("hashchange",function(){route();var id=viewId(location.hash),e=document.getElementById(id==="v-kho"?"hero-kho":id);if(e)e.scrollIntoView({behavior:"smooth",block:"start"})});
+window.addEventListener("hashchange",function(){if(viewId(location.hash)==="none"){if(typeof EX!=="undefined"&&EX&&EX.on)exLeave();var au=document.getElementById("exAu");if(au)au.pause();if(window.speechSynthesis)speechSynthesis.cancel();return}route();var id=viewId(location.hash),e=document.getElementById(id==="v-kho"?"hero-kho":id);if(e)e.scrollIntoView({behavior:"smooth",block:"start"})});
 document.addEventListener("click",function(e){var b=e.target.closest("#lg [data-nav]");if(b){e.preventDefault();location.hash=b.dataset.nav}});
 var VOICE=null,toastT=0;
 function toast(m){var el=document.getElementById("toast");el.textContent=m;el.classList.add("on");clearTimeout(toastT);toastT=setTimeout(function(){el.classList.remove("on")},3200)}
@@ -970,7 +970,7 @@ cdCount();
 function cdMark(k){if(!cdDn[k]){cdDn[k]=1;cdSave();cdRender()}}
 document.getElementById("v-cong-dong").addEventListener("click",function(e){
 var b=e.target.closest("[data-cd]");if(!b)return;var a=b.dataset.cd;
-if(a==="jump"){e.preventDefault();var t=document.getElementById("cd-"+b.dataset.k);if(t){t.scrollIntoView({behavior:"smooth",block:"center"});t.style.animation="none";void t.offsetWidth;t.style.animation="flash 1.2s"}}
+if(a==="jump"){e.preventDefault();var t=document.getElementById("cd-"+b.dataset.k);if(t){t.scrollIntoView({behavior:"smooth",block:"center"});t.style.animation="none";void t.offsetWidth;t.style.animation="lg-flash 1.2s"}}
 else if(a==="soon")toast("Mọt đang cập nhật link này, bạn quay lại sau nhé!");
 else if(a==="copy"){try{navigator.clipboard.writeText(b.dataset.t)}catch(_){}toast("Đã sao chép ID Locket: "+b.dataset.t)}
 else if(a==="tk"){var k=b.dataset.k;if(cdDn[k])delete cdDn[k];else cdDn[k]=1;cdSave();cdRender();var n=document.querySelector('[data-k="'+k+'"].cd-tk');if(n)n.focus()}
@@ -1070,7 +1070,7 @@ el.innerHTML=spBar()+'<div class="vc-pr"><span>'+(SP.n>=200?'Câu ':'Hình ')+(S
 '<div class="vc-ac"><button type="button" class="wr-b pri" data-sp="mic"'+(SPR?"":' title="Máy chưa hỗ trợ nhận giọng nói"')+'>🎤 Nói</button><button type="button" class="wr-b" data-sp="hint">💡 Gợi ý</button><button type="button" class="wr-b" data-sp="show">👀 Xem đáp án</button></div><p class="spk-hint" id="spHint" hidden>'+vEsc(SP.n>=200?(x[2]||""):x[3])+' · bắt đầu bằng “'+vEsc(x[1].charAt(0))+'”</p>')+'</div>';
 if(!SP.rev){
 var TT=SP.n>=200&&isC?Math.min(20,5+Math.ceil(x[1].length/2)):5,sec=TT,tm=document.getElementById("spSec"),ring=el.querySelector(".spk-tm .fg");
-if(ring){ring.style.animation="spring "+TT+"s linear forwards"}
+if(ring){ring.style.animation="lg-spring "+TT+"s linear forwards"}
 var tick=function(){sec--;if(tm)tm.textContent=Math.max(sec,0);if(sec<=0){spStop();SP.timeout=true;SP.rev=true;spRender2()}else spTm=setTimeout(tick,1000)};
 spTm=setTimeout(tick,1000);
 }

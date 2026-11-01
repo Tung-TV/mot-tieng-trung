@@ -9,7 +9,7 @@
 --    premium      : link mua, túi đồ nghề, app học, prompt                  → học viên trở lên
 alter table public.content drop constraint if exists content_kind_check;
 alter table public.content add constraint content_kind_check
-  check (kind in ('document','stage','stage_detail','test_key','settings','premium'));
+  check (kind in ('document','stage','stage_detail','test_key','settings','premium','lesson','doc_link'));
 
 -- 2) Hồ sơ: vai trò học viên + hạn dùng
 alter table public.profiles drop constraint if exists profiles_role_check;
@@ -47,8 +47,11 @@ end $$;
 drop policy if exists "content đọc công khai" on public.content;
 create policy "content đọc công khai" on public.content for select using (
   (kind = 'document' and coalesce(data->>'published', 'true') <> 'false')
-  or kind in ('stage','settings')
-  or (kind in ('stage_detail','premium') and public.has_role(array['student','editor','admin']))
+  -- danh sách lộ trình xem miễn phí; nội dung bài học (lesson) và link tài liệu trả phí (doc_link) chỉ Học viên,
+  -- trừ bài admin đặt "Miễn phí" (data.free = true)
+  or kind in ('stage','settings','stage_detail','premium')
+  or (kind = 'lesson' and (coalesce(data->>'free','false') = 'true' or public.has_role(array['student','editor','admin'])))
+  or (kind = 'doc_link' and public.has_role(array['student','editor','admin']))
   or public.has_role(array['editor','admin'])
 );
 drop policy if exists "content biên tập ghi" on public.content;
@@ -154,7 +157,9 @@ language plpgsql security definer set search_path = public as $$
 declare k jsonb; q record; pts numeric; a jsonb; ok boolean; v_earned numeric := 0; v_total numeric := 0; man numeric := 0;
         v_items jsonb := '{}'; prog jsonb; prev jsonb; rec jsonb; pass int; v_pct int; v_passed boolean; sub public.test_submissions; p public.profiles; st text;
 begin
-  if not public.has_role(array['student','editor','admin']) then raise exception 'Tính năng dành cho học viên.'; end if;
+  if not (public.has_role(array['student','editor','admin'])
+          or (public.has_role(array['member']) and coalesce((select data->>'free' from public.content where id = 'sd:' || p_stage), 'false') = 'true')) then
+    raise exception 'Chặng này dành cho Học viên.'; end if;
   select data->'keys' into k from public.content where id = 'tk:' || p_stage;
   if k is null or k = '{}'::jsonb then raise exception 'Chặng này chưa có bài kiểm tra.'; end if;
   select * into p from public.profiles where id = auth.uid();
@@ -232,7 +237,9 @@ create or replace function public.complete_stage(p_stage text) returns void
 language plpgsql security definer set search_path = public as $$
 declare prog jsonb;
 begin
-  if not public.has_role(array['student','editor','admin']) then raise exception 'Tính năng dành cho học viên.'; end if;
+  if not (public.has_role(array['student','editor','admin'])
+          or (public.has_role(array['member']) and coalesce((select data->>'free' from public.content where id = 'sd:' || p_stage), 'false') = 'true')) then
+    raise exception 'Chặng này dành cho Học viên.'; end if;
   if coalesce((select data->>'completion' from public.content where id = 'sd:' || p_stage), 'test') <> 'button' then
     raise exception 'Chặng này cần làm bài kiểm tra để hoàn thành.';
   end if;
@@ -263,7 +270,7 @@ do $$ begin
       using (bucket_id = 'media' and public.has_role(array['editor','admin']));
     drop policy if exists "ghi âm học viên tải lên" on storage.objects;
     create policy "ghi âm học viên tải lên" on storage.objects for insert to authenticated
-      with check (bucket_id = 'speaking' and (storage.foldername(name))[1] = auth.uid()::text and public.has_role(array['student','editor','admin']));
+      with check (bucket_id = 'speaking' and (storage.foldername(name))[1] = auth.uid()::text and public.has_role(array['member','student','editor','admin']));
     drop policy if exists "ghi âm xem" on storage.objects;
     create policy "ghi âm xem" on storage.objects for select to authenticated
       using (bucket_id = 'speaking' and ((storage.foldername(name))[1] = auth.uid()::text or public.has_role(array['editor','admin'])));

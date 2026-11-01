@@ -2,7 +2,7 @@
 // Cần chạy docs/supabase.sql trên project Supabase trước, rồi đặt VITE_BACKEND=supabase,
 // VITE_SUPABASE_URL và VITE_SUPABASE_ANON_KEY trong file .env
 import { buildSeed } from './seed.js';
-import { mergeStage, splitSettings, splitStage, tierOf, viewFor } from './model.js';
+import { mergeStage, splitSettings, splitStage, stageLevel, tierOf, viewFor } from './model.js';
 
 const SKEY = 'mot.sb.session';
 const BACK = 'mot.sb.back'; // trang cần quay lại sau khi đăng nhập Google
@@ -114,11 +114,12 @@ export function createSupabaseAdapter(url, anonKey) {
       }
       const pick = (k) => rows.filter((r) => r.kind === k).map((r) => r.data);
       const byId = (k) => Object.fromEntries(pick(k).map((d) => [d.id, d]));
-      const det = byId('stage_detail'), keys = byId('test_key');
+      const det = byId('stage_detail'), keys = byId('test_key'), links = byId('doc_link');
       const settings = rows.find((r) => r.kind === 'settings'), premium = rows.find((r) => r.kind === 'premium');
       return {
         version: 1,
-        documents: pick('document'),
+        // tài liệu đặt “Học viên”: link nằm ở dòng doc_link, chỉ học viên/biên tập đọc được
+        documents: pick('document').map((d) => (links[d.id] ? { ...d, url: links[d.id].url } : d)),
         stages: pick('stage').map((p) => mergeStage(p, det[p.id], keys[p.id])),
         settings: { ...(settings ? settings.data : buildSeed().settings), ...(premium ? premium.data : {}) },
       };
@@ -126,9 +127,16 @@ export function createSupabaseAdapter(url, anonKey) {
     async saveDocument(doc) {
       await ensureSeeded(this);
       const d = { ...doc, id: doc.id || 'doc_' + crypto.randomUUID().slice(0, 8), createdAt: doc.createdAt || Date.now() };
-      await upsert('content', { id: d.id, kind: 'document', sort: -d.createdAt, data: d }); return d;
+      if (d.access === 'student') {
+        const { url, ...pub } = d;
+        await upsert('content', [{ id: d.id, kind: 'document', sort: -d.createdAt, data: pub }, { id: 'dl:' + d.id, kind: 'doc_link', sort: 0, data: { id: d.id, url: url || '' } }]);
+      } else {
+        await upsert('content', { id: d.id, kind: 'document', sort: -d.createdAt, data: d });
+        await rest('content?id=eq.' + encodeURIComponent('dl:' + d.id), { method: 'DELETE' });
+      }
+      return d;
     },
-    async deleteDocument(id) { await ensureSeeded(this); await rest('content?id=eq.' + id, { method: 'DELETE' }); },
+    async deleteDocument(id) { await ensureSeeded(this); await rest('content?' + inIds([id, 'dl:' + id]), { method: 'DELETE' }); },
     async bumpDownload(id) { try { await rest('rpc/bump_download', { method: 'POST', body: { doc_id: id } }); } catch { /* bỏ qua */ } },
     async saveStage(stage) {
       await ensureSeeded(this);
@@ -199,6 +207,34 @@ export function createSupabaseAdapter(url, anonKey) {
       await upsert('content', rows);
     },
     async resetContent() { await this.importContent(buildSeed()); },
+
+    // ---- Bài học của Khoá học: mỗi bài một dòng kind = 'lesson' (RLS: chỉ Học viên, trừ bài Miễn phí)
+    async getLesson(level, n) {
+      const r = await rest('content?select=data&id=eq.' + encodeURIComponent('ls:' + level + '-' + n));
+      if (!r.length) {
+        const t = tierOf(await myProfile());
+        throw new Error(t === 'student' || t === 'staff' ? 'Bài học này chưa có nội dung.' : 'Bài học dành cho Học viên Khoá học Mọt Tiếng Trung.');
+      }
+      return r[0].data;
+    },
+    async listLessons(level) {
+      return (await rest('content?select=data&kind=eq.lesson&id=like.' + encodeURIComponent('ls:' + level + '-*') + '&order=sort.asc')).map((r) => r.data);
+    },
+    async saveLesson(lesson) { await this.importLessons([lesson]); return lesson; },
+    async importLessons(list) {
+      const rows = list.map((l) => ({ id: 'ls:' + l.id, kind: 'lesson', sort: l.level * 1000 + l.n, data: { ...l, updatedAt: Date.now() } }));
+      for (let i = 0; i < rows.length; i += 15) await upsert('content', rows.slice(i, i + 15));
+      // tên bài + bài miễn phí trong danh sách của chặng
+      const { stages } = await this.getContent();
+      for (const s of stages) {
+        const lv = stageLevel(s), mine = list.filter((l) => l.level === lv);
+        if (!mine.length) continue;
+        const lessons = [...(s.lessons || [])], free = new Set(s.freeLessons || []);
+        mine.forEach((l) => { lessons[l.n - 1] = [l.title, l.vi || '']; if (l.free) free.add(l.n); else free.delete(l.n); });
+        await this.saveStage({ ...s, lessons: Array.from(lessons, (x) => x || ['', '']), freeLessons: [...free].sort((a, b) => a - b) });
+      }
+      return list.length;
+    },
 
     // ---- Học tập: chấm điểm trong database (đáp án không bao giờ gửi xuống trình duyệt của học viên)
     async submitTest(stageId, answers) {

@@ -247,3 +247,14 @@ Kỹ thuật: các trang trên chạy bằng mã gốc của bản HTML (tách r
 - `hsk/b4–b6.jpg`: bìa giáo trình HSK4–6 (đang dùng bìa tạm).
 - `kho/c01…c40.jpg`: ảnh bìa tài liệu (web đang dùng hình vẽ tự tạo nên không bắt buộc).
 - Khảo sát “Nhận lộ trình” hiện chỉ lưu trên máy người dùng như bản gốc.
+
+## Cập nhật 01/11/2026 (2): Lộ trình xem miễn phí, Khoá học tính phí, bài học trong CMS
+
+- **Ai được gì**: danh sách lộ trình (chặng, giáo trình, danh sách bài) ai cũng xem. **Vào học** (trang chặng, bài kiểm tra, trang bài học) cần Học viên, trừ phần admin đặt **🎁 Miễn phí**: từng chặng (CMS › Lộ trình › Sửa chặng › “Ai được vào học”), từng bài học (CMS › Bài học › Sửa › “Miễn phí”), từng tài liệu (CMS › Tài liệu › “Ai được tải”). Mặc định: chặng Bắt đầu, Nhập môn và bài 1 mỗi cấp miễn phí; tài liệu Kho miễn phí.
+- **Trang bài học mới** `#/bai-hoc/<cấp>/<bài>`: video YouTube phát ngay trên web, ghim giữa trang, cuộn xuống thì thu nhỏ ở góc; bên dưới là Ôn tập: Luyện viết (thứ tự nét, tự viết — thư viện Hanzi Writer), Từ vựng (danh sách + lật thẻ, có giọng đọc), Nghe hiểu, Ngữ pháp + bài tập, Luyện nói (nhận giọng nói trên trình duyệt, chấm độ giống). Video HSK1–3 trong bản gốc không phải YouTube → hiện nút mở trang riêng cho tới khi admin dán link YouTube.
+- **3 trạng thái bài**: Bắt đầu học → Đang học (mở lại đúng phần ôn tập và giây video đang xem dở) → Đã học xong (vẫn vào ôn lại được).
+- **CMS › Bài học (Khoá học)**: sửa video, từ vựng, chữ luyện viết, ngữ pháp, bài tập, câu luyện nói từng bài; nhập/xuất file .json. Dữ liệu gốc từ bản HTML: `data/lessons/1..6.json` (144 bài) — **không** để công khai trên web; admin nhập qua nút “Nhập dữ liệu”. Nội dung bài lưu ở Supabase (`content.kind = 'lesson'`), chỉ Học viên đọc được (trừ bài Miễn phí).
+- **CMS › Thống kê học tập** (admin): số người dùng / đang hoạt động / đã bắt đầu học, người học đang dừng ở chặng nào, lượt làm và tỉ lệ đạt từng bài kiểm tra, câu hỏi làm sai nhiều nhất, bài học nhiều người học dở / mở nhiều nhất.
+- **Trang Khoá học** viết lại bằng React (giá + quyền lợi lấy từ CMS › Cài đặt › Gói học viên, chương trình HSK1–6 kèm danh sách bài, học thử, 3 bước đăng ký, hỏi đáp). Đã bỏ bộ đếm “thành viên đang tăng trực tiếp” của bản gốc vì là số giả.
+- Sửa lỗi: từ Kho → Khoá học → quay lại Kho bị mất tài liệu (mã gốc chạy lại khi đổi trang làm thẻ tài liệu đứng ở trạng thái ẩn).
+- Việc sau: đưa đề thi thử HSK vào CMS; AI chấm viết / nói (đề xuất: Cloudflare Workers AI miễn phí 10.000 neuron/ngày, gọi qua Cloudflare Pages Function để giấu khoá).

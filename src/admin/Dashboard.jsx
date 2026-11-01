@@ -21,7 +21,7 @@ function ContentUpdate() {
   };
   return (
     <section className="note-box up-note">
-      <b>🆕 Có bản cập nhật nội dung</b> — lộ trình HSK1–6 đủ danh sách bài học, khoá học trọn bộ 365K/năm, kho tài liệu thêm {u.documents.length} tài liệu.
+      <b>🆕 Có bản cập nhật nội dung</b> — lộ trình HSK1–6 đủ danh sách bài học, khoá học trọn bộ 365K/năm, đặt chặng Bắt đầu / Nhập môn và bài 1 mỗi cấp miễn phí, kho tài liệu thêm {u.documents.length} tài liệu. Sau đó vào mục <a href="#/admin/bai-hoc">Bài học</a> › “Nhập dữ liệu” để đưa nội dung từng bài (thư mục data/lessons).
       <div className="muted">Sẽ cập nhật {u.stages.length} chặng{u.planChanged ? ', đổi gói Học viên thành 365.000đ / 12 tháng' : ''}. Bài kiểm tra và tài liệu đã sửa được giữ nguyên.</div>
       <button className="btn-p" type="button" disabled={busy} onClick={apply}>{busy ? 'Đang cập nhật…' : 'Áp dụng cập nhật'}</button>
     </section>

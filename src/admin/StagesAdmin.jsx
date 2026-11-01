@@ -65,6 +65,13 @@ function StageForm({ initial, onSave, onClose, affKeys, toast }) {
           ))}
           <button type="button" className="btn-s small" onClick={() => set('sections', [...s.sections, { title: 'Nhóm mới', color: '#7bb8e8', items: [], note: '' }])}>+ Thêm nhóm buổi học</button>
         </fieldset>
+        <fieldset><legend>Ai được vào học</legend>
+          <div className="row-btns">
+            <label className={'q-opt' + (!s.free ? ' on' : '')}><input type="radio" name="free" checked={!s.free} onChange={() => set('free', false)} /> ⭐ Chỉ Học viên (Khoá học)</label>
+            <label className={'q-opt' + (s.free ? ' on' : '')}><input type="radio" name="free" checked={!!s.free} onChange={() => set('free', true)} /> 🎁 Miễn phí (mọi người)</label>
+          </div>
+          <small className="muted">Danh sách lộ trình luôn xem miễn phí. Đây là quyền vào trang chặng và làm bài kiểm tra. Bài học miễn phí (học thử) đặt trong mục <a href="#/admin/bai-hoc">Bài học</a>.</small>
+        </fieldset>
         <fieldset><legend>Hoàn thành chặng</legend>
           <div className="row-btns">
             <label className={'q-opt' + (s.completion !== 'button' ? ' on' : '')}><input type="radio" name="completion" checked={s.completion !== 'button'} onChange={() => set('completion', 'test')} /> Phải đạt bài kiểm tra</label>

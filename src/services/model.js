@@ -3,8 +3,8 @@
 
 // ----- Loại tài khoản -----
 // guest   : chưa đăng nhập
-// member  : tài khoản thường (đã đăng nhập, chưa nâng cấp) — xem Kho tài liệu, lộ trình chỉ xem khung
-// student : học viên (admin kích hoạt sau khi nhận chuyển khoản) — học lộ trình, làm bài kiểm tra
+// member  : tài khoản thường (đã đăng nhập, chưa nâng cấp) — xem Kho tài liệu + danh sách lộ trình, học phần admin đặt “Miễn phí”
+// student : học viên Khoá học Mọt Tiếng Trung (admin kích hoạt sau khi nhận chuyển khoản) — vào học mọi chặng, bài học, tài liệu
 // staff   : biên tập / quản trị — quản lý nội dung, xem trước toàn bộ lộ trình
 export function tierOf(u) {
   if (!u || u.status !== 'active') return 'guest';
@@ -13,6 +13,17 @@ export function tierOf(u) {
   return 'member';
 }
 export const canLearn = (u) => ['student', 'staff'].includes(tierOf(u));
+const paid = (tier) => tier === 'student' || tier === 'staff';
+/** Vào học một chặng: Học viên, hoặc chặng admin đặt Miễn phí */
+export const canEnterStage = (s, tier) => paid(tier) || !!(s && s.free);
+/** Mở một bài học của Khoá học: Học viên, hoặc bài admin đặt Miễn phí (học thử) */
+export const canOpenLesson = (stage, n, tier) => paid(tier) || ((stage && stage.freeLessons) || []).includes(Number(n));
+/** Tài liệu: access = 'free' (mặc định) | 'student' */
+export const docLocked = (d, tier) => d.access === 'student' && !paid(tier);
+/** Cấp HSK của chặng (HSK1 → 1), không phải chặng HSK thì null */
+export const stageLevel = (s) => { const m = /^HSK\s*([1-6])\b/.exec((s && s.title) || ''); return m ? +m[1] : null; };
+/** Trạng thái học một bài: new | doing | done */
+export const lessonState = (progress, id) => ((progress && progress.lessons && progress.lessons[id]) || {}).s || 'new';
 
 // ----- Tách dữ liệu chặng -----
 // Phần công khai: ai cũng xem được (khung lộ trình). Phần chi tiết: chỉ học viên trở lên.
@@ -94,9 +105,9 @@ export function viewFor(full, tier) {
   c.stages = c.stages.map((s) => ({ ...s, test: normTest(s.test) }));
   if (tier !== 'staff') c.documents = c.documents.filter((d) => d.published !== false);
   if (tier === 'staff') return c;
-  if (tier === 'student') { c.stages = c.stages.map((s) => (s.test ? { ...s, test: stripKeys(s.test) } : s)); return c; }
-  c.stages = c.stages.map((s) => pick(s, STAGE_PUBLIC));
-  c.settings = omit(c.settings, SETTINGS_PREMIUM);
+  // Danh sách lộ trình xem miễn phí (đủ chi tiết), chỉ ẩn đáp án. Tài liệu đặt “Học viên” thì ẩn link với người chưa nâng cấp.
+  c.stages = c.stages.map((s) => (s.test ? { ...s, test: stripKeys(s.test) } : s));
+  if (tier !== 'student') c.documents = c.documents.map((d) => (d.access === 'student' ? omit(d, ['url']) : d));
   return c;
 }
 

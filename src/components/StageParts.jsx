@@ -1,3 +1,6 @@
+import { useApp } from '../context/AppContext.jsx';
+import { navigate } from '../router.jsx';
+import { canOpenLesson, lessonState, stageLevel } from '../services/model.js';
 // Các khối hiển thị của một chặng, dùng chung cho trang Lộ trình và trang Chi tiết chặng
 import { useState } from 'react';
 import { copyText, sanitizeHtml } from '../services/util.js';
@@ -54,10 +57,8 @@ export function AppsPanel({ settings }) {
   );
 }
 
-/** learn: hiện nút “Bắt đầu học” từng bài + “Thi thử” (chỉ dùng ở trang chặng của Học viên) */
-export function InfoBlock({ s, settings, learn = false }) {
+export function InfoBlock({ s, settings, openLessons = false }) {
   const u = (settings.affiliate || {})[s.affKey];
-  const lv = learn && (/^HSK\s*([1-6])\b/.exec(s.title || '') || [])[1];
   return (
     <div className="inf">
       {s.ribbon && <div className="ribbon" style={{ background: s.ribbonColor }}>{s.ribbon}</div>}
@@ -71,12 +72,7 @@ export function InfoBlock({ s, settings, learn = false }) {
           </div>
         ) : <div key={k} className="ic"><b>{r[0]}</b><span>{r[1]}</span></div>)}
       </div>
-      {(s.lessons || []).length > 0 && (
-        <details className="dd" open={!!lv}><summary>📖 Danh sách {s.lessons.length} bài học trong giáo trình</summary>
-          <div><ol className="ls15">{s.lessons.map((l, i) => <li key={i}><span className="bn">Bài {i + 1}</span><span className="lt"><b>{l[0]}</b><small>{l[1]}</small></span>{lv && <a className="lbtn" href={'#bai-hoc-' + lv + '-' + (i + 1)}>BẮT ĐẦU HỌC ›</a>}</li>)}
-            {lv && <li className="ls-exam"><span className="bn">🏆 Thi</span><span className="lt"><b>THI THỬ HSK{lv}</b><small>Làm đề thi thử HSK {lv} để kiểm tra những gì đã học</small></span><a className="lbtn lbx" href={'#thi-hsk-' + lv}>VÀO THI THỬ ›</a></li>}</ol></div>
-        </details>
-      )}
+      {(s.lessons || []).length > 0 && <LessonList s={s} open={openLessons} />}
     </div>
   );
 }
@@ -118,5 +114,27 @@ export function Boxes({ s, settings, owned, toggleOwned }) {
       {toolsOpen && <ToolsPanel settings={settings} owned={owned} toggleOwned={toggleOwned} />}
       {appsOpen && <AppsPanel settings={settings} />}
     </>
+  );
+}
+
+const LS_BTN = { new: 'BẮT ĐẦU HỌC', doing: 'ĐANG HỌC ›', done: '✓ ĐÃ HỌC XONG' };
+/** Danh sách bài của giáo trình: ai cũng xem; vào học thì Học viên (hoặc bài admin đặt Miễn phí) */
+export function LessonList({ s, open: open0 = false }) {
+  const { tier, progress, setUpgradeOpen } = useApp();
+  const lv = stageLevel(s);
+  const go = (n) => (canOpenLesson(s, n, tier) ? navigate('/bai-hoc/' + lv + '/' + n) : setUpgradeOpen(true));
+  return (
+    <details className="dd" open={open0}><summary>📖 Danh sách {s.lessons.length} bài học trong giáo trình</summary>
+      <div><ol className="ls15">{s.lessons.map((l, i) => {
+        const n = i + 1, st = lv ? lessonState(progress, lv + '-' + n) : 'new', ok = canOpenLesson(s, n, tier);
+        return (
+          <li key={i} className={'ls-' + st}><span className="bn">Bài {n}</span><span className="lt"><b>{l[0]}</b><small>{l[1]}</small></span>
+            {lv && <button type="button" className={'lbtn lb-' + st + (ok ? '' : ' lb-lock')} onClick={() => go(n)}>{ok ? LS_BTN[st] : '🔒 HỌC VIÊN'}{ok && (s.freeLessons || []).includes(n) && tier !== 'student' && tier !== 'staff' ? ' · HỌC THỬ' : ''}</button>}
+          </li>
+        );
+      })}
+        {lv && <li className="ls-exam"><span className="bn">🏆 Thi</span><span className="lt"><b>THI THỬ HSK{lv}</b><small>Làm đề thi thử HSK {lv} để kiểm tra những gì đã học</small></span><a className="lbtn lbx" href={'#thi-hsk-' + lv}>VÀO THI THỬ ›</a></li>}
+      </ol></div>
+    </details>
   );
 }

@@ -8,12 +8,16 @@ import SettingsAdmin from './SettingsAdmin.jsx';
 import BackupAdmin from './BackupAdmin.jsx';
 import UpgradesAdmin from './UpgradesAdmin.jsx';
 import GradingAdmin from './GradingAdmin.jsx';
+import LessonsAdmin from './LessonsAdmin.jsx';
+import StatsAdmin from './StatsAdmin.jsx';
 
 const MENU = [
   { p: '/admin', l: '📊 Tổng quan', c: Dashboard },
   { p: '/admin/tai-lieu', l: '📄 Tài liệu', c: DocsAdmin },
   { p: '/admin/lo-trinh', l: '🪜 Lộ trình học', c: StagesAdmin },
+  { p: '/admin/bai-hoc', l: '🎬 Bài học (Khoá học)', c: LessonsAdmin },
   { p: '/admin/cham-bai', l: '📝 Chấm bài', c: GradingAdmin },
+  { p: '/admin/thong-ke', l: '📈 Thống kê học tập', c: StatsAdmin, admin: true },
   { p: '/admin/tai-khoan', l: '👥 Tài khoản', c: UsersAdmin, admin: true },
   { p: '/admin/nang-cap', l: '💳 Nâng cấp học viên', c: UpgradesAdmin, admin: true },
   { p: '/admin/cai-dat', l: '⚙️ Cài đặt', c: SettingsAdmin, admin: true },

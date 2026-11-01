@@ -112,3 +112,19 @@ code{background:var(--bg);border:1px solid var(--line);border-radius:5px;padding
 .g-ans audio{width:100%}
 .ok{color:#1f6b2a} .err-t{color:#b0352a}
 .up-note{display:grid;gap:8px;margin-bottom:14px}.up-note .btn-p{justify-self:start}
+/* thống kê */
+.st-bars{display:grid;gap:6px}
+.st-bar{display:grid;grid-template-columns:110px 1fr auto;gap:4px 10px;align-items:center}
+.st-bar small{grid-column:2/-1;color:var(--muted);font-size:12px;margin-top:-4px}
+.st-l{font-weight:700;font-size:13px}
+.st-t{height:14px;background:var(--line);border-radius:99px;overflow:hidden}
+.st-t i{display:block;height:100%;background:linear-gradient(90deg,#ecb857,#d9453d);border-radius:99px}
+.st-qs{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.st-qs li{display:flex;gap:10px;align-items:flex-start}
+.st-qs small{display:block;color:var(--muted)}
+.st-rate{flex:none;min-width:48px;text-align:center;border-radius:8px;padding:2px 6px;font-weight:800;color:#fff}
+.st-rate.bad{background:#d9453d}.st-rate.mid{background:#e8821e}.st-rate.ok{background:#2f9e5f}
+/* bài học */
+.row-miss td{opacity:.6}
+.vid-row{grid-template-columns:1fr 2fr auto;align-items:end}
+textarea.mono{font-family:ui-monospace,Menlo,monospace;font-size:13px}

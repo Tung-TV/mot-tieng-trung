@@ -69,3 +69,14 @@ css=strip_comments(open(sys.argv[1]).read())
 res,_=parse(css,0)
 open(sys.argv[2],'w').write(res)
 print(len(css),len(res))
+
+# --- đổi tên @keyframes (thêm tiền tố lg-) để không đè animation của web React ---
+names=set(re.findall(r'@keyframes\s+([\w-]+)',res))
+def ren_anim(m):
+    prop,val=m.group(1),m.group(2)
+    for n in names: val=re.sub(r'(?<![\w-])'+re.escape(n)+r'(?![\w-])','lg-'+n,val)
+    return prop+val
+res=re.sub(r'@keyframes\s+([\w-]+)',lambda m:'@keyframes lg-'+m.group(1),res)
+res=re.sub(r'(animation(?:-name)?\s*:)([^;}]*)',ren_anim,res)
+open(sys.argv[2],'w').write(res)
+print('keyframes',len(names))

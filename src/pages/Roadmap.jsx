@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext.jsx';
 import { navigate } from '../router.jsx';
 import { loadLegacy } from './LegacyView.jsx';
 import MOUNTAIN from '../data/mountain.svg.js';
-import { byButton, stageStates } from '../services/model.js';
+import { byButton, canEnterStage, stageStates } from '../services/model.js';
 import { Boxes, Chip, InfoBlock, Sections } from '../components/StageParts.jsx';
 
 const PHASES = [['Bắt đầu', 'Chuẩn bị', '#7fc8a9'], ['Nhập môn', 'Pinyin', '#ecb857'], ['HSK 1–3', 'Sơ cấp', '#74b5e4'], ['HSK 4–6', 'Trung cấp', '#b86fa3'], ['HSK 7–9', 'Cao cấp', '#c0392b']];
@@ -35,7 +35,7 @@ function Hero({ learner }) {
         </div>
         <p className="sub">{learner
           ? 'Mỗi chặng là một cấp bậc. Vượt qua bài kiểm tra cuối chặng để mở chặng tiếp theo, từ Vỡ lòng đến Bậc thầy.'
-          : 'Mỗi chặng là một cấp bậc: học xong là lên bậc, từ Vỡ lòng đến Bậc thầy. Nâng cấp tài khoản Học viên để vào học và làm bài kiểm tra từng chặng.'}</p>
+          : 'Mỗi chặng là một cấp bậc: học xong là lên bậc, từ Vỡ lòng đến Bậc thầy.'}</p>
         <GiftCta />
       </div>
       <div className="rh-r" dangerouslySetInnerHTML={{ __html: MOUNTAIN }} />
@@ -44,58 +44,7 @@ function Hero({ learner }) {
   );
 }
 
-// ---------- Tài khoản thường / khách: chỉ xem khung, không có nút, không có link ----------
-function LockedRoadmap() {
-  const { content, setUpgradeOpen, user } = useApp();
-  const { stages, settings } = content;
-  const ask = () => setUpgradeOpen(true);
-  return (
-    <section className="rm rm-locked" aria-label="Lộ trình học tiếng Trung">
-      <Hero learner={false} />
-      <div className="sk up-cta">
-        <span className="up-ic" aria-hidden="true">🔒</span>
-        <div><b>Lộ trình chi tiết dành cho Học viên</b><span>{user ? 'Tài khoản của bạn là tài khoản thường.' : 'Bạn chưa đăng nhập.'} Nâng cấp để mở bài học, giáo trình, bài kiểm tra và theo dõi tiến độ cá nhân.</span></div>
-        <button className="btn-p" type="button" onClick={() => navigate('/nang-cap')}>⭐ Nâng cấp tài khoản</button>
-      </div>
-
-      <div className="sk stairs" aria-label="Bậc thang cấp bậc">
-        <div className="st-head"><b>🪜 Bậc thang lên đỉnh</b><span>9 cấp bậc từ người mới tới HSK 7–9</span></div>
-        <div className="st-row" onClick={ask}>
-          {stages.map((s, i) => (
-            <div key={s.id} className={'step' + (i === stages.length - 1 ? ' top' : '')}
-              style={{ '--c': s.color, '--h': 58 + i * 15 + 'px', '--i': i, color: s.whiteText ? '#fff' : undefined }}>
-              <span className="se">{s.emoji}</span><span className="sn">{s.key}</span><span className="sb">Bậc {i + 1}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="tl">
-        {stages.map((s, i) => {
-          const next = stages[i + 1];
-          return (
-            <div key={s.id} className={'row' + (i === 0 ? ' first' : '')} style={{ '--a': s.color, '--b': next ? next.color : '#f2c94c' }}>
-              <div className="node" style={{ background: s.color, color: s.whiteText ? '#fff' : undefined }}>
-                <span className="ne">{s.emoji}</span><span className="nk">{s.key}</span>
-              </div>
-              <div className="sk stage stage-lock" onClick={ask}>
-                <h3><span className="lvt">BẬC {i + 1}</span>{s.title}{!/cấp$/.test(s.badge) && s.badge && <span className="bd">{s.badge}</span>}<span className="lock-tag">🔒 Học viên</span></h3>
-                <p>{s.desc}</p>
-                <div className="chips">{(s.chips || []).map((c) => <Chip key={c} label={c} settings={settings} />)}</div>
-              </div>
-            </div>
-          );
-        })}
-        <div className="row last">
-          <div className="node" style={{ background: 'var(--panel)', fontSize: 22 }}>⚑</div>
-          <div className="dest"><span><b>Đích đến: HSK 7–9</b> — đọc hiểu văn bản học thuật, báo chí chuyên sâu và giao tiếp thành thạo như người bản ngữ.</span></div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ---------- Học viên (và biên tập/quản trị xem trước) ----------
+// ---------- Lộ trình: ai cũng xem đủ danh sách; vào học thì Học viên (hoặc chặng admin đặt Miễn phí) ----------
 const STATE_LABEL = { passed: 'Đã hoàn thành', open: 'Đang học', locked: 'Chưa mở khoá', pending: 'Bài kiểm tra chờ chấm' };
 
 export function useStageStates() {
@@ -106,7 +55,8 @@ export function useStageStates() {
 }
 
 function LearnerRoadmap() {
-  const { content, progress, setProgress, setLibQuery, toast } = useApp();
+  const { content, progress, setProgress, setLibQuery, toast, tier, setUpgradeOpen, user } = useApp();
+  const paid = tier === 'student' || tier === 'staff';
   const { stages, settings } = content;
   const states = useStageStates();
   const rows = useRef({});
@@ -115,7 +65,7 @@ function LearnerRoadmap() {
   const pct = stages.length ? Math.round((passedN / stages.length) * 100) : 0;
   const curIdx = Math.max(0, states.findIndex((x) => x.state === 'open'));
   const cur = stages[curIdx];
-  const open = (s, i) => (states[i].state === 'locked' ? toast((byButton(stages[i - 1]) ? 'Hoàn thành chặng “' : 'Đạt bài kiểm tra chặng “') + stages[i - 1].key + '” để mở chặng này.', 'err') : navigate('/lo-trinh/' + s.id));
+  const open = (s, i) => (!canEnterStage(s, tier) ? setUpgradeOpen(true) : states[i].state === 'locked' ? toast((byButton(stages[i - 1]) ? 'Hoàn thành chặng “' : 'Đạt bài kiểm tra chặng “') + stages[i - 1].key + '” để mở chặng này.', 'err') : navigate('/lo-trinh/' + s.id));
   const toggleOwned = (k) => setProgress({ owned: owned.includes(k) ? owned.filter((x) => x !== k) : [...owned, k] });
   const goLib = (keyword) => { setLibQuery(keyword || ' '); navigate('/'); };
   const jump = (id) => {
@@ -127,6 +77,13 @@ function LearnerRoadmap() {
   return (
     <section className="rm" aria-label="Lộ trình học tiếng Trung">
       <Hero learner />
+      {!paid && (
+        <div className="sk up-cta">
+          <span className="up-ic" aria-hidden="true">🎓</span>
+          <div><b>Xem lộ trình miễn phí · vào học cùng Khoá học Mọt Tiếng Trung</b><span>Chặng có nhãn <b>Miễn phí</b> và bài <b>Học thử</b> vào học được ngay{user ? '' : ' (đăng nhập để lưu tiến độ)'}. Các bài học, bài kiểm tra còn lại dành cho Học viên.</span></div>
+          <button className="btn-p" type="button" onClick={() => navigate('/khoa-hoc')}>🎓 Xem khoá học</button>
+        </div>
+      )}
 
       <div className="sk stairs" aria-label="Bậc thang cấp bậc">
         <div className="st-head"><b>🪜 Bậc thang lên đỉnh</b><span>Bấm vào một bậc để nhảy tới chặng đó</span></div>
@@ -163,11 +120,11 @@ function LearnerRoadmap() {
                 <span className="ne">{locked ? '🔒' : s.emoji}</span><span className="nk">{s.key}</span>
               </div>
               <div className={'sk stage' + (locked ? ' stage-lock' : '')}>
-                <h3><span className="lvt">BẬC {i + 1}</span>{s.title}{!/cấp$/.test(s.badge) && s.badge && <span className="bd">{s.badge}</span>}{locked && <span className="lock-tag">🔒 Chưa mở</span>}</h3>
+                <h3><span className="lvt">BẬC {i + 1}</span>{s.title}{!/cấp$/.test(s.badge) && s.badge && <span className="bd">{s.badge}</span>}{locked && <span className="lock-tag">🔒 Chưa mở</span>}{!paid && (s.free ? <span className="free-tag">Miễn phí</span> : <span className="lock-tag">⭐ Học viên</span>)}</h3>
                 <p>{s.desc}</p>
-                {!locked && (s.info || []).length > 0 && <InfoBlock s={s} settings={settings} />}
-                {!locked && <Sections s={s} />}
-                {!locked && (s.boxes || []).length > 0
+                {(s.info || []).length > 0 && <InfoBlock s={s} settings={settings} />}
+                <Sections s={s} />
+                {(s.boxes || []).length > 0
                   ? <Boxes s={s} settings={settings} owned={owned} toggleOwned={toggleOwned} />
                   : <div className="chips">{(s.chips || []).map((c) => <Chip key={c} label={c} settings={settings} />)}</div>}
                 <div className="sbar"><div className="bar" style={{ flex: 1 }}><i style={{ width: stt.state === 'passed' ? '100%' : stt.state === 'open' ? '40%' : 0 }} /></div>{STATE_LABEL[stt.pending && stt.state !== 'passed' ? 'pending' : stt.state]}{stt.best != null ? ' · điểm cao nhất ' + stt.best + '%' : ''}</div>
@@ -175,7 +132,7 @@ function LearnerRoadmap() {
                   <div className="act"><span className="lock-note">{byButton(stages[i - 1]) ? 'Hoàn thành' : 'Qua bài kiểm tra'} “{stages[i - 1].key}” để mở</span></div>
                 ) : (
                   <div className="act" style={{ gridRow: '1/span ' + ((s.sections || []).length || (s.info || []).length ? 5 : 4) }}>
-                    <button className={'go' + (stt.state === 'open' ? ' on' : '')} type="button" onClick={() => open(s, i)}>{stt.state === 'passed' ? 'Ôn lại' : 'Vào học'}</button>
+                    <button className={'go' + (stt.state === 'open' ? ' on' : '')} type="button" onClick={() => open(s, i)}>{!canEnterStage(s, tier) ? '🔒 Vào học' : stt.state === 'passed' ? 'Ôn lại' : 'Vào học'}</button>
                     <button className="arr" type="button" aria-label={'Mở chặng ' + s.title} onClick={() => open(s, i)}>›</button>
                   </div>
                 )}
@@ -206,6 +163,5 @@ function LearnerRoadmap() {
 }
 
 export default function Roadmap() {
-  const { tier } = useApp();
-  return tier === 'student' || tier === 'staff' ? <LearnerRoadmap /> : <LockedRoadmap />;
+  return <LearnerRoadmap />;
 }

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { navigate } from '../router.jsx';
-import { SKILLS, allQuestions, byButton, hasTest, isManual, passPct, qPoints } from '../services/model.js';
+import { SKILLS, allQuestions, byButton, canEnterStage, hasTest, isManual, passPct, qPoints } from '../services/model.js';
 import Exam from '../components/Exam.jsx';
 import { nrm } from '../services/util.js';
 import DocCard from '../components/DocCard.jsx';
@@ -11,27 +11,37 @@ import { hotSet, useDocActions } from './Library.jsx';
 
 /** Trang chặn cho tài khoản chưa nâng cấp — không hiển thị bất kỳ nội dung/link nào của chặng */
 export function UpgradeGate({ title = 'Nội dung dành cho Học viên' }) {
-  const { user } = useApp();
+  const { user, setAuthOpen } = useApp();
   return (
     <section className="sk soon">
       <div className="soon-e">🔒</div>
       <h2>{title}</h2>
-      <p>{user ? 'Tài khoản của bạn là tài khoản thường.' : 'Bạn chưa đăng nhập.'} Nâng cấp tài khoản Học viên để vào học từng chặng, xem tài liệu đi kèm và làm bài kiểm tra.</p>
+      <p>Phần này thuộc <b>Khoá học Mọt Tiếng Trung</b>: video bài giảng, ôn tập từng bài, bài kiểm tra và tài liệu dành riêng. {user ? 'Đăng ký khoá học để vào học.' : 'Đăng nhập rồi đăng ký khoá học để vào học.'}</p>
       <div className="soon-a">
-        <button className="btn-p" type="button" onClick={() => navigate('/nang-cap')}>⭐ Nâng cấp tài khoản</button>
-        <button className="btn-s" type="button" onClick={() => navigate('/lo-trinh')}>Xem khung lộ trình</button>
+        <button className="btn-p" type="button" onClick={() => navigate('/khoa-hoc')}>🎓 Xem khoá học</button>
+        {!user && <button className="btn-s" type="button" onClick={() => setAuthOpen('login')}>Đăng nhập</button>}
+        <button className="btn-s" type="button" onClick={() => navigate('/lo-trinh')}>Xem lộ trình</button>
       </div>
     </section>
   );
 }
 
 function TestCard({ stage, idx, st }) {
-  const { content, store, toast, setUser, reload, tier } = useApp();
+  const { content, store, toast, setUser, reload, tier, user, setAuthOpen } = useApp();
   const [taking, setTaking] = useState(false);
   const [subs, setSubs] = useState(null);
   const next = content.stages[idx + 1];
   const nextBtn = next && <button className="btn-p" type="button" onClick={() => navigate('/lo-trinh/' + next.id)}>Sang chặng “{next.key}” ›</button>;
-  useEffect(() => { if (!byButton(stage)) store.mySubmissions(stage.id).then(setSubs, () => setSubs([])); }, [stage, store, st.attempts, st.pending]);
+  useEffect(() => { if (!byButton(stage) && user) store.mySubmissions(stage.id).then(setSubs, () => setSubs([])); }, [stage, store, st.attempts, st.pending, user]);
+  if (!user) {
+    return (
+      <section className="sk test-card">
+        <h3>{byButton(stage) ? '✅ Hoàn thành chặng' : '📝 Bài kiểm tra cuối chặng'}</h3>
+        <p>Đăng nhập để {byButton(stage) ? 'đánh dấu hoàn thành' : 'làm bài kiểm tra'} và lưu tiến độ học của bạn.</p>
+        <div className="row-btns"><button className="btn-p" type="button" onClick={() => setAuthOpen('login')}>Đăng nhập</button></div>
+      </section>
+    );
+  }
 
   if (byButton(stage)) {
     const complete = async () => {
@@ -93,7 +103,7 @@ function TestCard({ stage, idx, st }) {
 
 function StageDocs({ stage }) {
   const { content } = useApp();
-  const { saved, toggleSave, download } = useDocActions();
+  const { saved, toggleSave, download, locked } = useDocActions();
   const k = nrm((stage.keyword || '').trim());
   const docs = useMemo(() => (k ? content.documents.filter((d) => d.published !== false && nrm(d.name).includes(k)) : []), [content, k]);
   if (!docs.length) return null;
@@ -101,7 +111,7 @@ function StageDocs({ stage }) {
   return (
     <section className="panel st-docs">
       <div className="head"><span>📚 Tài liệu cho chặng này <small>{docs.length} tài liệu</small></span></div>
-      <div className="grid">{docs.slice(0, 8).map((d, i) => <DocCard key={d.id} doc={d} idx={'s' + i} hot={hot.has(d.id)} maxDl={maxDl} saved={saved.includes(d.id)} onSave={() => toggleSave(d.id)} onDownload={() => download(d.id)} />)}</div>
+      <div className="grid">{docs.slice(0, 8).map((d, i) => <DocCard onLocked={locked} key={d.id} doc={d} idx={'s' + i} hot={hot.has(d.id)} maxDl={maxDl} saved={saved.includes(d.id)} onSave={() => toggleSave(d.id)} onDownload={() => download(d.id)} />)}</div>
     </section>
   );
 }
@@ -109,9 +119,9 @@ function StageDocs({ stage }) {
 export default function StageDetail({ id }) {
   const { content, tier, progress, setProgress } = useApp();
   const states = useStageStates();
-  if (tier !== 'student' && tier !== 'staff') return <UpgradeGate />;
   const idx = content.stages.findIndex((s) => s.id === id);
   const s = content.stages[idx];
+  if (s && !canEnterStage(s, tier)) return <UpgradeGate title={'Chặng “' + s.key + '” dành cho Học viên'} />;
   if (!s) return <section className="sk soon"><div className="soon-e">🔍</div><h2>Không tìm thấy chặng</h2><div className="soon-a"><button className="btn-p" type="button" onClick={() => navigate('/lo-trinh')}>Về lộ trình</button></div></section>;
   const st = states[idx];
   const prev = content.stages[idx - 1], next = content.stages[idx + 1];
@@ -146,7 +156,7 @@ export default function StageDetail({ id }) {
 
       {((s.info || []).length > 0 || (s.sections || []).length > 0 || (s.boxes || []).length > 0) && (
         <section className="sk sd-body stage">
-          {(s.info || []).length > 0 && <InfoBlock s={s} settings={content.settings} learn />}
+          {(s.info || []).length > 0 && <InfoBlock s={s} settings={content.settings} openLessons />}
           <Sections s={s} />
           <Boxes s={s} settings={content.settings} owned={owned} toggleOwned={toggleOwned} />
         </section>

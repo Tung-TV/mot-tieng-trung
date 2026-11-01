@@ -2,9 +2,9 @@
 import { CONTENT_REV, buildSeed, contentUpdate, uid } from './seed.js';
 import { hashPassword, newSalt } from './crypto.js';
 import { checkGoogleClaims, decodeJwt } from './google.js';
-import { DEFAULT_SUPPORT, DEFAULT_PLAN, allQuestions, byButton, gradeAuto, hasTest, isManual, newTxnCode, normTest, passPct, pctOf, qPoints, stageStates, testFromLessons, tierOf, viewFor } from './model.js';
+import { DEFAULT_SUPPORT, DEFAULT_PLAN, allQuestions, byButton, gradeAuto, hasTest, isManual, newTxnCode, normTest, passPct, pctOf, qPoints, stageStates, testFromLessons, tierOf, viewFor, canEnterStage, canOpenLesson, stageLevel } from './model.js';
 
-const K = { db: 'mot.db.v1', users: 'mot.users.v1', session: 'mot.session.v1', upgrades: 'mot.upgrades.v1', subs: 'mot.subs.v1' };
+const K = { db: 'mot.db.v1', users: 'mot.users.v1', session: 'mot.session.v1', upgrades: 'mot.upgrades.v1', subs: 'mot.subs.v1', lessons: 'mot.lessons.v1' };
 const mem = {}; // dự phòng khi localStorage bị chặn
 const ls = {
   get(k) { try { const v = localStorage.getItem(k); return v == null ? mem[k] ?? null : v; } catch { return mem[k] ?? null; } },
@@ -51,6 +51,24 @@ export function createLocalAdapter({ googleClientId = '' } = {}) {
   const me = () => { const id = read(K.session, null); return users().find((u) => u.id === id) || null; };
   const require = (need) => { const u = me(); if (!can(u, need)) throw new Error('Bạn không có quyền thực hiện thao tác này.'); return u; };
   const persist = () => write(K.db, db);
+  const lessonCache = {};
+  async function levelLessons(level) {
+    const lv = Number(level);
+    if (!lessonCache[lv]) {
+      try { const r = await fetch('data/lessons/' + lv + '.json'); lessonCache[lv] = r.ok ? await r.json() : []; } catch { lessonCache[lv] = []; }
+    }
+    const ov = read(K.lessons, {});
+    const base = lessonCache[lv].map((l) => ov[l.id] || l);
+    const extra = Object.values(ov).filter((l) => l.level === lv && !base.some((x) => x.id === l.id));
+    return [...base, ...extra].sort((a, b) => a.n - b.n);
+  }
+  // danh sách bài trong chặng (tên bài + bài miễn phí) đi theo nội dung bài học
+  function syncStageLessons(l) {
+    const s = db.stages.find((x) => stageLevel(x) === l.level); if (!s) return;
+    const lessons = [...(s.lessons || [])]; lessons[l.n - 1] = [l.title, l.vi || ''];
+    const free = new Set(s.freeLessons || []); if (l.free) free.add(l.n); else free.delete(l.n);
+    Object.assign(s, { lessons: Array.from(lessons, (x) => x || ['', '']), freeLessons: [...free].sort((a, b) => a - b) });
+  }
 
   async function makeUser({ name, email, password, role = 'member' }) {
     const salt = newSalt();
@@ -107,6 +125,27 @@ export function createLocalAdapter({ googleClientId = '' } = {}) {
 
     // ---- Cài đặt
     async saveSettings(settings) { require('admin'); db.settings = settings; persist(); },
+
+    // ---- Bài học của Khoá học (dữ liệu gốc ở data/lessons/<cấp>.json, phần admin sửa lưu đè trong trình duyệt)
+    async getLesson(level, n) {
+      const s = db.stages.find((x) => stageLevel(x) === Number(level));
+      if (!canOpenLesson(s, n, tierOf(publicUser(me())))) throw new Error('Bài học dành cho Học viên Khoá học Mọt Tiếng Trung.');
+      const l = (await levelLessons(level)).find((x) => x.n === Number(n));
+      if (!l) throw new Error('Bài học này chưa có nội dung.');
+      return l;
+    },
+    async listLessons(level) { require('editor'); return levelLessons(level); },
+    async saveLesson(lesson) {
+      require('editor');
+      write(K.lessons, { ...read(K.lessons, {}), [lesson.id]: { ...lesson, updatedAt: Date.now() } });
+      syncStageLessons(lesson); persist(); return lesson;
+    },
+    async importLessons(list) {
+      require('editor');
+      const ov = read(K.lessons, {});
+      list.forEach((l) => { ov[l.id] = { ...l, updatedAt: Date.now() }; syncStageLessons(l); });
+      write(K.lessons, ov); persist(); return list.length;
+    },
 
     // ---- Tài khoản & phiên
     async currentUser() { return publicUser(me()); },
@@ -187,9 +226,10 @@ export function createLocalAdapter({ googleClientId = '' } = {}) {
 
     // ---- Học tập: nộp bài, chấm tự động, phần tự luận / nói chờ chấm tay
     async submitTest(stageId, answers) {
-      const u = require('student');
+      const u = require('member');
       const i = db.stages.findIndex((s) => s.id === stageId);
       const s = db.stages[i]; if (!s || !hasTest(s)) throw new Error('Chặng này chưa có bài kiểm tra.');
+      if (!canEnterStage(s, tierOf(publicUser(u)))) throw new Error('Chặng này dành cho Học viên.');
       if (tierOf(publicUser(u)) !== 'staff' && stageStates(db.stages, u.progress || {})[i].state === 'locked') throw new Error('Bạn cần hoàn thành chặng trước để mở chặng này.');
       const prev = (u.progress && u.progress.tests && u.progress.tests[stageId]) || {};
       if (prev.pending) throw new Error('Bài trước của bạn đang chờ chấm, chưa nộp lại được.');
@@ -206,8 +246,9 @@ export function createLocalAdapter({ googleClientId = '' } = {}) {
       return { status: sub.status, earned: g.earned, total: g.total, manual: g.manual, pct: sub.pct ?? null, passed: sub.passed ?? false, items: g.items, user: publicUser(list.find((x) => x.id === u.id)) };
     },
     async completeStage(stageId) {
-      const u = require('student');
+      const u = require('member');
       const i = db.stages.findIndex((s) => s.id === stageId);
+      if (i >= 0 && !canEnterStage(db.stages[i], tierOf(publicUser(u)))) throw new Error('Chặng này dành cho Học viên.');
       if (i < 0 || !byButton(db.stages[i])) throw new Error('Chặng này cần làm bài kiểm tra để hoàn thành.');
       if (tierOf(publicUser(u)) !== 'staff' && stageStates(db.stages, u.progress || {})[i].state === 'locked') throw new Error('Bạn cần hoàn thành chặng trước.');
       const done = [...new Set([...((u.progress || {}).done || []), stageId])];
@@ -245,7 +286,7 @@ export function createLocalAdapter({ googleClientId = '' } = {}) {
       return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(new Error('Không đọc được tệp')); r.readAsDataURL(file); });
     },
     async uploadRecording(blob) {
-      require('student');
+      require('member');
       if (blob.size > 1.5 * 1024 * 1024) throw new Error('Bản ghi quá dài, hãy ghi ngắn hơn.');
       return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(new Error('Không đọc được bản ghi')); r.readAsDataURL(blob); });
     },
