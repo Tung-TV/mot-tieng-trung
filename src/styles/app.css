@@ -549,3 +549,14 @@ b.warn{color:#b0352a}
 .cdm .cd-sc{font:inherit;cursor:pointer}
 .cdm .cd-c.flash{animation:cdflash 1.2s}
 @keyframes cdflash{20%{transform:scale(1.03);box-shadow:0 0 0 4px var(--c)}}
+/* mục Khoá học trên menu: nổi bật, gọn 2 dòng */
+.nv.n5{border-color:#ffd24a;box-shadow:0 4px 0 rgba(0,0,0,.14),0 8px 16px rgba(179,36,27,.35)}
+.nv.n5 .ck{color:#7a1610}
+.nv.n5 b{color:#fff;letter-spacing:.3px;text-shadow:0 1px 0 rgba(0,0,0,.25)}
+.nv.n5 .n5-pill{display:inline-block;margin-top:3px;background:#ffd24a;color:#7a1610;border-radius:999px;padding:1px 9px;font-size:11px;font-weight:900;letter-spacing:0;white-space:nowrap}
+.nv.n5 .hotb{top:6px;right:8px;background:#ffd24a;color:#a3261f;border-color:#fff;font-size:9px;padding:0 6px}
+.nv.n5 .nv-e{background:rgba(255,255,255,.92)}
+.nv.n5::before{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.22) 50%,transparent 60%);background-size:250% 100%;animation:n5shine 3.5s ease-in-out infinite;pointer-events:none}
+@keyframes n5shine{0%{background-position:120% 0}60%,100%{background-position:-60% 0}}
+@media (prefers-reduced-motion:reduce){.nv.n5::before{animation:none}}
+.nv.n5 .hotb{right:auto;left:50%;transform:translateX(-50%);top:4px}.nv.n5 > span:not(.nv-e){padding-top:8px}

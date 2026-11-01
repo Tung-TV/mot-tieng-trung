@@ -6,7 +6,7 @@ import { ROLE_LABEL } from '../services/util.js';
 const NAV = [
   { r: '/', cls: 'n1', s: '--bg1:#d6e9fd;--bg2:#b9d8f8;--tc:#1f4f9a;--sc:#c1440e', ck: '#3b82d6', b: ['KHO TÀI LIỆU', 'TIẾNG TRUNG'], sm: 'MIỄN PHÍ 100%', img: 'nav1' },
   { r: '/lo-trinh', cls: 'n2', s: '--bg1:#fde5b8;--bg2:#fbd08a;--tc:#b3541a;--sc:#5a3a1a', ck: '#f0a030', b: ['LỘ TRÌNH HỌC', 'TIẾNG TRUNG'], sm: 'DÀNH CHO NGƯỜI MỚI', img: 'nav2' },
-  { r: '/khoa-hoc', cls: 'n5', s: '--bg1:#ffd9d6;--bg2:#fbb7b1;--tc:#a3261f;--sc:#6b1d18', ck: '#d9453d', b: ['KHÓA HỌC', 'MỌT TIẾNG TRUNG HSK1-6'], sm: 'ƯU ĐÃI CHỈ 1K/NGÀY', hot: true, emoji: '🎓' },
+  { r: '/khoa-hoc', cls: 'n5', s: '--bg1:#ef4b3a;--bg2:#b3241b;--tc:#fff;--sc:#fff', ck: '#ffd24a', b: ['KHÓA HỌC', 'HSK 1–6'], sm: 'Chỉ 1K/ngày', hot: true, emoji: '🎓' },
   { r: '/on-tap', cls: 'n3', s: '--bg1:#d8f3d3;--bg2:#bde8b6;--tc:#1f7a2f;--sc:#2f5d34', ck: '#3fae49', b: ['ÔN TẬP', 'TIẾNG TRUNG'], sm: 'Luyện từ vựng, nghe, nói, đọc, viết', img: 'nav3' },
   { r: '/cong-dong', cls: 'n4', s: '--bg1:#f1dcf8;--bg2:#e4c3f1;--tc:#7b2f9c;--sc:#7b2f9c', ck: '#a855c7', b: ['CỘNG ĐỒNG', 'HỌC TIẾNG TRUNG'], sm: 'GIAO LƯU & CHIA SẺ', img: 'nav4' },
 ];
@@ -88,7 +88,7 @@ export function TopNav({ path }) {
         <a key={n.r} className={'nv ' + n.cls + (navOn(path, n.r) ? ' on' : '')} href={hrefOf(n.r)} style={styleObj(n.s)}>
           {n.hot && <em className="hotb">HOT</em>}
           <i className="ck" style={{ background: n.ck }}>✓</i>
-          <span><b>{n.b[0]}<br />{n.b[1]}</b><small>{n.hot && <span className="fire" aria-hidden="true">🔥 </span>}{n.sm}</small></span>
+          <span><b>{n.b[0]}<br />{n.b[1]}</b>{n.hot ? <small className="n5-pill"><span className="fire" aria-hidden="true">🔥</span> {n.sm}</small> : <small>{n.sm}</small>}</span>
           {n.emoji ? <span className="nv-e" aria-hidden="true">{n.emoji}</span> : <img src={img[n.img]} alt="" />}
         </a>
       ))}
