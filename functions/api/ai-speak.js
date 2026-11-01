@@ -12,6 +12,17 @@ function similarity(a, b) {
   for (let i = 1; i <= x.length; i++) for (let j = 1; j <= y.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (x[i - 1] === y[j - 1] ? 0 : 1));
   return Math.max(0, Math.round((1 - d[x.length][y.length] / Math.max(x.length, y.length)) * 100));
 }
+// Whisper hay “bịa” mấy câu này khi bản ghi im lặng / chỉ có tiếng ồn → coi như không nghe được gì
+const HALLU = /(点赞|订阅|转发|打赏|明镜|字幕|谢谢观看|感谢观看|请不吝|下次再见|中文字幕|以下是普通话)/;
+// Workers AI có thể trả response là chuỗi, hoặc đã là object JSON
+function pickReview(r) {
+  const raw = r && (r.response !== undefined ? r.response : r.choices && r.choices[0] && r.choices[0].message && r.choices[0].message.content);
+  if (raw && typeof raw === 'object') return raw;
+  const txt = String(raw || '').replace(/<think>[\s\S]*?<\/think>/g, '');
+  const m = txt.match(/\{[\s\S]*\}/);
+  if (!m) return null;
+  try { return JSON.parse(m[0]); } catch { return null; }
+}
 const b64 = (buf) => { let s = ''; const u = new Uint8Array(buf); for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode(...u.subarray(i, i + 0x8000)); return btoa(s); };
 
 export async function onRequestPost({ request, env }) {
@@ -32,7 +43,8 @@ export async function onRequestPost({ request, env }) {
     if (audio.size > 1_000_000) return json({ error: 'Bản ghi quá dài, hãy nói trong 15 giây.' }, 413);
 
     const asr = await env.AI.run('@cf/openai/whisper-large-v3-turbo', { audio: b64(await audio.arrayBuffer()), language: 'zh', initial_prompt: '以下是普通话的句子。' });
-    const heard = String((asr && asr.text) || '').trim();
+    let heard = String((asr && asr.text) || '').trim();
+    if (HALLU.test(heard) && !HALLU.test(target)) heard = '';
     const score = similarity(heard, target);
 
     let review = null;
@@ -44,9 +56,8 @@ Hãy so sánh từng chữ. Chữ bị nghe khác thường do phát âm sai tha
 {"score": số 0-100, "mistakes": [{"want": "chữ đúng (pinyin)", "got": "chữ máy nghe được (pinyin)", "note": "lỗi phát âm có thể gặp, tiếng Việt, ngắn"}], "comment": "nhận xét chung 1-2 câu tiếng Việt, thân thiện", "tip": "1 mẹo luyện cụ thể bằng tiếng Việt"}
 Nếu đọc đúng hết thì mistakes là mảng rỗng.`;
       const r = await env.AI.run('@cf/qwen/qwen3-30b-a3b-fp8', { messages: [{ role: 'system', content: 'Chỉ trả lời bằng JSON hợp lệ. /no_think' }, { role: 'user', content: prompt }], max_tokens: 600, temperature: 0.2 });
-      const txt = String((r && (r.response || (r.choices && r.choices[0] && r.choices[0].message && r.choices[0].message.content))) || '').replace(/<think>[\s\S]*?<\/think>/g, '');
-      const m = txt.match(/\{[\s\S]*\}/);
-      if (m) { try { review = JSON.parse(m[0]); } catch { review = null; } }
+      review = pickReview(r);
+      if (!review) console.log('ai-speak: không đọc được nhận xét', JSON.stringify(r).slice(0, 300));
     }
     return json({
       heard, score: review && Number.isFinite(+review.score) ? Math.round((+review.score + score) / 2) : score,
