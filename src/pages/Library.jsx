@@ -60,12 +60,16 @@ export default function Library() {
 
   return (
     <div id="v-kho">
-      <section className="hero" id="hero-kho">
+      <section className="hero hero2" id="hero-kho">
         <span className="tag">Kho tài liệu cùng Mọt</span>
-        <i className="hero-br" aria-hidden="true" />
         <h1>Khám phá tài liệu cùng <span>MỌT TIẾNG TRUNG</span></h1>
-        <div className="proof">Cùng 10.000+ bạn học khám phá tài liệu mỗi ngày!</div>
-        <button className="btn" type="button" onClick={() => navigate('/kho-cua-toi')}>Kho của tôi</button>
+        <div className="hero-act">
+          <div className="proof">
+            <span className="av" aria-hidden="true"><i>👩‍🎓</i><i>🧑‍🎓</i><i>👨‍🎓</i></span>
+            <span><b>10.000+ bạn học</b>khám phá tài liệu mỗi ngày</span>
+          </div>
+          <button className="btn" type="button" onClick={() => navigate('/kho-cua-toi')}><span aria-hidden="true">♡</span> Kho của tôi</button>
+        </div>
       </section>
 
       <div className="panel search">
