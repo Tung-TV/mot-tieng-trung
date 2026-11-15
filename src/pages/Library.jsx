@@ -62,15 +62,16 @@ export default function Library() {
     <div id="v-kho">
       <section className="hero" id="hero-kho">
         <span className="tag">Kho tài liệu cùng Mọt</span>
+        <i className="hero-br" aria-hidden="true" />
         <h1>Khám phá tài liệu cùng <span>MỌT TIẾNG TRUNG</span></h1>
-        <button className="btn" type="button" onClick={() => navigate('/kho-cua-toi')}>Kho của tôi</button>
         <div className="proof">Cùng 10.000+ bạn học khám phá tài liệu mỗi ngày!</div>
+        <button className="btn" type="button" onClick={() => navigate('/kho-cua-toi')}>Kho của tôi</button>
       </section>
 
       <div className="panel search">
-        <input type="search" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} placeholder="Tìm kiếm tài liệu, môn học, giáo trình..." aria-label="Tìm kiếm" />
+        <input type="search" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} placeholder="Tìm tài liệu, giáo trình…" aria-label="Tìm kiếm" />
         <select value={sort} onChange={(e) => { setSort(e.target.value); setPage(1); }} aria-label="Sắp xếp"><option value="new">Mới nhất</option><option value="dl">Tải nhiều nhất</option></select>
-        <button type="button" onClick={reset}>Đặt lại</button>
+        {(q || tab !== 'ALL' || sort !== 'new') && <button type="button" onClick={reset}>Đặt lại</button>}
       </div>
 
       <div className="wrap lib-wrap">

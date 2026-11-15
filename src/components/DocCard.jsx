@@ -21,7 +21,7 @@ export default function DocCard({ doc, idx, hot, maxDl, saved, onSave, onDownloa
         {hasHan(a.ch) && <span className="cd-wm" aria-hidden="true">{a.ch}</span>}
         <DocArt doc={doc} idx={doc.id} />
         <span className="cd-fmt" style={{ '--fm': m.c }}><span dangerouslySetInnerHTML={{ __html: ficon(doc.format, 16) }} /><b>{m.l}</b></span>
-        {doc.access === 'student' ? <span className="cd-tag pro">⭐ HỌC VIÊN</span> : hot ? <span className="cd-tag hot">🔥 HOT</span> : <span className="cd-tag">FREE</span>}
+        {doc.access === 'student' ? <span className="cd-tag pro">⭐ HỌC VIÊN</span> : hot ? <span className="cd-tag hot">🔥 HOT</span> : null}
         <span className="cd-kind">{docKind(doc.url)}</span>
         {onSave && (
           <button type="button" className={'cd-save' + (saved ? ' on' : '')} onClick={onSave} aria-pressed={saved} title={saved ? 'Bỏ khỏi Kho của tôi' : 'Lưu vào Kho của tôi'}>
@@ -32,7 +32,6 @@ export default function DocCard({ doc, idx, hot, maxDl, saved, onSave, onDownloa
       <div className="cd-body">
         <h3 className="cd-t">{doc.name}</h3>
         <div className="cd-meta"><span>⬇ <b>{shownDl(doc).toLocaleString("vi-VN")}</b> lượt tải</span><span className="cd-free">{doc.access === 'student' ? 'Học viên' : 'Miễn phí'}</span></div>
-        <div className="cd-pop" title="Mức độ quan tâm"><i style={{ width: Math.max(8, Math.round((shownDl(doc) / (maxDl || 1)) * 100)) + '%' }} /></div>
         {locked ? (
           <button type="button" className="cd-btn cd-lock" onClick={onLocked}><span className="cd-ic">🔒</span><span className="cd-tx">Dành cho Học viên</span></button>
         ) : <a className="cd-btn" href={doc.url} target="_blank" rel="noopener noreferrer" aria-label={'Tải xuống: ' + doc.name} onClick={onDownload}>
