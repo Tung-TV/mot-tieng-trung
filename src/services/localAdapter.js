@@ -2,9 +2,9 @@
 import { CONTENT_REV, buildSeed, contentUpdate, uid } from './seed.js';
 import { hashPassword, newSalt } from './crypto.js';
 import { checkGoogleClaims, decodeJwt } from './google.js';
-import { DEFAULT_SUPPORT, DEFAULT_PLAN, allQuestions, byButton, gradeAuto, hasTest, isManual, newTxnCode, normTest, passPct, pctOf, qPoints, stageStates, testFromLessons, tierOf, viewFor, canEnterStage, canOpenLesson, stageLevel } from './model.js';
+import { DEFAULT_SUPPORT, DEFAULT_PLAN, allQuestions, byButton, gradeAuto, hasTest, isManual, newTxnCode, normTest, passPct, pctOf, qPoints, stageStates, testFromLessons, tierOf, viewFor, canEnterStage, canOpenLesson, stageLevel, canRenew } from './model.js';
 
-const K = { db: 'mot.db.v1', users: 'mot.users.v1', session: 'mot.session.v1', upgrades: 'mot.upgrades.v1', subs: 'mot.subs.v1', lessons: 'mot.lessons.v1', leads: 'mot.leads.v1' };
+const K = { db: 'mot.db.v1', users: 'mot.users.v1', session: 'mot.session.v1', upgrades: 'mot.upgrades.v1', subs: 'mot.subs.v1', lessons: 'mot.lessons.v1', leads: 'mot.leads.v1', sid: 'mot.sid.v1' };
 const mem = {}; // dự phòng khi localStorage bị chặn
 const ls = {
   get(k) { try { const v = localStorage.getItem(k); return v == null ? mem[k] ?? null : v; } catch { return mem[k] ?? null; } },
@@ -69,6 +69,17 @@ export function createLocalAdapter({ googleClientId = '' } = {}) {
     const free = new Set(s.freeLessons || []); if (l.free) free.add(l.n); else free.delete(l.n);
     Object.assign(s, { lessons: Array.from(lessons, (x) => x || ['', '']), freeLessons: [...free].sort((a, b) => a - b) });
   }
+
+  // Mỗi tài khoản chỉ 1 thiết bị. Bản local không có máy chủ, nên các trình duyệt khác nhau so mã phiên qua
+  // sổ đăng ký trong máy chủ dev (vite.config.js › /__mot/session, khoá theo email). Không có máy chủ đó
+  // (bản tĩnh / bản xem trước) thì bỏ qua. Quản trị/biên tập được miễn.
+  const SID_URL = '__mot/session';
+  async function claimSession(u) {
+    if (!u || tierOf(publicUser(u)) === 'staff') return;
+    const sid = uid('sid'); write(K.sid, sid);
+    try { await fetch(SID_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: u.email, sid }) }); } catch { /* */ }
+  }
+  function signIn(u) { write(K.session, u.id); return claimSession(u).then(() => publicUser(u)); }
 
   async function makeUser({ name, email, password, role = 'member' }) {
     const salt = newSalt();
@@ -161,14 +172,14 @@ export function createLocalAdapter({ googleClientId = '' } = {}) {
       const list = users();
       if (list.some((u) => u.email === email.toLowerCase().trim())) throw new Error('Email này đã được đăng ký.');
       const u = await makeUser({ name, email, password });
-      saveUsers([...list, u]); write(K.session, u.id); return publicUser(u);
+      saveUsers([...list, u]); return signIn(u);
     },
     async login({ email, password }) {
       const u = users().find((x) => x.email === email.toLowerCase().trim());
       if (u && !u.passHash) throw new Error('Tài khoản này đăng nhập bằng Google. Bấm “Tiếp tục với Google”.');
       if (!u || (await hashPassword(password, u.salt)) !== u.passHash) throw new Error('Sai email hoặc mật khẩu.');
       if (u.status !== 'active') throw new Error('Tài khoản đang bị khoá. Liên hệ quản trị viên.');
-      write(K.session, u.id); return publicUser(u);
+      return signIn(u);
     },
     // credential = ID token Google trả về cho nút "Đăng nhập bằng Google"
     async loginWithGoogle(credential) {
@@ -185,9 +196,22 @@ export function createLocalAdapter({ googleClientId = '' } = {}) {
         u = { id: uid('user'), name: g.name || email.split('@')[0], email, role: 'member', status: 'active', googleSub: g.sub, avatar: g.picture || '', createdAt: Date.now(), progress: {} };
         saveUsers([...list, u]);
       }
-      write(K.session, u.id); return publicUser(u);
+      return signIn(u);
     },
-    async logout() { ls.del(K.session); },
+    async logout() { ls.del(K.session); ls.del(K.sid); },
+    // false = tài khoản đã đăng nhập ở trình duyệt khác sau thiết bị này → đăng xuất ở đây
+    async checkSession() {
+      const u = me(), mine = read(K.sid, null);
+      if (!u || !mine || tierOf(publicUser(u)) === 'staff') return true;
+      let latest = null;
+      try {
+        const r = await fetch(SID_URL, { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: u.email }) });
+        if (!r.ok || !(r.headers.get('content-type') || '').includes('json')) return true;
+        latest = (await r.json()).sid;
+      } catch { return true; }
+      if (!latest || latest === mine) return true;
+      ls.del(K.session); ls.del(K.sid); return false;
+    },
     async updateProgress(patch) {
       const cur = me(); if (!cur) return null;
       const list = users().map((u) => (u.id === cur.id ? { ...u, progress: { ...(u.progress || {}), ...patch } } : u));
@@ -212,7 +236,7 @@ export function createLocalAdapter({ googleClientId = '' } = {}) {
       require('admin');
       const list = users();
       if (list.some((u) => u.email === data.email.toLowerCase().trim())) throw new Error('Email này đã tồn tại.');
-      const u = await makeUser(data); saveUsers([...list, u]); return publicUser(u);
+      const u = { ...(await makeUser(data)), ...(data.role === 'student' && data.studentUntil ? { studentUntil: data.studentUntil } : {}) }; saveUsers([...list, u]); return publicUser(u);
     },
     async updateUser(id, patch) {
       const admin = require('admin');
@@ -308,13 +332,13 @@ export function createLocalAdapter({ googleClientId = '' } = {}) {
     },
     async createUpgrade() {
       const u = require('member');
-      if (tierOf(publicUser(u)) !== 'member') throw new Error('Tài khoản của bạn không cần nâng cấp.');
+      if (!canRenew(publicUser(u))) throw new Error('Tài khoản của bạn không cần nâng cấp.');
       const all = read(K.upgrades, []);
       const open = all.find((r) => r.userId === u.id && (r.status === 'pending' || r.status === 'claimed'));
       if (open) return open;
       let code; do { code = newTxnCode(); } while (all.some((r) => r.code === code));
       const plan = db.settings.plan || DEFAULT_PLAN;
-      const r = { id: uid('up'), userId: u.id, name: u.name, email: u.email, code, amount: plan.price, months: plan.months || 0, status: 'pending', createdAt: Date.now() };
+      const r = { id: uid('up'), userId: u.id, name: u.name, email: u.email, code, amount: plan.price, months: plan.months > 0 ? plan.months : 12, status: 'pending', createdAt: Date.now() };
       write(K.upgrades, [...all, r]); return r;
     },
     async claimUpgrade(id) {
@@ -339,8 +363,9 @@ export function createLocalAdapter({ googleClientId = '' } = {}) {
       if (r.status === 'cancelled') throw new Error('Yêu cầu đã huỷ.');
       const list = users().map((x) => {
         if (x.id !== r.userId) return x;
-        const base = Math.max(Date.now(), x.studentUntil || 0);
-        return { ...x, role: x.role === 'member' || x.role === 'student' ? 'student' : x.role, studentUntil: r.months > 0 ? base + r.months * 30 * 86400000 : null };
+        // hạn tính theo tháng lịch (12 tháng = đúng 1 năm), cộng nối tiếp nếu còn hạn; gói cũ ghi 0 tháng → mặc định 12
+        const d = new Date(Math.max(Date.now(), x.studentUntil || 0)); d.setMonth(d.getMonth() + (r.months > 0 ? r.months : 12));
+        return { ...x, role: x.role === 'member' || x.role === 'student' ? 'student' : x.role, studentUntil: d.getTime() };
       });
       saveUsers(list);
       const nr = { ...r, status: 'paid', paidAt: Date.now(), confirmedBy: admin.email };

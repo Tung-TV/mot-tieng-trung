@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { Modal } from '../components/Overlays.jsx';
-import { stageLevel } from '../services/model.js';
+import { stageLevel, isHskLevel, levelName } from '../services/model.js';
 import { ytId } from '../pages/Lesson.jsx';
 import { Empty, Field } from './ui.jsx';
 
@@ -124,11 +124,11 @@ export default function LessonsAdmin() {
   const [list, setList] = useState(null);
   const [edit, setEdit] = useState(null);
   const [addLv, setAddLv] = useState(false);
-  const nextLv = Math.max(6, ...levels.map(stageLevel)) + 1;
+  const nextLv = Math.max(6, ...levels.map(stageLevel).filter(isHskLevel)) + 1;
   const createLevel = async (e) => {
     e.preventDefault();
     const f = new FormData(e.target), n = Number(f.get('n'));
-    if (!n || n < 1) { toast('Nhập số cấp, VD 8.', 'err'); return; }
+    if (!n || n < 1 || n >= 100) { toast('Nhập số cấp HSK từ 1 đến 99, VD 8.', 'err'); return; }
     if (levels.some((s) => stageLevel(s) === n)) { toast('Đã có cấp HSK' + n + '.', 'err'); return; }
     await store.saveStage({ key: String(f.get('key') || 'HSK' + n).trim(), emoji: f.get('emoji') || '📘', color: f.get('color') || '#c0392b', whiteText: true, title: 'HSK' + n, badge: n >= 7 ? 'Cao cấp' : n >= 4 ? 'Trung cấp' : 'Sơ cấp', desc: String(f.get('desc') || '').trim(), chips: ['Bài giảng', 'Từ vựng', 'Luyện viết', 'Nghe hiểu', 'Ngữ pháp', 'Thi HSK'], keyword: 'HSK' + n, sections: [], info: [], lessons: [], freeLessons: [], free: false, ribbon: '', ribbonColor: '#c4001d', affKey: '', cover: '', boxes: [], test: null, completion: 'test' });
     await reload(); setAddLv(false); setLv(n); toast('Đã thêm cấp HSK' + n + '. Bấm “+ Thêm bài mới” để soạn bài.');
@@ -155,7 +155,7 @@ export default function LessonsAdmin() {
         <h1 className="adm-h">Bài học <small>Khoá học Mọt Tiếng Trung</small></h1>
         <div className="row-btns">
           <label className="btn-s">⬆ Nhập dữ liệu (.json)<input type="file" accept=".json,application/json" multiple hidden onChange={(e) => importFiles([...e.target.files])} /></label>
-          <button type="button" className="btn-s" onClick={exportLv} disabled={!list}>⬇ Xuất HSK{lv}</button>
+          <button type="button" className="btn-s" onClick={exportLv} disabled={!list}>⬇ Xuất {levelName(stage, lv)}</button>
         </div>
       </div>
       <p className="note-box">Mỗi bài: video bài giảng (ghim giữa trang) + 5 phần ôn tập. Tên bài sửa ở đây sẽ cập nhật luôn danh sách bài trong lộ trình. Bài đánh dấu <b>🎁 Miễn phí</b> ai cũng học được; còn lại chỉ Học viên. Dữ liệu gốc từ bản HTML nằm ở thư mục <code>data/lessons</code> của dự án — dùng nút “Nhập dữ liệu” để đưa vào lần đầu.</p>

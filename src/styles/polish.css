@@ -1,0 +1,80 @@
+/* =====================================================================
+   Lớp chỉnh giao diện chung cho các trang người dùng (15/11/2026)
+   Chỉ áp dụng ngoài trang quản trị: .page:not(.page-adm)
+   Mục tiêu: chữ dễ đọc hơn, bo góc + bóng đổ đồng bộ, nút thống nhất,
+   nền ô li nhẹ hơn để nội dung nổi lên.
+   ===================================================================== */
+:root{
+  --r-lg:20px;--r-md:14px;--r-sm:10px;
+  --sh-card:0 1px 0 rgba(43,42,34,.06),0 6px 18px rgba(43,42,34,.07);
+  --sh-pop:3px 5px 0 rgba(0,0,0,.14);
+  --accent:#d9453d;--accent-2:#ffd24a;
+}
+
+/* Nền ô li nhạt hơn, chữ cơ bản 15px */
+body:has(.page:not(.page-adm)){background-image:linear-gradient(rgba(214,203,170,.45) 1px,transparent 1px),linear-gradient(90deg,rgba(214,203,170,.45) 1px,transparent 1px)}
+.page:not(.page-adm){font-size:15px;line-height:1.5}
+.page:not(.page-adm) h1,.page:not(.page-adm) h2,.page:not(.page-adm) h3{letter-spacing:-.01em}
+
+/* Khung nội dung (.sk): bỏ bo góc méo, dùng bo tròn đều + bóng mềm */
+.page:not(.page-adm) .sk{border-radius:var(--r-lg);border:1.5px solid rgba(43,42,34,.85);box-shadow:var(--sh-pop)}
+
+/* Nút dùng chung — bọc :where() để nút riêng của từng trang (vd. khung đỏ Khoá học) vẫn đè được */
+:where(.page:not(.page-adm)) :is(.btn-p,.btn-s,.btn-d){border-radius:12px;min-height:40px;padding:9px 18px;transition:transform .15s,filter .15s,background .15s}
+:where(.page:not(.page-adm)) .btn-p{background:linear-gradient(180deg,#9a7743,#7e5f31);border-color:#5e4622;box-shadow:0 3px 0 #5e4622}
+:where(.page:not(.page-adm)) .btn-p:hover{transform:translateY(-1px);filter:brightness(1.06)}
+:where(.page:not(.page-adm)) .btn-p:active{transform:translateY(2px);box-shadow:0 1px 0 #5e4622}
+:where(.page:not(.page-adm)) .btn-s{background:#fff;border-color:#d9d0b3}
+:where(.page:not(.page-adm)) .btn-s:hover{background:#fff8e6;border-color:var(--ink)}
+:where(.page:not(.page-adm)) :is(.btn-p,.btn-s,.btn-d).small{min-height:32px;padding:5px 12px;font-size:13px;border-radius:9px}
+
+/* Chữ phụ quá nhỏ → tối thiểu 12px, màu đậm hơn để đủ tương phản */
+.page:not(.page-adm){--muted:#6b6856}
+.page:not(.page-adm) .nv small{font-size:clamp(10px,.9vw,11.5px)}
+
+/* Thanh 5 tab: gọn và thoáng hơn */
+.page:not(.page-adm) .topnav{gap:12px}
+.page:not(.page-adm) .nv{border-radius:18px;border-width:2px}
+.page:not(.page-adm) .nv.on{box-shadow:0 0 0 3px var(--ink),0 8px 18px rgba(0,0,0,.18);transform:translateY(-2px)}
+
+/* Thông báo vàng (note-box) */
+.page:not(.page-adm) .note-box{border-radius:var(--r-md)}
+
+/* Chân trang */
+.page:not(.page-adm) .foot{margin-top:40px;padding-top:18px;border-top:1px dashed #d9d0b3;font-size:13px}
+.page:not(.page-adm) .foot a{color:var(--muted)}
+
+/* ===== Trang bài học ===== */
+.page:not(.page-adm) .lsn2{gap:18px}
+.page:not(.page-adm) .lsn2-h{background:var(--panel);border:1.5px solid rgba(43,42,34,.85);border-radius:var(--r-lg);padding:16px 20px;box-shadow:var(--sh-pop)}
+.page:not(.page-adm) .lsn2-h h1{font-size:clamp(26px,3.6vw,36px)}
+.page:not(.page-adm) .lsn-n{border-radius:10px;padding:4px 12px;font-size:14px}
+.page:not(.page-adm) .ot2{padding:20px}
+.page:not(.page-adm) .ot2-h{margin:0 0 14px;font-family:"Baloo 2",system-ui,sans-serif;font-size:24px}
+.page:not(.page-adm) .lsn-t{gap:8px;padding:6px;background:var(--bg);border:1.5px solid var(--line);border-radius:16px;margin-bottom:14px}
+.page:not(.page-adm) .lsn-t button{flex:1 1 auto;border:1.5px solid transparent;border-radius:12px;padding:9px 14px;background:transparent;opacity:1;color:var(--muted);font-size:14.5px}
+.page:not(.page-adm) .lsn-t button:hover{background:#fff;color:var(--ink)}
+.page:not(.page-adm) .lsn-t button[aria-selected=true]{background:var(--c);color:#2b2a22;border-color:var(--ink);transform:none;box-shadow:0 3px 0 rgba(0,0,0,.2)}
+.page:not(.page-adm) .lsn-p{background:transparent;border:0;padding:0}
+
+@media (max-width:760px){
+  .page:not(.page-adm) .lsn-t{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .page:not(.page-adm) .lsn-t button{flex:none}
+  .page:not(.page-adm) .lsn2-h{padding:14px}
+}
+
+/* ===== Cỡ chữ tối thiểu cho nhãn nhỏ (trước đây 10–11px) ===== */
+.page:not(.page-adm) small{font-size:max(12px,.8em)}
+.page:not(.page-adm) .rm :is(.sb,.lvt,.bn,.free-tag,.lock-tag){font-size:12px}
+.page:not(.page-adm) .rm .ph small{font-size:12px}
+
+/* ===== Thanh 5 tab ở màn hình vừa (821–1100px): bỏ dấu tick + ảnh để chữ không bị ngắt từng từ ===== */
+@media (min-width:821px) and (max-width:1100px){
+  .page:not(.page-adm) .nv{justify-content:center;padding:10px 8px}
+  .page:not(.page-adm) .nv .ck,.page:not(.page-adm) .nv>img,.page:not(.page-adm) .nv:not(.n5) .nv-e{display:none}
+  .page:not(.page-adm) .nv b{font-size:13.5px;text-wrap:balance}
+  .page:not(.page-adm) .nv small{text-wrap:balance}
+  .page:not(.page-adm) .nv.n5{gap:6px}
+  .page:not(.page-adm) .nv.n5 .nv-e{width:30px;height:30px;font-size:18px}
+  .page:not(.page-adm) .nv.n5 .n5-pill{font-size:11px;padding:1px 7px;white-space:nowrap}
+}

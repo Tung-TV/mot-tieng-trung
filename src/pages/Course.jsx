@@ -2,8 +2,8 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { navigate } from '../router.jsx';
-import { DEFAULT_PLAN, fmtVnd, lessonState, stageLevel } from '../services/model.js';
-import { LessonList } from '../components/StageParts.jsx';
+import { DEFAULT_PLAN, fmtVnd, lessonState, stageLevel, isHskLevel } from '../services/model.js';
+import { LessonList, BrText } from '../components/StageParts.jsx';
 import { TABS } from './Lesson.jsx';
 
 const PARTS = [['🎬', 'Video bài giảng', 'Xem ngay trên web, ghim video khi cuộn để vừa xem vừa ôn'], ...TABS.map(([, e, t]) => [e, t, {
@@ -27,13 +27,13 @@ function LevelCard({ s }) {
   const done = (s.lessons || []).filter((_, i) => lessonState(progress, lv + '-' + (i + 1)) === 'done').length;
   const paid = tier === 'student' || tier === 'staff';
   return (
-    <article className="kc-lv" style={{ '--c': s.color }}>
+    <article className={'kc-lv' + (open ? ' open' : '')} style={{ '--c': s.color }}>
       <div className="kc-lv-top">
         {s.cover ? <img src={s.cover} alt={'Giáo trình ' + s.title} loading="lazy" /> : <span className="kc-lv-e">{s.emoji}</span>}
         <div>
           <span className="kc-lv-k">{s.emoji} {s.key}</span>
           <h3>{s.title}</h3>
-          <p>{s.desc}</p>
+          <p><BrText text={s.desc} /></p>
           <div className="kc-lv-m">
             <span>📖 {n} bài</span>
             {(s.info || []).filter((r) => r[0] !== 'Giáo trình').slice(0, 2).map((r) => <span key={r[0]}>{r[1].replace(/ theo Đại cương HSK mới/, '')}</span>)}
@@ -50,8 +50,8 @@ function LevelCard({ s }) {
 
 export default function Course() {
   const { content, tier, progress } = useApp();
-  const plan = content.settings.plan || DEFAULT_PLAN;
-  const levels = content.stages.filter((s) => stageLevel(s) && (s.lessons || []).length);
+  const plan0 = content.settings.plan || DEFAULT_PLAN, plan = { ...plan0, months: plan0.months > 0 ? plan0.months : 12 };
+  const levels = content.stages.filter((s) => isHskLevel(stageLevel(s)) && (s.lessons || []).length);
   const total = levels.reduce((n, s) => n + s.lessons.length, 0);
   const paid = tier === 'student' || tier === 'staff';
   const perDay = plan.months > 0 ? Math.round(plan.price / (plan.months * 30.4) / 100) / 10 : 0;
@@ -75,21 +75,20 @@ export default function Course() {
         </div>
         <div className="kc-price">
           <small>TRỌN BỘ HSK 1–6</small>
-          <b>{fmtVnd(plan.price)}</b>
-          <span>{plan.months ? (plan.months === 12 ? '/ năm' : '/ ' + plan.months + ' tháng') : 'trọn đời'}</span>
-          {perDay > 0 && <em>≈ chỉ {perDay.toLocaleString('vi-VN')}K / ngày</em>}
+          <div className="kc-amt"><b>{fmtVnd(plan.price)}</b><span>{plan.months ? (plan.months === 12 ? '/ năm' : '/ ' + plan.months + ' tháng') : 'trọn đời'}</span></div>
+          {perDay > 0 && <em>🔥 Chỉ ≈ {perDay.toLocaleString('vi-VN')}K / ngày</em>}
           <ul>{(plan.benefits || []).map((b, i) => <li key={i}>{b}</li>)}</ul>
           {paid ? <span className="kc-on">✓ Bạn đang là Học viên</span> : <button type="button" className="btn-p" onClick={() => navigate('/nang-cap')}>Đăng ký ngay</button>}
         </div>
       </section>
 
       <section className="sk kc-sec">
-        <h2>Mỗi bài học có gì?</h2>
+        <h2>Mỗi bài học có gì?<small>Video bài giảng + 5 phần ôn tập, học xong là nhớ</small></h2>
         <div className="kc-parts">{PARTS.map(([e, t, d]) => <div key={t} className="kc-part"><i>{e}</i><b>{t}</b><span>{d}</span></div>)}</div>
       </section>
 
       <section className="kc-sec">
-        <h2>Chương trình học</h2>
+        <h2>Chương trình học<small>{levels.length} cấp theo giáo trình HSK 3.0 · bài 1 mỗi cấp học thử miễn phí</small></h2>
         <div className="kc-lvs">{levels.map((s) => <LevelCard key={s.id} s={s} />)}</div>
       </section>
 

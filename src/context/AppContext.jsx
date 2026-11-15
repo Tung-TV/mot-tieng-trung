@@ -7,6 +7,7 @@ const Ctx = createContext(null);
 export const useApp = () => useContext(Ctx);
 
 const GUEST_KEY = 'mot.guest.progress';
+const KICKED = 'Tài khoản của bạn vừa đăng nhập trên thiết bị khác, nên đã tự đăng xuất ở thiết bị này. Mỗi tài khoản chỉ dùng được trên 1 thiết bị cùng lúc. Nếu không phải bạn đăng nhập, hãy đổi mật khẩu ngay.';
 const readGuest = () => { try { return JSON.parse(localStorage.getItem(GUEST_KEY) || '{}'); } catch { return {}; } };
 
 export function AppProvider({ children }) {
@@ -29,18 +30,46 @@ export function AppProvider({ children }) {
 
   const reload = useCallback(async () => { setContent(await store.getContent()); }, []);
 
+  // Mỗi tài khoản chỉ 1 thiết bị: phiên ở đây đã bị thay bởi lần đăng nhập ở thiết bị khác
+  const kicked = useCallback(async () => {
+    setUser(null);
+    try { await reload(); } catch { /* */ }
+    if (currentPath().startsWith('/admin')) navigate('/');
+    const again = await ask({ title: 'Bạn đã bị đăng xuất', message: KICKED, ok: 'Đăng nhập lại', cancel: 'Đóng' });
+    if (again) setAuthOpen('login');
+  }, [reload, ask]);
+
   useEffect(() => {
     (async () => {
       try {
         await store.init(); await reload();
-        const u = await store.currentUser(); setUser(u);
+        let u = await store.currentUser();
+        if (store.checkSession && !(await store.checkSession())) { u = null; kicked(); }
+        setUser(u);
         const ae = store.takeAuthError && store.takeAuthError();
         if (ae) toast(ae, 'err'); else if (u && sessionStorage.getItem('mot.welcome')) { toast('Đăng nhập thành công. Chào ' + u.name + '!'); if (tierOf(u) === 'staff') navigate('/admin'); }
         try { sessionStorage.removeItem('mot.welcome'); } catch { /* */ }
       }
       catch (e) { setError(e.message || String(e)); }
     })();
-  }, [reload, toast]);
+  }, [reload, toast, kicked]);
+
+  // Kiểm tra lại phiên khi quay lại tab/cửa sổ và mỗi phút (quản trị/biên tập được miễn)
+  const uid = user && user.id, staff = tierOf(user) === 'staff';
+  useEffect(() => {
+    if (!uid || staff || !store.checkSession) return undefined;
+    let busy = false;
+    const check = async () => {
+      if (busy || document.hidden) return;
+      busy = true;
+      try { if (!(await store.checkSession())) kicked(); } finally { busy = false; }
+    };
+    const onVis = () => { if (!document.hidden) check(); };
+    window.addEventListener('focus', check);
+    document.addEventListener('visibilitychange', onVis);
+    const t = setInterval(check, 60000);
+    return () => { window.removeEventListener('focus', check); document.removeEventListener('visibilitychange', onVis); clearInterval(t); };
+  }, [uid, staff, kicked]);
 
   // Chạy một thao tác ghi, báo lỗi bằng toast, tải lại dữ liệu
   const run = useCallback(async (fn, okMsg) => {

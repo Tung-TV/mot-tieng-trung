@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { Modal } from '../components/Overlays.jsx';
 import { ChipPicker, Field, ImageInput, pairsToText, textToPairs } from './ui.jsx';
-import { allQuestions, normTest } from '../services/model.js';
+import { allQuestions, normTest, nextExtraLevel, lessonsFromSections } from '../services/model.js';
 import TestEditor, { cleanTest } from './TestEditor.jsx';
 
 const BLANK = { key: 'Bậc mới', emoji: '📘', color: '#74b5e4', whiteText: false, title: 'HSK', badge: 'Sơ cấp', desc: '', chips: ['Bài giảng', 'Từ vựng'], keyword: 'HSK', sections: [], info: [], lessons: [], ribbon: '', ribbonColor: '#c4001d', affKey: '', cover: '', boxes: [], test: null, completion: 'test' };
@@ -66,6 +66,17 @@ function StageForm({ initial, onSave, onClose, affKeys, toast }) {
           ))}
           <button type="button" className="btn-s small" onClick={() => set('sections', [...s.sections, { title: 'Nhóm mới', color: '#7bb8e8', items: [], note: '' }])}>+ Thêm nhóm buổi học</button>
         </fieldset>
+        {!/^HSK\s*\d/.test(s.title || '') && (
+          <fieldset><legend>Bài học (video + 5 phần ôn tập)</legend>
+            <label className="chk"><input type="checkbox" checked={Number.isInteger(s.lessonLevel)} onChange={(e) => {
+              if (!e.target.checked) { const { lessonLevel, ...rest } = s; return setS(rest); }
+              const lv = Number.isInteger(initial.lessonLevel) ? initial.lessonLevel : nextExtraLevel(content.stages);
+              setS({ ...s, lessonLevel: lv });
+              if (!textToPairs(txt.lessons).length && (s.sections || []).length) setTxt({ ...txt, lessons: pairsToText(lessonsFromSections(s.sections)) });
+            }} /> Chặng này có bài học như HSK — soạn ở mục <b>Bài học (Khoá học)</b></label>
+            <p className="muted">Bật lên thì mỗi dòng trong “Danh sách bài học” là một bài (lấy sẵn từ các buổi nếu đang trống). Trên trang chặng, mỗi buổi thành nút vào học bài tương ứng, theo thứ tự từ trên xuống.</p>
+          </fieldset>
+        )}
         <fieldset><legend>Ai được vào học</legend>
           <div className="row-btns">
             <label className={'q-opt' + (!s.free ? ' on' : '')}><input type="radio" name="free" checked={!s.free} onChange={() => set('free', false)} /> ⭐ Chỉ Học viên (Khoá học)</label>

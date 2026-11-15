@@ -1,9 +1,15 @@
 import { useApp } from '../context/AppContext.jsx';
 import { navigate } from '../router.jsx';
-import { canOpenLesson, lessonState, stageLevel } from '../services/model.js';
+import { canOpenLesson, isHskLevel, lessonState, stageLevel } from '../services/model.js';
 // Các khối hiển thị của một chặng, dùng chung cho trang Lộ trình và trang Chi tiết chặng
 import { useState } from 'react';
 import { copyText, sanitizeHtml } from '../services/util.js';
+
+/** Mô tả chặng: dữ liệu dùng <br> để xuống dòng → hiện thành xuống dòng thật, không in nguyên chữ "<br>" */
+export function BrText({ text }) {
+  const parts = String(text || '').split(/<br\s*\/?>/i);
+  return parts.map((t, i) => <span key={i}>{i > 0 && <br />}{t}</span>);
+}
 
 export function Chip({ label, settings }) {
   const c = settings.chipColors?.[label], e = settings.chipEmojis?.[label];
@@ -79,13 +85,22 @@ export function InfoBlock({ s, settings, openLessons = false }) {
 
 
 export function Sections({ s }) {
+  const { tier, progress, setUpgradeOpen } = useApp();
   if (!s.sections || !s.sections.length) return null;
+  // Chặng có bài học (Nhập môn…): buổi thứ k (đếm từ trên xuống qua các nhóm) = bài k
+  const lv = Number.isInteger(s.lessonLevel) ? s.lessonLevel : null, nLessons = (s.lessons || []).length;
+  let k0 = 0;
+  const btn = (n) => {
+    if (lv == null || n > nLessons) return null;
+    const st = lessonState(progress, lv + '-' + n), ok = canOpenLesson(s, n, tier);
+    return <button type="button" className={'lbtn lb-' + st + (ok ? '' : ' lb-lock')} onClick={() => (ok ? navigate('/bai-hoc/' + lv + '/' + n) : setUpgradeOpen(true))}>{ok ? LS_BTN[st] : '🔒 HỌC VIÊN'}</button>;
+  };
   return (
-    <div className="secs">
+    <div className={'secs' + (lv != null ? ' secs-ls' : '')}>
       {s.sections.map((x, j) => (
         <div key={j} className="sec" style={{ '--c': x.color }}>
           <h4>{x.title}</h4>
-          <ul>{x.items.map((l, k) => <li key={k}><span className="bn">{l[0]}</span>{l[1]}</li>)}</ul>
+          <ul>{x.items.map((l, k) => { const n = ++k0; return <li key={k}><span className="bn">{l[0]}</span><span className="st">{l[1]}</span>{btn(n)}</li>; })}</ul>
           {x.note && <div className="sn2">{x.note}</div>}
         </div>
       ))}
@@ -133,7 +148,7 @@ export function LessonList({ s, open: open0 = false }) {
           </li>
         );
       })}
-        {lv && <li className="ls-exam"><span className="bn">🏆 Thi</span><span className="lt"><b>THI THỬ HSK{lv}</b><small>Làm đề thi thử HSK {lv} để kiểm tra những gì đã học</small></span><a className="lbtn lbx" href={'#thi-hsk-' + lv}>VÀO THI THỬ ›</a></li>}
+        {isHskLevel(lv) && <li className="ls-exam"><span className="bn">🏆 Thi</span><span className="lt"><b>THI THỬ HSK{lv}</b><small>Làm đề thi thử HSK {lv} để kiểm tra những gì đã học</small></span><a className="lbtn lbx" href={'#thi-hsk-' + lv}>VÀO THI THỬ ›</a></li>}
       </ol></div>
     </details>
   );

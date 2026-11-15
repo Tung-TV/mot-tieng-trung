@@ -4,7 +4,7 @@ import { navigate } from '../router.jsx';
 import RoadmapGift from '../components/RoadmapGift.jsx';
 import MOUNTAIN from '../data/mountain.svg.js';
 import { byButton, canEnterStage, stageLevel, stageStates } from '../services/model.js';
-import { Boxes, Chip, InfoBlock, Sections } from '../components/StageParts.jsx';
+import { Boxes, Chip, InfoBlock, Sections, BrText } from '../components/StageParts.jsx';
 
 const PHASES = [['Bắt đầu', 'Chuẩn bị', '#7fc8a9'], ['Nhập môn', 'Pinyin', '#ecb857'], ['HSK 1–3', 'Sơ cấp', '#74b5e4'], ['HSK 4–6', 'Trung cấp', '#b86fa3'], ['HSK 7–9', 'Cao cấp', '#c0392b']];
 
@@ -23,6 +23,7 @@ function GiftCta() {
 }
 
 function Hero({ learner }) {
+  const { tier } = useApp();
   return (
     <div className="sk rhero">
       <div className="rh-l">
@@ -34,7 +35,7 @@ function Hero({ learner }) {
         <p className="sub">{learner
           ? 'Mỗi chặng là một cấp bậc. Vượt qua bài kiểm tra cuối chặng để mở chặng tiếp theo, từ Vỡ lòng đến Bậc thầy.'
           : 'Mỗi chặng là một cấp bậc: học xong là lên bậc, từ Vỡ lòng đến Bậc thầy.'}</p>
-        <GiftCta />
+        {tier !== 'student' && <GiftCta />}
       </div>
       <div className="rh-r" dangerouslySetInnerHTML={{ __html: MOUNTAIN }} />
       <div className="stamp" aria-label="Chương trình HSK 3.0">HSK<b>3.0</b></div>
@@ -119,7 +120,7 @@ function LearnerRoadmap() {
               </div>
               <div className={'sk stage' + (locked ? ' stage-lock' : '')}>
                 <h3><span className="lvt">BẬC {i + 1}</span>{s.title}{!/cấp$/.test(s.badge) && s.badge && <span className="bd">{s.badge}</span>}{locked && <span className="lock-tag">🔒 Chưa mở</span>}{!paid && (s.free ? <span className="free-tag">Miễn phí</span> : <span className="lock-tag">⭐ Học viên</span>)}</h3>
-                <p>{s.desc}</p>
+                <p><BrText text={s.desc} /></p>
                 {(s.info || []).length > 0 && <InfoBlock s={s} settings={settings} />}
                 <Sections s={s} />
                 {(s.boxes || []).length > 0

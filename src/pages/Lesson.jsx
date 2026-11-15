@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { navigate } from '../router.jsx';
-import { canOpenLesson, lessonState, stageLevel } from '../services/model.js';
+import { canOpenLesson, lessonState, stageLevel, isHskLevel } from '../services/model.js';
 import { stopSay } from '../services/speech.js';
 import { GrammarPart, ListenPart, SpeakPart, VocabPart, WritePart } from '../components/LessonParts.jsx';
 import { UpgradeGate } from './StageDetail.jsx';
@@ -153,7 +153,7 @@ export default function Lesson({ lv, n }) {
           </div>
           <nav className="sd-pn">
             {n > 1 ? <button className="btn-s" type="button" onClick={() => go(n - 1)}>‹ Bài trước</button> : <span />}
-            {n < total ? <button className={nextOpen ? 'btn-p' : 'btn-s'} type="button" onClick={() => go(n + 1)}>{nextOpen ? 'Bài sau ›' : '🔒 Bài sau'}</button> : <a className="btn-p" href={'#thi-hsk-' + lv}>🏆 Thi thử HSK{lv} ›</a>}
+            {n < total ? <button className={nextOpen ? 'btn-p' : 'btn-s'} type="button" onClick={() => go(n + 1)}>{nextOpen ? 'Bài sau ›' : '🔒 Bài sau'}</button> : (isHskLevel(lv) ? <a className="btn-p" href={'#thi-hsk-' + lv}>🏆 Thi thử HSK{lv} ›</a> : <button className="btn-p" type="button" onClick={() => navigate('/lo-trinh/' + stage.id)}>‹ Về chặng {stage.key}</button>)}
           </nav>
         </>
       )}

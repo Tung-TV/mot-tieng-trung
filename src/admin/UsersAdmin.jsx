@@ -4,8 +4,26 @@ import { Modal } from '../components/Overlays.jsx';
 import { nrm, ROLE_LABEL } from '../services/util.js';
 import { Field, Empty } from './ui.jsx';
 
+// Cấp Học viên mặc định 1 năm kể từ hôm nay (hoặc từ hạn cũ nếu còn hạn); admin sửa lại ngày được
+const plusYear = (from) => { const d = new Date(Math.max(Date.now(), from || 0)); d.setFullYear(d.getFullYear() + 1); d.setHours(23, 59, 59, 0); return d.getTime(); };
+const toInput = (t) => { if (!t) return ''; const d = new Date(t); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const fromInput = (v) => { if (!v) return null; const [y, m, d] = v.split('-').map(Number); return new Date(y, m - 1, d, 23, 59, 59).getTime(); };
+
+/** Ô hạn Học viên: chọn ngày, nút +1 năm, xoá ngày = không thời hạn */
+function StudentUntil({ u, save }) {
+  const expired = u.studentUntil && u.studentUntil < Date.now();
+  return (
+    <div className="until">
+      <input type="date" aria-label={'Hạn Học viên của ' + u.email} value={toInput(u.studentUntil)}
+        onChange={(e) => save(fromInput(e.target.value), e.target.value ? 'Đã đổi hạn Học viên.' : 'Học viên không thời hạn.')} />
+      <button type="button" className="btn-s small" onClick={() => save(plusYear(u.studentUntil), 'Đã gia hạn thêm 1 năm.')}>+1 năm</button>
+      <small className={expired ? 'exp' : 'muted'}>{!u.studentUntil ? 'Không thời hạn' : expired ? 'Đã hết hạn' : 'Còn ' + Math.ceil((u.studentUntil - Date.now()) / 86400000) + ' ngày'}</small>
+    </div>
+  );
+}
+
 function UserForm({ onSave, onClose }) {
-  const [f, setF] = useState({ name: '', email: '', password: '', role: 'member' });
+  const [f, setF] = useState({ name: '', email: '', password: '', role: 'member', studentUntil: null });
   const set = (k, v) => setF({ ...f, [k]: v });
   return (
     <Modal title="Tạo tài khoản" onClose={onClose}>
@@ -13,7 +31,8 @@ function UserForm({ onSave, onClose }) {
         <Field label="Họ tên"><input value={f.name} onChange={(e) => set('name', e.target.value)} required /></Field>
         <Field label="Email"><input type="email" value={f.email} onChange={(e) => set('email', e.target.value)} required /></Field>
         <Field label="Mật khẩu (≥ 6 ký tự)"><input type="text" minLength={6} value={f.password} onChange={(e) => set('password', e.target.value)} required /></Field>
-        <Field label="Vai trò"><select value={f.role} onChange={(e) => set('role', e.target.value)}>{Object.entries(ROLE_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></Field>
+        <Field label="Vai trò"><select value={f.role} onChange={(e) => setF({ ...f, role: e.target.value, studentUntil: e.target.value === 'student' ? (f.studentUntil || plusYear()) : null })}>{Object.entries(ROLE_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></Field>
+        {f.role === 'student' && <Field label="Hạn Học viên (mặc định 1 năm, bỏ trống = không thời hạn)"><input type="date" value={toInput(f.studentUntil)} onChange={(e) => set('studentUntil', fromInput(e.target.value))} /></Field>}
         <div className="form-act"><button type="button" className="btn-s" onClick={onClose}>Huỷ</button><button className="btn-p">Tạo tài khoản</button></div>
       </form>
     </Modal>
@@ -59,7 +78,7 @@ export default function UsersAdmin() {
               return (
                 <tr key={u.id}>
                   <td><b>{u.name}{me && ' (bạn)'}</b><span className="url">{u.email}{(u.providers || []).includes('google') && <span className="prov">Google</span>}</span></td>
-                  <td><select value={u.role} onChange={(e) => act(() => store.updateUser(u.id, { role: e.target.value }), 'Đã đổi vai trò.')}>{Object.entries(ROLE_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>{u.role === 'student' && <small className="muted until">{u.studentUntil ? 'đến ' + new Date(u.studentUntil).toLocaleDateString('vi-VN') : 'không thời hạn'}</small>}</td>
+                  <td><select value={u.role} onChange={(e) => { const r = e.target.value; act(() => store.updateUser(u.id, r === 'student' && u.role !== 'student' ? { role: r, studentUntil: plusYear() } : { role: r }), r === 'student' && u.role !== 'student' ? 'Đã cấp Học viên 1 năm.' : 'Đã đổi vai trò.'); }}>{Object.entries(ROLE_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>{u.role === 'student' && <StudentUntil u={u} save={(t, ok) => act(() => store.updateUser(u.id, { studentUntil: t }), ok)} />}</td>
                   <td className="muted">{Object.values(p.tests || {}).filter((t) => t.passed).length} bài kiểm tra đạt · {(p.saved || []).length} tài liệu lưu</td>
                   <td className="muted">{u.createdAt ? new Date(u.createdAt).toLocaleDateString('vi-VN') : '—'}</td>
                   <td><button type="button" className={'pill-s ' + (u.status === 'active' ? 'on' : 'off')} disabled={me} onClick={() => act(() => store.updateUser(u.id, { status: u.status === 'active' ? 'locked' : 'active' }), u.status === 'active' ? 'Đã khoá tài khoản.' : 'Đã mở khoá.')}>{u.status === 'active' ? 'Hoạt động' : 'Đã khoá'}</button></td>

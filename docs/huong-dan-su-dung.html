@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Hướng dẫn sử dụng Mọt Tiếng Trung</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 18mm 16mm; }
+  :root { --ink:#2b2a22; --muted:#6b6856; --brand:#8a6a3a; --red:#c0392b; --line:#e6dfc7; --soft:#fbf6ea; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", sans-serif; color: var(--ink); font-size: 10.6pt; line-height: 1.55; margin: 0; }
+  h1, h2, h3 { line-height: 1.25; color: var(--ink); }
+  h1 { font-size: 21pt; margin: 0 0 6pt; }
+  h2 { font-size: 15pt; margin: 22pt 0 8pt; padding-bottom: 4pt; border-bottom: 2px solid var(--brand); break-after: avoid; }
+  h3 { font-size: 12pt; margin: 14pt 0 5pt; color: var(--brand); break-after: avoid; }
+  p { margin: 0 0 7pt; }
+  ul, ol { margin: 0 0 8pt; padding-left: 18pt; }
+  li { margin-bottom: 3pt; }
+  b { font-weight: 700; }
+  code, .mono { font-family: "SF Mono", Menlo, "PingFang SC", monospace; font-size: 9.4pt; background: #f3eee0; padding: 0 3pt; border-radius: 3pt; }
+  pre { font-family: "SF Mono", Menlo, "PingFang SC", monospace; font-size: 9.2pt; background: #f6f1e3; border: 1px solid var(--line); border-radius: 6pt; padding: 7pt 9pt; margin: 4pt 0 9pt; white-space: pre-wrap; break-inside: avoid; }
+  table { width: 100%; border-collapse: collapse; margin: 4pt 0 10pt; font-size: 9.8pt; break-inside: auto; }
+  th, td { border: 1px solid var(--line); padding: 5pt 7pt; text-align: left; vertical-align: top; }
+  th { background: var(--soft); }
+  tr { break-inside: avoid; }
+  .cover { height: 245mm; display: flex; flex-direction: column; justify-content: center; break-after: page; }
+  .cover .tag { display: inline-block; background: #ffd24a; color: #5a2a10; font-weight: 800; border-radius: 99pt; padding: 3pt 12pt; font-size: 10pt; align-self: flex-start; }
+  .cover h1 { font-size: 32pt; margin: 14pt 0 8pt; }
+  .cover .sub { font-size: 13pt; color: var(--muted); max-width: 140mm; }
+  .cover .meta { margin-top: 30pt; font-size: 10pt; color: var(--muted); }
+  .part { break-before: page; background: var(--soft); border: 1.5px solid var(--ink); border-radius: 10pt; padding: 14pt 16pt; margin-bottom: 10pt; }
+  .part h1 { font-size: 20pt; margin: 0 0 4pt; }
+  .part p { margin: 0; color: var(--muted); }
+  .note { border-left: 4px solid #e0a800; background: #fff6d8; padding: 7pt 10pt; border-radius: 0 6pt 6pt 0; margin: 6pt 0 10pt; break-inside: avoid; }
+  .tip { border-left: 4px solid #2f9e5f; background: #e8f6ea; padding: 7pt 10pt; border-radius: 0 6pt 6pt 0; margin: 6pt 0 10pt; break-inside: avoid; }
+  .warn { border-left: 4px solid var(--red); background: #fdecea; padding: 7pt 10pt; border-radius: 0 6pt 6pt 0; margin: 6pt 0 10pt; break-inside: avoid; }
+  .steps { counter-reset: s; list-style: none; padding-left: 0; }
+  .steps > li { counter-increment: s; position: relative; padding-left: 24pt; margin-bottom: 5pt; }
+  .steps > li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 16pt; height: 16pt; border-radius: 50%; background: var(--brand); color: #fff; font-weight: 700; font-size: 8.5pt; text-align: center; line-height: 16pt; }
+  .toc { columns: 2; column-gap: 14pt; font-size: 10pt; }
+  .toc div { margin-bottom: 3pt; break-inside: avoid; }
+  .toc .p { font-weight: 800; margin-top: 6pt; color: var(--brand); }
+  .kbd { display: inline-block; border: 1px solid #cfc6a8; border-bottom-width: 2px; border-radius: 4pt; padding: 0 5pt; background: #fff; font-size: 9.4pt; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <span class="tag">TÀI LIỆU HƯỚNG DẪN</span>
+  <h1>Hướng dẫn sử dụng<br>Mọt Tiếng Trung</h1>
+  <p class="sub">Dành cho học viên và quản trị viên: từ tạo tài khoản, đăng ký Khoá học HSK 1–6 đến cách soạn lộ trình, bài học, bài ôn tập, bài kiểm tra và vận hành trang quản trị.</p>
+  <p class="meta">Phiên bản ngày 15/11/2026 · Áp dụng cho giao diện web hiện tại</p>
+</section>
+
+<h2 style="margin-top:0">Mục lục</h2>
+<div class="toc">
+  <div class="p">Giới thiệu</div>
+  <div>0. Các loại tài khoản</div>
+  <div class="p">Phần A — Học viên</div>
+  <div>A1. Tạo tài khoản và đăng nhập</div>
+  <div>A2. Đăng ký Khoá học, chuyển khoản, gia hạn</div>
+  <div>A3. Học theo Lộ trình và Khoá học</div>
+  <div>A4. Bài học: video và 5 phần ôn tập</div>
+  <div>A5. Bài kiểm tra cuối chặng</div>
+  <div>A6. Kho tài liệu, Ôn tập, Cộng đồng</div>
+  <div>A7. Chuông thông báo</div>
+  <div>A8. Câu hỏi thường gặp</div>
+  <div class="p">Phần B — Quản trị viên</div>
+  <div>B1. Vào trang quản trị, các mục menu</div>
+  <div>B2. Tài khoản và hạn Học viên</div>
+  <div>B3. Duyệt chuyển khoản (Nâng cấp học viên)</div>
+  <div>B4. Lộ trình học: thêm và sửa chặng</div>
+  <div>B5. Khoá học: thêm cấp HSK và bài học</div>
+  <div>B6. Soạn 5 phần ôn tập của một bài</div>
+  <div>B7. Bài kiểm tra cuối chặng</div>
+  <div>B8. Chấm bài và Thống kê học tập</div>
+  <div>B9. Tài liệu trong Kho</div>
+  <div>B10. Cài đặt (thông báo, gói, ngân hàng…)</div>
+  <div>B11. Sao lưu và lưu ý vận hành</div>
+  <div>B12. Quy trình mẫu: mở một khoá mới</div>
+</div>
+
+<h2>0. Các loại tài khoản</h2>
+<table>
+  <tr><th style="width:22%">Loại</th><th>Được làm gì</th></tr>
+  <tr><td><b>Khách</b> (chưa đăng nhập)</td><td>Xem Kho tài liệu miễn phí, xem khung Lộ trình và trang Khoá học, học thử các bài được đánh dấu Miễn phí. Không lưu tiến độ.</td></tr>
+  <tr><td><b>Thành viên</b> (tài khoản thường)</td><td>Như khách, cộng thêm lưu tài liệu vào “Kho của tôi”, lưu tiến độ học thử, đăng ký Khoá học.</td></tr>
+  <tr><td><b>Học viên</b></td><td>Đã đăng ký Khoá học (365.000đ/năm, mặc định 1 năm). Vào mọi chặng, mọi bài học (video + ôn tập), bài kiểm tra, tài liệu dành riêng. Hết hạn thì tự về Thành viên, tiến độ học vẫn được giữ.</td></tr>
+  <tr><td><b>Biên tập</b></td><td>Vào trang quản trị để soạn nội dung (tài liệu, lộ trình, bài học) và chấm bài. Không quản lý tài khoản, không duyệt thanh toán.</td></tr>
+  <tr><td><b>Quản trị</b></td><td>Toàn quyền: nội dung, tài khoản, duyệt chuyển khoản, cài đặt, sao lưu.</td></tr>
+</table>
+
+<!-- ======================= PHẦN A ======================= -->
+<div class="part"><h1>Phần A — Dành cho học viên</h1><p>Cách tạo tài khoản, đăng ký Khoá học và học mỗi ngày trên web Mọt Tiếng Trung.</p></div>
+
+<h2>A1. Tạo tài khoản và đăng nhập</h2>
+<ol class="steps">
+  <li>Bấm vào <b>biểu tượng người</b> ở góc trên bên phải, chọn <b>Tạo tài khoản</b>.</li>
+  <li>Nhập họ tên, email, mật khẩu (ít nhất 6 ký tự), rồi bấm tạo. Có thể bấm <b>Tiếp tục với Google</b> nếu nút này hiện.</li>
+  <li>Lần sau bấm biểu tượng người, chọn <b>Đăng nhập</b>.</li>
+</ol>
+</div>
+<p>Menu tài khoản (bấm vào chữ cái đầu tên ở góc phải) có: <b>Kho của tôi</b>, <b>Lộ trình của tôi</b> (học viên) hoặc <b>Đăng ký Khoá học</b> (thành viên), và <b>Đăng xuất</b>. Học viên thấy thêm dòng “Học viên đến dd/mm/yyyy”.</p>
+<div class="note"><b>Mỗi tài khoản chỉ đăng nhập trên 1 thiết bị cùng lúc.</b> Khi bạn đăng nhập ở máy mới, máy cũ sẽ tự đăng xuất và hiện thông báo “Tài khoản của bạn vừa đăng nhập trên thiết bị khác”. Tiến độ học lưu theo tài khoản nên đổi máy vẫn học tiếp đúng chỗ. Nếu thấy thông báo này mà bạn không đăng nhập ở đâu khác, hãy đổi mật khẩu và báo Mọt.</div>
+
+<h2>A2. Đăng ký Khoá học, chuyển khoản, gia hạn</h2>
+<h3>Đăng ký lần đầu</h3>
+<ol class="steps">
+  <li>Đăng nhập, vào tab <b>Khoá học HSK 1–6</b> rồi bấm <b>Đăng ký</b> (hoặc menu tài khoản › Đăng ký Khoá học).</li>
+  <li>Bấm <b>Tạo mã giao dịch</b>. Web hiện <b>mã giao dịch riêng</b> (dạng <code>MOTxxxxxx</code>), mã QR có sẵn số tiền, số tài khoản ngân hàng.</li>
+  <li>Mở app ngân hàng, quét mã QR (hoặc chuyển khoản tay). <b>Ghi đúng mã giao dịch vào nội dung chuyển khoản</b> và chuyển đúng số tiền.</li>
+  <li>Quay lại web, bấm <b>Tôi đã chuyển khoản</b>. Trạng thái chuyển sang “Đã báo chuyển khoản – chờ admin xác nhận”.</li>
+  <li>Admin kiểm tra và kích hoạt (thường trong 24 giờ). Chuông 🔔 sẽ báo <b>“Đã kích hoạt Học viên”</b> kèm ngày hết hạn. Tải lại trang là học được ngay.</li>
+</ol>
+<div class="tip">Chưa chuyển khoản thì có thể bấm <b>Huỷ yêu cầu</b>. Mã chưa thanh toán vẫn được nhắc trong chuông thông báo.</div>
+<h3>Thời hạn và gia hạn</h3>
+<ul>
+  <li>Mỗi lần thanh toán cho <b>1 năm</b> (12 tháng) học viên.</li>
+  <li>Khi còn <b>30 ngày trở xuống</b>, chuông nhắc “Gói Học viên còn N ngày” (nhắc lại ở mốc 7 và 3 ngày). Lúc này bạn có thể <b>gia hạn sớm</b> theo đúng các bước trên; thời gian mới được <b>cộng nối tiếp</b> vào hạn cũ, không bị mất ngày.</li>
+  <li>Hết hạn: tài khoản tự về Thành viên, bài học dành cho học viên bị khoá lại, <b>tiến độ học vẫn được giữ</b>. Gia hạn xong là học tiếp đúng chỗ.</li>
+</ul>
+
+<h2>A3. Học theo Lộ trình và Khoá học</h2>
+<p><b>Lộ trình học</b> là bậc thang 9 chặng, từ <i>Bắt đầu</i>, <i>Nhập môn</i> (Pinyin, bộ thủ) đến HSK 1–6 và cao cấp. Mỗi chặng có mô tả, giáo trình, danh sách buổi/bài học và bài kiểm tra cuối chặng.</p>
+<ul>
+  <li>Bấm vào một bậc trên bậc thang để xem chi tiết chặng. Chặng có nhãn <b>Miễn phí</b> ai cũng vào được.</li>
+  <li>Chặng sau mở khi bạn <b>đạt bài kiểm tra</b> của chặng trước (hoặc bấm “Hoàn thành chặng” nếu chặng đó không cần kiểm tra).</li>
+  <li>Thanh “Lộ trình của bạn” cho biết đang ở chặng nào và % đã đi qua. Nút <b>Tiếp tục học</b> đưa bạn về bài đang học dở.</li>
+</ul>
+<p><b>Trang Khoá học HSK 1–6</b> liệt kê 6 cấp. Mỗi cấp có bìa giáo trình, số bài, từ vựng; bấm <b>Xem … bài học</b> để mở danh sách bài, rồi bấm <b>BẮT ĐẦU HỌC / ĐANG HỌC</b> ở bài muốn học. Bài 1 mỗi cấp thường là <b>học thử miễn phí</b>.</p>
+
+<h2>A4. Bài học: video và 5 phần ôn tập</h2>
+<p>Mỗi bài gồm <b>video bài giảng</b> (bấm “Mở video bài giảng”; khi cuộn xuống, video thu nhỏ và ghim ở góc để vừa xem vừa ôn) và <b>5 phần ôn tập</b> ở thanh chọn:</p>
+<table>
+  <tr><th style="width:22%">Phần</th><th>Làm gì</th></tr>
+  <tr><td>✍️ Luyện viết</td><td>Xem thứ tự nét từng chữ Hán rồi tự viết theo trên khung, máy chấm nét.</td></tr>
+  <tr><td>📚 Từ vựng</td><td>Danh sách từ có pinyin, loại từ, nghĩa, câu ví dụ có giọng đọc. Có chế độ <b>Lật thẻ</b> để tự kiểm tra.</td></tr>
+  <tr><td>🎧 Nghe hiểu</td><td>Nghe từ và chọn nghĩa đúng, luyện phản xạ tai nghe. Điểm được lưu.</td></tr>
+  <tr><td>🧩 Ngữ pháp</td><td>Điểm ngữ pháp (công thức, giải thích, ví dụ, mẹo) và bài tập trắc nghiệm / sắp xếp câu, chấm ngay.</td></tr>
+  <tr><td>🗣️ Luyện nói</td><td>Nghe câu mẫu, bấm ghi âm và nói theo; máy nhận giọng và chấm độ giống.</td></tr>
+</table>
+<p>Học xong bấm <b>✓ Đánh dấu đã học xong</b> ở cuối bài; tiến độ hiện ở trang Khoá học và Lộ trình.</p>
+
+<h2>A5. Bài kiểm tra cuối chặng</h2>
+<ul>
+  <li>Vào chi tiết chặng, bấm <b>Bắt đầu làm bài</b>. Có thể có giới hạn thời gian; hết giờ bài tự nộp.</li>
+  <li>Câu trắc nghiệm, đúng/sai, điền từ, sắp xếp câu được <b>chấm ngay</b>. Câu <b>viết tự luận</b> và <b>nói (ghi âm)</b> do giáo viên chấm tay.</li>
+  <li>Bài có câu chấm tay sẽ ở trạng thái <b>Chờ chấm</b>; trong lúc chờ chưa nộp lại được. Khi chấm xong, chuông 🔔 báo điểm, Đạt/Chưa đạt và nhận xét.</li>
+  <li>Đạt mức điểm yêu cầu (thường 60–70%) thì chặng sau mở. Chưa đạt thì xem nhận xét và làm lại.</li>
+</ul>
+
+<h2>A6. Kho tài liệu, Ôn tập, Cộng đồng</h2>
+<ul>
+  <li><b>Kho tài liệu</b>: tìm theo tên, lọc PDF/PPT/Sheet/Docx, sắp “Mới nhất / Tải nhiều nhất”. Bấm <b>Tải xuống</b> để mở link. Tài liệu có nhãn ⭐ chỉ học viên lấy được link.</li>
+  <li><b>Kho của tôi</b>: bấm biểu tượng lưu trên thẻ tài liệu để gom vào kho riêng.</li>
+  <li><b>Ôn tập</b>: luyện phát âm với bảng Pinyin và bài tập Pinyin, luyện thi HSK (đề thi thử theo cấp), luyện gõ từ vựng, shadowing, HSKK sơ cấp, tra địa điểm thi.</li>
+  <li><b>Cộng đồng</b>: link nhóm Facebook/Zalo, lịch hoạt động, thử thách hằng tuần.</li>
+</ul>
+
+<h2>A7. Chuông thông báo</h2>
+<p>Chuông 🔔 cạnh avatar hiện <b>số thông báo chưa đọc</b>. Bấm chuông để xem; bấm từng thông báo để đi tới đúng trang. Bạn sẽ nhận:</p>
+<ul>
+  <li>Mã giao dịch chưa thanh toán · đang chờ xác nhận · <b>đã kích hoạt Học viên</b>.</li>
+  <li>Gói học viên <b>sắp hết hạn</b> (30/7/3 ngày) hoặc <b>đã hết hạn</b>.</li>
+  <li>Bài kiểm tra <b>đã được chấm</b> (điểm + nhận xét).</li>
+  <li>Tài liệu mới trong Kho, lời chào khi mới tạo tài khoản, và <b>thông báo chung</b> từ Mọt.</li>
+</ul>
+<p>Trạng thái đã đọc lưu theo tài khoản nên đồng bộ mọi thiết bị.</p>
+
+<h2>A8. Câu hỏi thường gặp</h2>
+<table>
+  <tr><th style="width:36%">Tình huống</th><th>Cách xử lý</th></tr>
+  <tr><td>Đã chuyển khoản nhưng chưa thành Học viên</td><td>Kiểm tra đã bấm <b>Tôi đã chuyển khoản</b> chưa và nội dung chuyển khoản có đúng mã <code>MOT…</code> không. Quá 24 giờ thì nhắn Mọt qua nút hỗ trợ (Zalo/Messenger), gửi ảnh giao dịch.</td></tr>
+  <tr><td>Bị đăng xuất bất ngờ</td><td>Tài khoản vừa đăng nhập trên thiết bị khác. Đăng nhập lại; nếu không phải bạn, đổi mật khẩu.</td></tr>
+  <tr><td>Bài học hiện 🔒 Học viên</td><td>Bài này dành cho học viên, hoặc gói của bạn đã hết hạn. Đăng ký/gia hạn ở trang Khoá học.</td></tr>
+  <tr><td>Không nộp lại được bài kiểm tra</td><td>Bài trước đang chờ chấm. Đợi giáo viên chấm (chuông sẽ báo).</td></tr>
+  <tr><td>Video không chạy</td><td>Tải lại trang; kiểm tra mạng. Video ngoài YouTube sẽ mở ở trang riêng.</td></tr>
+  <tr><td>Ghi âm/luyện nói không nhận giọng</td><td>Cho phép trình duyệt dùng micro; dùng Chrome hoặc Safari bản mới.</td></tr>
+</table>
+
+<!-- ======================= PHẦN B ======================= -->
+<div class="part"><h1>Phần B — Dành cho quản trị viên</h1><p>Hướng dẫn đầy đủ trang quản trị: tài khoản, duyệt thanh toán, soạn lộ trình, khoá học, bài học, ôn tập, bài kiểm tra, tài liệu và cài đặt.</p></div>
+
+<h2>B1. Vào trang quản trị, các mục menu</h2>
+<p>Đăng nhập bằng tài khoản <b>Quản trị</b> hoặc <b>Biên tập</b>, bấm avatar › <b>Trang quản trị (CMS)</b>. Các mục:</p>
+<table>
+  <tr><th style="width:28%">Mục</th><th>Dùng để</th></tr>
+  <tr><td>📊 Tổng quan</td><td>Số tài liệu, lượt tải, số chặng, <b>bài chờ chấm</b>, <b>chờ kích hoạt học viên</b>, tài khoản; tài liệu tải nhiều nhất.</td></tr>
+  <tr><td>📄 Tài liệu</td><td>Thêm/sửa/ẩn tài liệu trong Kho (B9).</td></tr>
+  <tr><td>🪜 Lộ trình học</td><td>Thêm/sửa/sắp xếp các chặng, buổi học, bài kiểm tra cuối chặng (B4, B7).</td></tr>
+  <tr><td>🎬 Bài học (Khoá học)</td><td>Thêm cấp HSK, soạn từng bài: video + 5 phần ôn tập (B5, B6).</td></tr>
+  <tr><td>📝 Chấm bài</td><td>Chấm câu tự luận và ghi âm trong bài kiểm tra (B8).</td></tr>
+  <tr><td>📈 Thống kê học tập</td><td>Người học đang kẹt ở đâu, câu sai nhiều, bài học dở (B8).</td></tr>
+  <tr><td>👥 Tài khoản</td><td>Vai trò, hạn Học viên, khoá/xoá tài khoản (B2). <i>Chỉ Quản trị.</i></td></tr>
+  <tr><td>💳 Nâng cấp học viên</td><td>Duyệt chuyển khoản (B3). <i>Chỉ Quản trị.</i></td></tr>
+  <tr><td>⚙️ Cài đặt</td><td>Thông báo chung, gói học viên, ngân hàng, hỗ trợ… (B10).</td></tr>
+  <tr><td>💾 Sao lưu</td><td>Tải/nhập bản sao lưu nội dung (B11).</td></tr>
+</table>
+<div class="tip">Chuông 🔔 của admin tự báo khi có người <b>báo đã chuyển khoản</b> hoặc có <b>bài chờ chấm</b>. Bấm vào là tới đúng trang xử lý.</div>
+<div class="note">Hầu hết form có nút <b>Lưu</b> riêng (Lưu chặng, Lưu bài học, Lưu tài liệu, Lưu thay đổi). Chưa bấm Lưu mà rời trang là mất phần vừa sửa. Sau khi lưu, mở trang người dùng (“‹ Xem trang web”) để kiểm tra lại.</div>
+
+<h2>B2. Tài khoản và hạn Học viên</h2>
+<p>Mục <b>👥 Tài khoản</b> liệt kê mọi tài khoản, tìm theo tên/email, lọc theo vai trò.</p>
+<ul>
+  <li><b>Đổi vai trò</b>: chọn ở cột Vai trò (Quản trị / Biên tập / Học viên / Thành viên). Lưu ngay khi chọn.</li>
+  <li><b>Cấp Học viên</b>: đổi vai trò sang Học viên, hạn <b>tự đặt 1 năm</b> kể từ hôm nay (báo “Đã cấp Học viên 1 năm”).</li>
+  <li><b>Sửa hạn</b>: dưới vai trò có ô ngày “Hạn đến”, chọn ngày khác là lưu. Xoá trống ngày = Học viên <b>không thời hạn</b> (chỉ dùng cho trường hợp đặc biệt).</li>
+  <li><b>+1 năm</b>: gia hạn thêm 1 năm. Còn hạn thì cộng nối tiếp, đã hết hạn thì tính từ hôm nay.</li>
+  <li>Bên cạnh hiện tình trạng: “Còn N ngày”, <span style="color:#c0392b"><b>Đã hết hạn</b></span>, hoặc “Không thời hạn”.</li>
+  <li><b>Khoá</b> tài khoản: bấm nút “Hoạt động” để chuyển sang “Đã khoá” (người đó không đăng nhập được). Bấm lại để mở.</li>
+  <li><b>Xoá</b>: xoá vĩnh viễn tài khoản và tiến độ học. Không hoàn tác được.</li>
+</ul>
+<div class="note">Học viên hết hạn <b>tự về tài khoản thường</b> (không cần admin làm gì); tiến độ vẫn giữ. Trên bản Supabase, người dùng tự đăng ký; đặt lại mật khẩu qua email trong Supabase Dashboard › Authentication. Admin và Biên tập được miễn giới hạn 1 thiết bị.</div>
+
+<h2>B3. Duyệt chuyển khoản (Nâng cấp học viên)</h2>
+<ol class="steps">
+  <li>Khi có người bấm “Tôi đã chuyển khoản”, chuông và Tổng quan báo <b>Chờ kích hoạt học viên</b>. Vào <b>💳 Nâng cấp học viên</b>.</li>
+  <li>Mỗi dòng có: tên, email, <b>mã giao dịch</b>, số tiền, thời hạn (12 tháng), trạng thái.</li>
+  <li>Mở app ngân hàng, tìm giao dịch có <b>nội dung chứa đúng mã</b> và <b>đúng số tiền</b>.</li>
+  <li>Thấy rồi thì bấm <b>Xác nhận đã nhận tiền</b> › <b>Kích hoạt học viên</b>. Tài khoản thành Học viên 1 năm (đang còn hạn thì cộng nối tiếp). Học viên nhận thông báo ngay.</li>
+  <li>Không thấy tiền hoặc yêu cầu sai: bấm <b>Huỷ</b>.</li>
+</ol>
+<div class="warn">Chỉ bấm xác nhận khi <b>đã thấy tiền vào tài khoản</b>. Thao tác này không tự động kiểm tra ngân hàng.</div>
+<p>Giá và thời hạn gói đặt ở <b>Cài đặt › Gói học viên</b> (B10); thay đổi chỉ áp dụng cho mã giao dịch tạo sau đó.</p>
+
+<h2>B4. Lộ trình học: thêm và sửa chặng</h2>
+<p>Mục <b>🪜 Lộ trình học</b> là danh sách các chặng theo thứ tự bậc thang. Dùng nút <b>Lên / Xuống</b> để đổi thứ tự, <b>Sửa</b> để mở form, <b>+ Thêm chặng</b> để tạo chặng mới.</p>
+<h3>Các ô trong form chặng</h3>
+<table>
+  <tr><th style="width:32%">Ô</th><th>Ý nghĩa / cách nhập</th></tr>
+  <tr><td>Tên bậc</td><td>Chữ ngắn trên bậc thang, VD “Vỡ lòng”, “Nhập môn”.</td></tr>
+  <tr><td>Emoji, Màu, Chữ trắng</td><td>Biểu tượng và màu của bậc; tick “Chữ trắng trên nền màu” nếu màu đậm.</td></tr>
+  <tr><td>Tiêu đề</td><td>Tên đầy đủ. <b>Quan trọng:</b> chặng có bài học Khoá học phải đặt tiêu đề dạng <code>HSK1</code>, <code>HSK2</code>… (xem B5).</td></tr>
+  <tr><td>Nhãn cấp độ</td><td>VD “Sơ cấp”, “Trung cấp”. Nhãn kết thúc bằng “cấp” sẽ không hiện trên thẻ.</td></tr>
+  <tr><td>Từ khoá lọc Kho tài liệu</td><td>Bấm “Vào học” ở chặng sẽ mở Kho lọc theo từ khoá này.</td></tr>
+  <tr><td>Mô tả</td><td>Đoạn giới thiệu. Muốn xuống dòng, gõ <code>&lt;br&gt;</code>; web hiển thị thành dòng mới.</td></tr>
+  <tr><td>Thông tin giáo trình (tuỳ chọn)</td><td><b>Dòng ruy-băng</b> + màu; <b>Link mua sách</b> (chọn khoá affiliate); <b>Bảng thông tin</b> mỗi dòng <code>Nhãn | Nội dung</code> (dòng có nhãn “Giáo trình” hiện ảnh bìa + nút mua); <b>Ảnh bìa giáo trình</b>.</td></tr>
+  <tr><td>Danh sách bài học</td><td>Mỗi dòng <code>中文 | Tiếng Việt</code>, VD <code>我叫李文 | Tôi tên là Lý Văn</code>. Thứ tự dòng = số bài.</td></tr>
+  <tr><td>Nhóm buổi học (tuỳ chọn)</td><td>Dùng cho chặng không theo giáo trình HSK (VD Nhập môn). <b>+ Thêm nhóm buổi học</b>: tên nhóm, màu, ghi chú, các buổi mỗi dòng <code>Buổi 1 | Nội dung</code>.</td></tr>
+  <tr><td>Ai được vào học</td><td>⭐ Chỉ Học viên, hoặc 🎁 Miễn phí (mọi người).</td></tr>
+  <tr><td>Hoàn thành chặng</td><td><b>Phải đạt bài kiểm tra</b>, hoặc <b>Bấm nút “Hoàn thành chặng”</b> (không cần kiểm tra). Nếu chọn kiểm tra mà chưa có bài, học viên sẽ dừng ở chặng này.</td></tr>
+</table>
+<p>Soạn xong bấm <b>Lưu chặng</b>. Phần bài kiểm tra nằm cuối form (B7).</p>
+<h3>Chặng không phải HSK có bài học (VD Nhập môn)</h3>
+<p>Với chặng có tiêu đề không phải “HSK + số” (Nhập môn, Bắt đầu…), form có thêm mục <b>Bài học (video + 5 phần ôn tập)</b>:</p>
+<ol class="steps">
+  <li>Tick <b>Chặng này có bài học như HSK</b>. Nếu “Danh sách bài học” đang trống, web tự lấy sẵn từ các buổi (Buổi 1 → bài 1, Buổi 2 → bài 2…). Bấm <b>Lưu chặng</b>.</li>
+  <li>Vào <b>Bài học (Khoá học)</b>: chặng này hiện trên thanh cấp (VD “Nhập môn tiếng Trung cho người mới học · Nhập môn”). Bấm <b>Soạn</b> ở từng buổi để thêm video và 5 phần ôn tập như bài HSK (B5, B6).</li>
+  <li>Trên trang chặng, mỗi buổi có nút <b>BẮT ĐẦU HỌC</b> mở đúng bài; buổi chưa soạn sẽ báo “chưa có nội dung”. Buổi đánh dấu 🎁 Miễn phí thì ai vào được chặng cũng học được.</li>
+</ol>
+<div class="note">Thứ tự buổi trên trang chặng (đếm từ trên xuống qua các nhóm) khớp với thứ tự bài. Thêm hoặc đổi chỗ buổi thì sửa luôn “Danh sách bài học” cho khớp. Chặng này không hiện trên trang Khoá học HSK 1–6.</div>
+
+<h2>B5. Khoá học: thêm cấp HSK và bài học</h2>
+<p>Mục <b>🎬 Bài học (Khoá học)</b> quản lý nội dung từng bài của các cấp HSK. Thanh trên cùng là các cấp (HSK1 · Vỡ lòng, HSK2 · Tập sự…): các chặng có tiêu đề dạng <code>HSK + số</code>, và các chặng đã bật “có bài học” như Nhập môn (B4).</p>
+<h3>Thêm một cấp mới (VD HSK7)</h3>
+<ol class="steps">
+  <li>Bấm <b>＋ Thêm cấp</b>.</li>
+  <li>Nhập <b>Cấp số</b> (VD 7), <b>Tên chặng</b> (tên bậc, VD “Cao thủ”), <b>Màu</b>, <b>Mô tả ngắn</b>, bấm <b>Thêm cấp</b>.</li>
+  <li>Cấp mới được thêm thành một chặng ở cuối Lộ trình, xuất hiện ở trang Khoá học và Thống kê. Vào <b>Lộ trình học</b> để sắp lại thứ tự, sửa mô tả, giáo trình, bài kiểm tra.</li>
+</ol>
+<h3>Thêm một bài học</h3>
+<ol class="steps">
+  <li>Chọn cấp ở thanh trên. Bảng hiện các bài: Video, số từ vựng, Viết, Ngữ pháp, Bài tập, Nói, <b>Quyền</b> (🎁 Miễn phí / ⭐ Học viên / Chưa có nội dung).</li>
+  <li>Bấm <b>+ Thêm bài mới</b> (hoặc <b>Sửa</b> ở bài có sẵn).</li>
+  <li>Tab <b>Chung &amp; video</b>: nhập <b>Tên bài (tiếng Trung)</b>, <b>Nghĩa tiếng Việt</b>. Tick <b>🎁 Miễn phí</b> nếu muốn cho học thử (ai cũng học được); bỏ tick = chỉ Học viên.</li>
+  <li><b>Video bài giảng</b>: bấm <b>+ Thêm video</b>, đặt tên phần, dán link YouTube (<code>youtu.be/…</code> hoặc <code>youtube.com/watch?v=…</code>). Hiện “✓ YouTube — phát trên web” là đúng. Có thể thêm nhiều phần video.</li>
+  <li>Soạn 5 phần ôn tập ở các tab còn lại (B6), rồi bấm <b>Lưu bài học</b>.</li>
+</ol>
+<div class="tip">Tên bài sửa ở đây tự cập nhật danh sách bài trong Lộ trình. Có nhiều bài soạn sẵn dạng file thì dùng <b>⬆ Nhập dữ liệu (.json)</b> để đưa vào một lần.</div>
+<div class="note">Video YouTube nên để chế độ <b>Không công khai (Unlisted)</b> để chỉ người có link (học viên trên web) xem được.</div>
+
+<h2>B6. Soạn 5 phần ôn tập của một bài</h2>
+<p>Trong form bài học, mỗi tab là một phần ôn tập. Các ô nhập theo dòng: mỗi dòng một mục, các cột cách nhau bằng dấu <code>|</code>. Ô tự lưu vào bản nháp khi bấm ra ngoài; nhớ bấm <b>Lưu bài học</b> ở cuối.</p>
+
+<h3>1. Từ vựng</h3>
+<p>Mỗi dòng <code>汉字 | pinyin | loại từ | nghĩa</code>. Câu ví dụ đặt ở dòng ngay dưới, bắt đầu bằng <code>- </code>: <code>- 中文 | pinyin | nghĩa</code>.</p>
+<pre>你好 | nǐ hǎo | Cụm từ | xin chào
+- 你好，我叫李文。 | Nǐ hǎo, wǒ jiào Lǐ Wén. | Xin chào, tôi tên là Lý Văn.
+不客气 | bú kèqi | Cụm từ | không có gì
+- A：谢谢！B：不客气。 | A: Xièxie! B: Bú kèqi. | A: Cảm ơn! B: Không có gì.</pre>
+<p>Từ vựng này dùng luôn cho phần <b>Nghe hiểu</b> (máy đọc từ, học viên chọn nghĩa) và thẻ lật.</p>
+
+<h3>2. Luyện viết</h3>
+<p>Gõ liền các chữ Hán cần luyện, VD <code>你好谢谢</code>. Thứ tự nét lấy tự động từ thư viện Hanzi Writer, không cần nhập.</p>
+
+<h3>3. Ngữ pháp</h3>
+<p>Bấm <b>+ Thêm điểm ngữ pháp</b>, mỗi điểm có: <b>Biểu tượng</b>, <b>Công thức</b> (VD <code>Chủ ngữ + 是 + Danh từ</code>), <b>Giải thích</b>, <b>Ví dụ</b> mỗi dòng <code>中文 | pinyin | nghĩa</code>, <b>Mẹo</b>. Ví dụ có giọng đọc cho học viên.</p>
+
+<h3>4. Bài tập (hiện dưới phần Ngữ pháp)</h3>
+<p>Bấm <b>+ Thêm câu hỏi</b>, chọn loại:</p>
+<ul>
+  <li><b>Trắc nghiệm</b>: Đề bài; các lựa chọn mỗi dòng một đáp án, thêm <code>*</code> ở đầu đáp án đúng; Giải thích khi trả lời.</li>
+  <li><b>Sắp xếp câu</b>: Đề bài; câu đúng với các phần cách nhau bằng dấu cách (VD <code>我 是 越南人 。</code>); Pinyin (tuỳ chọn); Giải thích.</li>
+</ul>
+<pre>Đề bài: “Xin chào” tiếng Trung là gì?
+Các lựa chọn:
+*你好
+谢谢
+再见</pre>
+<p>Học viên làm xong được chấm ngay.</p>
+
+<h3>5. Luyện nói</h3>
+<p>Mỗi dòng một câu mẫu <code>中文 | pinyin | nghĩa</code>. Học viên nghe, ghi âm nói theo, máy chấm độ giống.</p>
+<pre>你好！ | Nǐ hǎo! | Xin chào!
+我是越南人。 | Wǒ shì Yuènán rén. | Tôi là người Việt Nam.</pre>
+<div class="tip">Cột “Quyền” hiện <b>Chưa có nội dung</b> khi bài chưa có gì; học viên mở bài sẽ thấy báo “chưa có nội dung”. Nên soạn đủ video + từ vựng trước khi mở cho học viên.</div>
+
+<h2>B7. Bài kiểm tra cuối chặng</h2>
+<p>Ở cuối form <b>Sửa chặng</b> (Lộ trình học), bấm <b>+ Tạo bài kiểm tra</b>, hoặc <b>Tạo bài mẫu từ danh sách bài học</b> để máy dựng sẵn khung từ từ vựng các bài rồi chỉnh lại.</p>
+<ul>
+  <li><b>Điểm đạt (%)</b>: học viên cần đạt từ mức này để mở chặng sau.</li>
+  <li><b>Thời gian làm bài (phút)</b>: 0 = không giới hạn; hết giờ tự nộp.</li>
+  <li>Bài chia thành <b>phần</b> (VD Nghe, Đọc, Viết). Mỗi phần có <b>Hướng dẫn làm bài</b>, <b>Tệp nghe</b> dùng chung, <b>Bài đọc</b>, <b>Hình chung</b> (đều tuỳ chọn).</li>
+</ul>
+<table>
+  <tr><th style="width:28%">Loại câu</th><th>Cách nhập</th><th style="width:16%">Chấm</th></tr>
+  <tr><td>Trắc nghiệm</td><td>Đề bài, hình (tuỳ chọn), các lựa chọn (+ Lựa chọn), chọn đáp án đúng.</td><td>Tự động</td></tr>
+  <tr><td>Đúng / Sai</td><td>Đề bài và chọn Đúng hoặc Sai.</td><td>Tự động</td></tr>
+  <tr><td>Điền từ</td><td>“Đáp án được chấp nhận” mỗi dòng một cách viết. Khi chấm bỏ qua dấu câu, khoảng trắng, hoa/thường.</td><td>Tự động</td></tr>
+  <tr><td>Sắp xếp câu</td><td>Câu đúng, các phần cách nhau bằng <code>/</code>, VD <code>我/是/越南/人</code>; học viên thấy các phần đã xáo trộn.</td><td>Tự động</td></tr>
+  <tr><td>Viết tự luận</td><td>Đề bài + “Hướng dẫn chấm / bài mẫu” (chỉ người chấm thấy).</td><td>Chấm tay</td></tr>
+  <tr><td>Nói – ghi âm</td><td>Đề bài + hướng dẫn chấm; học viên ghi âm câu trả lời.</td><td>Chấm tay</td></tr>
+</table>
+<p>Dùng <b>Lên / Xuống</b> để đổi thứ tự câu, <b>Xoá phần</b> / <b>Bỏ bài kiểm tra</b> khi cần. Bấm <b>Lưu chặng</b> để lưu cả bài kiểm tra.</p>
+
+<h2>B8. Chấm bài và Thống kê học tập</h2>
+<h3>Chấm bài</h3>
+<ol class="steps">
+  <li>Vào <b>📝 Chấm bài</b>, lọc <b>Chờ chấm</b>.</li>
+  <li>Mở bài: xem câu <b>Viết tự luận</b> (đọc bài) và <b>Nói (ghi âm)</b> (nghe file), nhập điểm cho từng câu.</li>
+  <li>Ghi <b>Nhận xét gửi học viên</b>, bấm lưu. Hệ thống cộng điểm, tính Đạt/Chưa đạt; đạt thì mở chặng sau. Học viên nhận thông báo kèm nhận xét.</li>
+</ol>
+<h3>Thống kê học tập</h3>
+<p>Chọn khoảng thời gian (7/30/90 ngày, từ trước tới nay). Xem: người dùng, đang hoạt động, đã bắt đầu học, lượt làm bài, bài đã học xong; <b>người học đang dừng ở chặng nào</b> (cột dài = nhiều người kẹt, nên xem lại độ khó); <b>câu hỏi làm sai nhiều nhất</b>; bài học nhiều người học dở; bài được mở nhiều nhất; kết quả khảo sát “Nhận ngay lộ trình” (tải <b>.csv</b>).</p>
+
+<h2>B9. Tài liệu trong Kho</h2>
+<ol class="steps">
+  <li>Vào <b>📄 Tài liệu</b>, bấm <b>+ Thêm tài liệu</b> (hoặc Sửa).</li>
+  <li>Nhập <b>Tên tài liệu</b>, <b>Định dạng</b> (PDF/PPT/Sheet/Docx), <b>Đường dẫn tải</b> (Google Drive…). Nhớ bật chia sẻ “<b>Bất kỳ ai có đường liên kết</b>”.</li>
+  <li><b>Ai được tải</b>: 🎁 Miễn phí — mọi người, hoặc ⭐ Chỉ Học viên (người thường thấy thẻ nhưng không lấy được link).</li>
+  <li>Ảnh thẻ: chọn <b>Kiểu ảnh minh hoạ</b>, <b>Dòng chữ 1, 2</b>, <b>Chữ Hán / emoji</b>, <b>Màu chủ đạo</b>.</li>
+  <li><b>Số lượt tải hiển thị thêm</b>: số ban đầu cộng vào lượt tải thật (tuỳ chọn).</li>
+  <li>Tick <b>Hiển thị trên Kho tài liệu</b> và bấm <b>Lưu tài liệu</b>. Bỏ tick để ẩn mà không xoá.</li>
+</ol>
+<p>Tài liệu mới đăng được báo trong chuông cho người dùng đã có tài khoản.</p>
+
+<h2>B10. Cài đặt</h2>
+<p>Mục <b>⚙️ Cài đặt</b> có nhiều tab; sửa xong bấm <b>Lưu thay đổi</b> ở góc trên.</p>
+<table>
+  <tr><th style="width:24%">Tab</th><th>Nội dung</th></tr>
+  <tr><td>📣 Thông báo</td><td><b>+ Thêm thông báo</b>: Tiêu đề, Nội dung, <b>Gửi tới</b> (Mọi người / Tài khoản thường / Chỉ Học viên), Biểu tượng, “Bấm vào thì mở” (đường dẫn trong web, VD <code>/khoa-hoc</code>, <code>/on-tap</code>, <code>/lo-trinh</code>), Hiện đến ngày (tự ẩn), Trạng thái (Đang hiện / Tạm ẩn). <b>Gửi lại</b> đưa thông báo lên đầu và báo chưa đọc lại cho mọi người. Thông báo tự động (kích hoạt, sắp hết hạn, bài đã chấm, tài liệu mới) không cần soạn.</td></tr>
+  <tr><td>⭐ Gói học viên</td><td>Tên gói, <b>Giá</b> (đồng), <b>Thời hạn (tháng)</b> — mặc định 12 = 1 năm, Quyền lợi (mỗi dòng một ý). Áp dụng cho mã giao dịch tạo từ sau khi lưu.</td></tr>
+  <tr><td>💝 Ngân hàng</td><td>Ngân hàng, số tài khoản, chủ tài khoản dùng để tạo mã QR chuyển khoản.</td></tr>
+  <tr><td>💬 Hỗ trợ</td><td>Link Zalo, Facebook, Messenger, giờ hỗ trợ, bật/tắt nút hỗ trợ nổi.</td></tr>
+  <tr><td>👥 Cộng đồng</td><td>Nội dung trang Cộng đồng: nhóm, lịch, thử thách.</td></tr>
+  <tr><td>🎁 Quà lộ trình</td><td>Khảo sát + nhiệm vụ của nút “Nhận ngay lộ trình” (ẩn với học viên) và file quà.</td></tr>
+  <tr><td>🏷️ Tag</td><td>Tag kỹ năng hiện trên chặng (Bài giảng, Từ vựng, Thi HSK…), màu và emoji.</td></tr>
+  <tr><td>🛒 Link mua</td><td>Link affiliate giáo trình, bút, vở dùng trong chặng và túi đồ nghề.</td></tr>
+  <tr><td>🎒 Túi đồ nghề · 📱 App học · 🤖 Prompt AI</td><td>Danh sách dụng cụ, app gợi ý và các prompt mẫu hiện ở chặng “Bắt đầu”.</td></tr>
+</table>
+
+<h2>B11. Sao lưu và lưu ý vận hành</h2>
+<ul>
+  <li><b>💾 Tải bản sao lưu</b> (<code>content.json</code>): gồm tài liệu, lộ trình, cài đặt. <b>Không gồm tài khoản người dùng.</b> Nên tải trước mỗi lần sửa lớn.</li>
+  <li><b>📥 Nhập từ file</b>: khôi phục từ bản đã tải trước đó (ghi đè nội dung hiện tại).</li>
+  <li><b>♻️ Khôi phục nội dung gốc</b>: đưa tài liệu, lộ trình, cài đặt về bản ban đầu. Cẩn thận, mất các chỉnh sửa.</li>
+</ul>
+<div class="warn"><b>Cập nhật cơ sở dữ liệu Supabase (làm 1 lần, người phụ trách kỹ thuật):</b> các tính năng mới cần chạy file SQL trong Supabase › SQL Editor, theo thứ tự:
+<br>• <code>docs/migrations/003_mot-thiet-bi.sql</code> — mỗi tài khoản 1 thiết bị.
+<br>• <code>docs/migrations/004_hoc-vien-1-nam.sql</code> — gói Học viên mặc định 1 năm, gia hạn sớm 30 ngày. Cuối file có đoạn tuỳ chọn đặt hạn 1 năm cho học viên cũ đang “không thời hạn” (có câu lệnh xem trước).
+<br>Các file chạy lại nhiều lần không sao.</div>
+
+<div style="break-inside:avoid">
+<h2>B12. Quy trình mẫu: mở một khoá/cấp mới</h2>
+<ol class="steps">
+  <li><b>Sao lưu</b> nội dung hiện tại (B11).</li>
+  <li><b>Bài học › ＋ Thêm cấp</b>: tạo cấp (VD HSK7) (B5).</li>
+  <li><b>Lộ trình học › Sửa</b> chặng vừa tạo: mô tả, giáo trình, ảnh bìa, danh sách bài học <code>中文 | Tiếng Việt</code>, chọn ai được học, cách hoàn thành chặng (B4).</li>
+  <li><b>Bài học</b>: soạn từng bài — video YouTube + từ vựng, luyện viết, ngữ pháp, bài tập, luyện nói (B5, B6). Tick 🎁 Miễn phí cho bài 1 để học thử.</li>
+  <li><b>Bài kiểm tra</b> cuối chặng: tạo từ bài mẫu, chỉnh điểm đạt, thời gian (B7).</li>
+  <li><b>Tài liệu</b> đi kèm vào Kho (B9).</li>
+  <li><b>Cài đặt › Thông báo</b>: soạn “Ra mắt HSK7”, gửi tới Mọi người, link <code>/khoa-hoc</code> (B10).</li>
+  <li>Mở “‹ Xem trang web” bằng tài khoản học viên thử để kiểm tra lại toàn bộ.</li>
+</ol>
+
+</body>
+</html>

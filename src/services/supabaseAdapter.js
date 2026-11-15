@@ -11,7 +11,9 @@ export function createSupabaseAdapter(url, anonKey) {
   if (!url || !anonKey) throw new Error('Thiếu VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY');
   let session = null;
   let authError = ''; // lỗi khi quay về từ Google, báo bằng toast
-  try { session = JSON.parse(localStorage.getItem(SKEY) || 'null'); } catch { session = null; }
+  let lost = false; // phiên đang dùng bị máy chủ huỷ (thường do đăng nhập ở thiết bị khác)
+  const readStored = () => { try { return JSON.parse(localStorage.getItem(SKEY) || 'null'); } catch { return null; } };
+  session = readStored();
   const saveSession = (s) => { session = s; try { s ? localStorage.setItem(SKEY, JSON.stringify(s)) : localStorage.removeItem(SKEY); } catch { /* */ } };
 
   async function call(path, { method = 'GET', body, headers = {}, auth = true } = {}) {
@@ -31,7 +33,12 @@ export function createSupabaseAdapter(url, anonKey) {
     try {
       const s = await call('/auth/v1/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: session.refresh_token }, auth: false });
       saveSession(s);
-    } catch { saveSession(null); }
+    } catch (e) {
+      // tab khác trên cùng trình duyệt đã làm mới / đăng nhập lại → dùng phiên đó
+      const stored = readStored();
+      if (stored && stored.refresh_token !== session.refresh_token) { session = stored; return; }
+      saveSession(null); lost = !(e instanceof TypeError); // TypeError = mất mạng, không phải bị thu hồi
+    }
   }
   const rest = (p, o) => call('/rest/v1/' + p, o);
   const upsert = (table, row) => rest(table, { method: 'POST', body: row, headers: { Prefer: 'resolution=merge-duplicates,return=representation' } });
@@ -73,6 +80,14 @@ export function createSupabaseAdapter(url, anonKey) {
     saveSession({ ...tmp, user: await call('/auth/v1/user') });
     const p = await myProfile();
     if (p && p.status !== 'active') { saveSession(null); throw new Error('Tài khoản đang bị khoá. Liên hệ quản trị viên.'); }
+    await claimSession(p);
+  }
+  // Mỗi tài khoản chỉ 1 thiết bị (docs/migrations/003_mot-thiet-bi.sql): phiên vừa đăng nhập thành phiên mới nhất,
+  // các phiên khác bị thu hồi refresh token. Quản trị/biên tập được miễn. Chưa chạy migration thì bỏ qua.
+  async function claimSession(p) {
+    if (!p || tierOf(p) === 'staff') return;
+    try { await rpc('claim_session'); } catch { return; }
+    try { await call('/auth/v1/logout?scope=others', { method: 'POST' }); } catch { /* */ }
   }
   async function myProfile() {
     if (!session) return null;
@@ -157,19 +172,31 @@ export function createSupabaseAdapter(url, anonKey) {
 
     takeAuthError() { const e = authError; authError = ''; return e; },
     async currentUser() { return myProfile(); },
+    // false = phiên này không còn là phiên mới nhất của tài khoản → đã đăng xuất ở thiết bị này
+    async checkSession() {
+      let ok = true;
+      if (session) { try { ok = (await rpc('session_ok')) !== false; } catch { /* lỗi mạng / chưa chạy migration: cho qua */ } }
+      if (lost) { lost = false; return false; } // refresh token đã bị thu hồi
+      if (ok) return true;
+      // tab khác trên cùng trình duyệt vừa đăng nhập lại → dùng phiên mới đó, không xoá nó
+      const stored = readStored();
+      if (stored && stored.refresh_token !== session.refresh_token) { session = stored; return true; }
+      saveSession(null); return false;
+    },
     async register({ name, email, password }) {
       const s = await call('/auth/v1/signup', { method: 'POST', body: { email, password, data: { name } }, auth: false });
       if (!s.access_token) throw new Error('Đã tạo tài khoản. Hãy mở email để xác nhận rồi đăng nhập.');
-      saveSession(s); return myProfile();
+      saveSession(s); const p = await myProfile(); await claimSession(p); return p;
     },
     async login({ email, password }) {
       const s = await call('/auth/v1/token?grant_type=password', { method: 'POST', body: { email, password }, auth: false });
       saveSession(s);
       const p = await myProfile();
       if (p && p.status !== 'active') { saveSession(null); throw new Error('Tài khoản đang bị khoá.'); }
+      await claimSession(p);
       return p;
     },
-    async logout() { try { await call('/auth/v1/logout', { method: 'POST' }); } catch { /* */ } saveSession(null); },
+    async logout() { try { await call('/auth/v1/logout', { method: 'POST' }); } catch { /* */ } saveSession(null); lost = false; },
     async updateProgress(patch) {
       const p = await myProfile(); if (!p) return null;
       await rest('profiles?id=eq.' + p.id, { method: 'PATCH', body: { progress: { ...p.progress, ...patch } } });

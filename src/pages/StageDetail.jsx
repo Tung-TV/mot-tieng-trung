@@ -5,7 +5,7 @@ import { SKILLS, allQuestions, byButton, canEnterStage, hasTest, isManual, passP
 import Exam from '../components/Exam.jsx';
 import { nrm, shownDl } from '../services/util.js';
 import DocCard from '../components/DocCard.jsx';
-import { Boxes, Chip, InfoBlock, Sections } from '../components/StageParts.jsx';
+import { Boxes, Chip, InfoBlock, Sections, BrText } from '../components/StageParts.jsx';
 import { useStageStates } from './Roadmap.jsx';
 import { hotSet, useDocActions } from './Library.jsx';
 
@@ -148,7 +148,7 @@ export default function StageDetail({ id }) {
         <div className="sd-badge" style={{ background: s.color, color: s.whiteText ? '#fff' : undefined }}><span>{s.emoji}</span>{s.key}</div>
         <div>
           <h1>{s.title}{!/cấp$/.test(s.badge) && s.badge && <span className="bd">{s.badge}</span>}</h1>
-          <p>{s.desc}</p>
+          <p><BrText text={s.desc} /></p>
           <div className="chips">{(s.chips || []).map((c) => <Chip key={c} label={c} settings={content.settings} />)}</div>
         </div>
         <span className={'sd-state st-' + st.state}>{st.state === 'passed' ? '✓ Đã hoàn thành' : st.pending ? '⏳ Chờ chấm' : 'Đang học'}</span>

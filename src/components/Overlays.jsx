@@ -141,7 +141,7 @@ export function ConfirmDialog() {
         {dialog.message && <p className="cf-msg">{dialog.message}</p>}
         {dialog.input && <label>{dialog.input.label}<input id="cf-input" autoFocus type="text" minLength={dialog.input.minLength} value={val} onChange={(e) => setVal(e.target.value)} required /></label>}
         <div className="form-act">
-          <button type="button" className="btn-s" onClick={() => close(dialog.input ? null : false)}>Huỷ</button>
+          <button type="button" className="btn-s" onClick={() => close(dialog.input ? null : false)}>{dialog.cancel || 'Huỷ'}</button>
           <button className={dialog.danger ? 'btn-d solid' : 'btn-p'} autoFocus={!dialog.input}>{dialog.ok || 'Đồng ý'}</button>
         </div>
       </form>

@@ -9,25 +9,54 @@ const PR_LABEL = { p1: 'Prompt phân tích chữ Hán', p2: 'Prompt 2', p3: 'Pro
 export default function SettingsAdmin() {
   const { content, store, run, toast } = useApp();
   const [s, setS] = useState(() => { const x = structuredClone(content.settings); x.plan = { ...DEFAULT_PLAN, ...(x.plan || {}) }; x.support = { ...DEFAULT_SUPPORT, ...(x.support || {}) }; return x; });
-  const [tab, setTab] = useState('plan');
+  const [tab, setTab] = useState('noti');
   const set = (k, v) => setS({ ...s, [k]: v });
   const setIn = (k, sub, v) => setS({ ...s, [k]: { ...s[k], [sub]: v } });
   const setArr = (k, i, sub, v) => setS({ ...s, [k]: s[k].map((x, j) => (j === i ? { ...x, [sub]: v } : x)) });
   const save = () => run(() => store.saveSettings({ ...s, plan: { ...s.plan, benefits: (s.plan.benefits || []).map((x) => x.trim()).filter(Boolean) } }), 'Đã lưu cài đặt.');
   const err = (m) => toast(m, 'err');
-  const TABS = [['plan', '⭐ Gói học viên'], ['bank', '💝 Ngân hàng'], ['support', '💬 Hỗ trợ'], ['community', '👥 Cộng đồng'], ['gift', '🎁 Quà lộ trình'], ['tags', '🏷️ Tag'], ['aff', '🛒 Link mua'], ['tools', '🎒 Túi đồ nghề'], ['apps', '📱 App học'], ['pr', '🤖 Prompt AI']];
+  const TABS = [['noti', '📣 Thông báo'], ['plan', '⭐ Gói học viên'], ['bank', '💝 Ngân hàng'], ['support', '💬 Hỗ trợ'], ['community', '👥 Cộng đồng'], ['gift', '🎁 Quà lộ trình'], ['tags', '🏷️ Tag'], ['aff', '🛒 Link mua'], ['tools', '🎒 Túi đồ nghề'], ['apps', '📱 App học'], ['pr', '🤖 Prompt AI']];
 
   return (
     <>
       <div className="adm-top"><h1 className="adm-h">Cài đặt</h1><button type="button" className="btn-p" onClick={save}>Lưu thay đổi</button></div>
       <div className="seg">{TABS.map(([k, l]) => <button key={k} type="button" className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>
       <div className="card form">
+        {tab === 'noti' && (() => {
+          const list = s.announcements || [];
+          const put = (i, k, v) => set('announcements', list.map((x, j) => (j === i ? { ...x, [k]: v } : x)));
+          const add = () => set('announcements', [{ id: 'a' + Date.now().toString(36), title: '', body: '', link: '', audience: 'all', icon: '📣', on: true, at: Date.now() }, ...list]);
+          const del = (i) => set('announcements', list.filter((_, j) => j !== i));
+          const day = (t) => (t ? new Date(t).toISOString().slice(0, 10) : '');
+          const fromDay = (v) => (v ? new Date(v + 'T23:59:59').getTime() : null);
+          return (<>
+            <p className="muted">Thông báo chung hiện trong chuông 🔔 của người xem (chấm đỏ khi chưa đọc). Bấm <b>Lưu thay đổi</b> để gửi. Các thông báo tự động (kích hoạt học viên, sắp hết hạn, bài đã chấm, tài liệu mới…) không cần soạn ở đây.</p>
+            <div className="row-btns"><button type="button" className="btn-s" onClick={add}>＋ Thêm thông báo</button></div>
+            {!list.length && <p className="muted">Chưa có thông báo chung nào.</p>}
+            {list.map((a, i) => (
+              <div key={a.id} className="card" style={{ marginTop: 12 }}>
+                <div className="grid3">
+                  <Field label="Tiêu đề"><input value={a.title} onChange={(e) => put(i, 'title', e.target.value)} placeholder="VD: Ra mắt đề thi thử HSK 4" /></Field>
+                  <Field label="Gửi tới"><select value={a.audience || 'all'} onChange={(e) => put(i, 'audience', e.target.value)}><option value="all">Mọi người</option><option value="member">Tài khoản thường (chưa là học viên)</option><option value="student">Chỉ Học viên</option></select></Field>
+                  <Field label="Biểu tượng"><input value={a.icon || ''} maxLength={4} onChange={(e) => put(i, 'icon', e.target.value)} /></Field>
+                </div>
+                <Field label="Nội dung"><textarea rows={2} value={a.body} onChange={(e) => put(i, 'body', e.target.value)} /></Field>
+                <div className="grid3">
+                  <Field label="Bấm vào thì mở" hint="Đường dẫn trong web, VD /khoa-hoc, /on-tap, /lo-trinh"><input value={a.link || ''} onChange={(e) => put(i, 'link', e.target.value.trim())} placeholder="/khoa-hoc" /></Field>
+                  <Field label="Hiện đến ngày" hint="Bỏ trống = không tự ẩn"><input type="date" value={day(a.until)} onChange={(e) => put(i, 'until', fromDay(e.target.value))} /></Field>
+                  <Field label="Trạng thái"><select value={a.on === false ? 'off' : 'on'} onChange={(e) => put(i, 'on', e.target.value === 'on')}><option value="on">Đang hiện</option><option value="off">Tạm ẩn</option></select></Field>
+                </div>
+                <div className="row-btns"><small className="muted">Tạo lúc {new Date(a.at || Date.now()).toLocaleString('vi-VN')}</small><button type="button" className="btn-s small" onClick={() => put(i, 'at', Date.now())} title="Đưa lên đầu và báo chưa đọc lại cho mọi người">Gửi lại</button><button type="button" className="btn-d small" onClick={() => del(i)}>Xoá</button></div>
+              </div>
+            ))}
+          </>);
+        })()}
         {tab === 'plan' && (<>
           <p className="muted">Thông tin hiển thị ở trang “Nâng cấp tài khoản”. Giá và thời hạn áp dụng cho các mã giao dịch tạo từ nay về sau.</p>
           <div className="grid3">
             <Field label="Tên gói"><input value={s.plan.name} onChange={(e) => setIn('plan', 'name', e.target.value)} /></Field>
             <Field label="Giá (đồng)" hint={fmtVnd(s.plan.price)}><input type="number" min="0" step="1000" value={s.plan.price} onChange={(e) => setIn('plan', 'price', Math.max(0, parseInt(e.target.value, 10) || 0))} /></Field>
-            <Field label="Thời hạn (tháng)" hint="0 = không giới hạn thời gian"><input type="number" min="0" value={s.plan.months} onChange={(e) => setIn('plan', 'months', Math.max(0, parseInt(e.target.value, 10) || 0))} /></Field>
+            <Field label="Thời hạn (tháng)" hint="Mặc định 12 tháng = 1 năm. Admin vẫn sửa hạn từng người ở mục Tài khoản."><input type="number" min="1" value={s.plan.months || 12} onChange={(e) => setIn('plan', 'months', Math.max(1, parseInt(e.target.value, 10) || 12))} /></Field>
           </div>
           <Field label="Quyền lợi — mỗi dòng một ý"><textarea rows={5} value={(s.plan.benefits || []).join('\n')} onChange={(e) => setIn('plan', 'benefits', e.target.value.split('\n'))} /></Field>
         </>)}

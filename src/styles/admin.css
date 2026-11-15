@@ -87,7 +87,9 @@ code{background:var(--bg);border:1px solid var(--line);border-radius:5px;padding
 .pill-s.mute{background:var(--bg);color:var(--muted)}
 .kpi-link{text-decoration:none;color:inherit;border-color:#e8b14a}
 .kpi-link:hover{box-shadow:0 0 0 2px #e8b14a}
-.until{display:block;font-size:11px;margin-top:2px}
+.until{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;margin-top:6px;font-size:12px}
+.until input[type=date]{font:inherit;font-size:12px;padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:#fff}
+.until .exp{color:#c0392b;font-weight:700}
 .adm-out{border:0;background:none;font:inherit;text-align:left;cursor:pointer}
 .q-edit{gap:8px}
 .q-opts{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}

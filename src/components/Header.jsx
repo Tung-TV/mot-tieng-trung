@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { hrefOf, navigate } from '../router.jsx';
 import { ROLE_LABEL } from '../services/util.js';
+import { NotificationBell } from './Notifications.jsx';
 
 const NAV = [
   { r: '/', cls: 'n1', s: '--bg1:#d6e9fd;--bg2:#b9d8f8;--tc:#1f4f9a;--sc:#c1440e', ck: '#3b82d6', b: ['KHO TÀI LIỆU', 'TIẾNG TRUNG'], sm: 'MIỄN PHÍ 100%', img: 'nav1', sh: 'Tài liệu' },
@@ -37,10 +38,7 @@ export function Header() {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2" /><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5" /><circle cx="17" cy="9" r="2.4" /><path d="M17.5 14.2c2.2.3 3.5 2 3.5 4.3" /></svg>
           Cộng đồng
         </a>
-        <button className="bell" type="button" aria-label="Thông báo" title="Thông báo">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 0112 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9" /><path d="M10 20a2 2 0 004 0" /></svg>
-          <i className="dot" />
-        </button>
+        <NotificationBell />
         <div className="me" ref={ref}>
           <button className={'avatar' + (user ? ' in' : '')} type="button" aria-haspopup="true" aria-expanded={open} aria-label="Tài khoản" onClick={() => setOpen((o) => !o)}>
             <svg viewBox="0 0 24 24" width="28" height="28" fill="#8a6a3a" aria-hidden="true"><circle cx="12" cy="8.5" r="4" /><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7z" /></svg>
@@ -51,7 +49,8 @@ export function Header() {
             <div className="menu">
               {user ? (
                 <>
-                  <b>Xin chào, {user.name}!<small className="role-tag">{ROLE_LABEL[user.role]}</small></b>
+                  <b>Xin chào, {user.name}!<small className="role-tag">{ROLE_LABEL[user.role === 'student' && tier !== 'student' ? 'member' : user.role]}</small></b>
+                  {tier === 'student' && user.studentUntil && <small className="muted">Học viên đến {new Date(user.studentUntil).toLocaleDateString('vi-VN')}</small>}
                   {tier === 'staff' ? (
                     <button type="button" onClick={go(() => navigate('/admin'))}>🛠️ Trang quản trị (CMS)</button>
                   ) : (

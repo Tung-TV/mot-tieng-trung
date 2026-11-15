@@ -65,10 +65,10 @@ export default function Library() {
         <h1>Khám phá tài liệu cùng <span>MỌT TIẾNG TRUNG</span></h1>
         <div className="hero-act">
           <div className="proof">
-            <span className="av" aria-hidden="true"><i>👩‍🎓</i><i>🧑‍🎓</i><i>👨‍🎓</i></span>
+            <span className="av" aria-hidden="true"><i>L</i><i>H</i><i>M</i><i className="more">+</i></span>
             <span><b>10.000+ bạn học</b>khám phá tài liệu mỗi ngày</span>
           </div>
-          <button className="btn" type="button" onClick={() => navigate('/kho-cua-toi')}><span aria-hidden="true">♡</span> Kho của tôi</button>
+          <button className="btn" type="button" onClick={() => navigate('/kho-cua-toi')}><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z" /></svg> Kho của tôi</button>
         </div>
       </section>
 

@@ -21,13 +21,25 @@ export const canOpenLesson = (stage, n, tier) => paid(tier) || ((stage && stage.
 /** Tài liệu: access = 'free' (mặc định) | 'student' */
 export const docLocked = (d, tier) => d.access === 'student' && !paid(tier);
 /** Cấp HSK của chặng (HSK1 → 1), không phải chặng HSK thì null */
-export const stageLevel = (s) => { const m = /^HSK\s*(\d+)/.exec((s && s.title) || ''); return m ? +m[1] : null; };
+export const stageLevel = (s) => {
+  if (s && Number.isInteger(s.lessonLevel)) return s.lessonLevel; // chặng không phải HSK nhưng có bài học (Nhập môn…)
+  const m = /^HSK\s*(\d+)/.exec((s && s.title) || ''); return m ? +m[1] : null;
+};
+/** Mã cấp cho chặng không phải HSK (Nhập môn, Bắt đầu…) bắt đầu từ 100 để không trùng HSK 1–9 */
+export const EXTRA_LEVEL = 100;
+export const isHskLevel = (lv) => lv != null && lv > 0 && lv < EXTRA_LEVEL;
+/** Tên cấp để hiển thị: “HSK1” hoặc tên chặng (VD “Nhập môn”) */
+export const levelName = (s, lv = stageLevel(s)) => (isHskLevel(lv) ? 'HSK' + lv : (s && s.key) || 'Cấp ' + lv);
+/** Mã cấp còn trống cho một chặng không phải HSK */
+export const nextExtraLevel = (stages) => Math.max(EXTRA_LEVEL - 1, ...stages.map(stageLevel).filter((x) => x >= EXTRA_LEVEL)) + 1;
+/** Mỗi buổi trong các nhóm buổi học → [tên, “Buổi n”] để làm danh sách bài */
+export const lessonsFromSections = (sections = []) => sections.flatMap((x) => (x.items || []).map((r) => [r[1] || r[0], r[0] || '']));
 /** Trạng thái học một bài: new | doing | done */
 export const lessonState = (progress, id) => ((progress && progress.lessons && progress.lessons[id]) || {}).s || 'new';
 
 // ----- Tách dữ liệu chặng -----
 // Phần công khai: ai cũng xem được (khung lộ trình). Phần chi tiết: chỉ học viên trở lên.
-export const STAGE_PUBLIC = ['id', 'order', 'key', 'emoji', 'color', 'whiteText', 'title', 'badge', 'desc', 'chips'];
+export const STAGE_PUBLIC = ['id', 'order', 'key', 'emoji', 'color', 'whiteText', 'title', 'badge', 'desc', 'chips', 'lessonLevel'];
 // Phần cài đặt chỉ học viên trở lên được tải: link mua, túi đồ nghề, app học, prompt
 export const SETTINGS_PREMIUM = ['affiliate', 'tools', 'apps', 'prompts'];
 
@@ -307,3 +319,12 @@ export function communityOf(settings) {
   const sp = supportOf(settings), fill = { fbPage: facebookUrl(sp.facebook), zalo: zaloUrl(sp.zalo) };
   return { ...c, platforms: (c.platforms || []).map((p) => ({ ...p, url: p.url || fill[p.k] || '' })) };
 }
+
+// ----- Gia hạn Học viên -----
+/** Được gia hạn sớm khi còn ≤ 30 ngày (hoặc đã hết hạn / chưa là học viên) */
+export const RENEW_DAYS = 30;
+export const canRenew = (u) => {
+  const t = tierOf(u);
+  if (t === 'member') return true;
+  return t === 'student' && !!u.studentUntil && u.studentUntil - Date.now() <= RENEW_DAYS * 86400000;
+};

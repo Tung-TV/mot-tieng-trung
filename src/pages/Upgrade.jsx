@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext.jsx';
 import { navigate } from '../router.jsx';
 import { Modal } from '../components/Overlays.jsx';
-import { DEFAULT_PLAN, fmtVnd, vietQrPayload } from '../services/model.js';
+import { DEFAULT_PLAN, fmtVnd, vietQrPayload, canRenew } from '../services/model.js';
 import { qrSvg } from '../services/qr.js';
 import { SupportBox } from '../components/Support.jsx';
 import { copyText } from '../services/util.js';
@@ -62,7 +62,7 @@ export default function Upgrade() {
   if (tier === 'staff') {
     return <section className="sk soon"><div className="soon-e">🛠️</div><h2>Tài khoản quản trị</h2><p>Tài khoản quản trị/biên tập không cần nâng cấp.</p><div className="soon-a"><button className="btn-p" type="button" onClick={() => navigate('/admin/nang-cap')}>Xem yêu cầu nâng cấp</button></div></section>;
   }
-  if (tier === 'student') {
+  if (tier === 'student' && !canRenew(user)) {
     return (
       <section className="sk soon">
         <div className="soon-e">🎉</div>
@@ -97,7 +97,7 @@ export default function Upgrade() {
         <div>
           <span className="dn-badge">GÓI HỌC VIÊN</span>
           <h1>{plan.name}</h1>
-          <div className="up-price">{fmtVnd(plan.price)}<small>{plan.months > 0 ? ' / ' + plan.months + ' tháng' : ' · dùng không giới hạn'}</small></div>
+          <div className="up-price">{fmtVnd(plan.price)}<small>{' / ' + ((plan.months || 12) === 12 ? 'năm' : plan.months + ' tháng')}</small></div>
           <ul className="up-list">{(plan.benefits || []).map((b, i) => <li key={i}>{b}</li>)}</ul>
         </div>
         {!active && (
